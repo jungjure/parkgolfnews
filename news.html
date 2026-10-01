@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>뉴스 - 파크골프뉴스</title>
+<meta name="description" content="파크골프뉴스의 전체 뉴스. 대회 결과, 협회 소식, 행사 안내를 모았습니다.">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap cols">
+  <main>
+    <h2 class="sec">뉴스</h2>
+    <div class="toolbar" id="chips"></div>
+    <div class="toolbar"><input type="search" id="q" placeholder="제목·내용 검색"></div>
+    <div id="list"><div class="loading">불러오는 중...</div></div>
+    <div class="pager" id="pager"></div>
+  </main>
+  <div id="side"></div>
+</div>
+<script src="assets/app.js"></script>
+<script>
+(async () => {
+  const S = await layout('news');
+  $('#side').innerHTML = sideBox(S);
+  const PER = 12; let all = [], cat = '전체', page = 1, q = '';
+  const draw = () => {
+    const f = all.filter(n => (cat === '전체' || n.cat === cat) && (!q || (n.title + n.summary + n.body).includes(q)));
+    const pages = Math.max(1, Math.ceil(f.length / PER)); page = Math.min(page, pages);
+    $('#list').innerHTML = f.length ? `<div class="grid">${f.slice((page - 1) * PER, page * PER).map(newsCard).join('')}</div>` : '<div class="empty">해당하는 뉴스가 없습니다.</div>';
+    $('#pager').innerHTML = pages > 1 ? Array.from({ length: pages }, (_, i) => `<button class="chip ${i + 1 === page ? 'on' : ''}" data-p="${i + 1}">${i + 1}</button>`).join('') : '';
+  };
+  try {
+    all = await getNews();
+    const cats = ['전체', ...new Set(all.map(n => n.cat))];
+    const want = new URLSearchParams(location.search).get('cat'); if (want && cats.includes(want)) cat = want;
+    $('#chips').innerHTML = cats.map(c => `<button class="chip ${c === cat ? 'on' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('');
+    $('#chips').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; cat = b.dataset.c; page = 1; document.querySelectorAll('#chips .chip').forEach(x => x.classList.toggle('on', x === b)); draw(); };
+    $('#pager').onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; page = +b.dataset.p; draw(); scrollTo(0, 0); };
+    $('#q').oninput = e => { q = e.target.value.trim(); page = 1; draw(); };
+    draw();
+  } catch (e) { showError($('#list'), e); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>파크골프뉴스 - 전국 파크골프 대회 일정과 뉴스</title>
+<meta name="description" content="파크골프뉴스는 전국 파크골프 대회 일정, 접수 안내, 협회 소식과 뉴스를 매일 전합니다.">
+<meta property="og:title" content="파크골프뉴스">
+<meta property="og:description" content="전국 파크골프 대회 일정, 접수 안내, 뉴스를 매일 전합니다.">
+<meta property="og:image" content="https://parkgolfnews.org/assets/logo.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<section class="hero"><div class="wrap">
+  <h1>오늘의 파크골프 소식</h1>
+  <p>전국 대회 일정, 접수 마감, 협회 소식을 매일 전해드립니다.</p>
+  <div class="cta"><a class="btn solid" href="schedule.html">대회일정 보기</a><a class="btn" href="news.html">전체 뉴스</a></div>
+</div></section>
+
+<div class="wrap cols">
+  <main>
+    <section class="block"><h2 class="sec">오늘의 일정 <a class="more" href="schedule.html">전체 일정 &rarr;</a></h2>
+      <div class="card" id="today"><div class="loading">불러오는 중...</div></div></section>
+    <section class="block"><h2 class="sec">접수 마감 임박 <a class="more" href="schedule.html?type=접수">접수 일정 &rarr;</a></h2>
+      <div class="card" id="deadline"><div class="loading">불러오는 중...</div></div></section>
+    <section class="block"><h2 class="sec">최신 뉴스 <a class="more" href="news.html">더보기 &rarr;</a></h2>
+      <div id="news"><div class="loading">불러오는 중...</div></div></section>
+  </main>
+  <div id="side"></div>
+</div>
+
+<script src="assets/app.js"></script>
+<script>
+(async () => {
+  const S = await layout('home');
+  $('#side').innerHTML = sideBox(S);
+  const t = today0(), tn = ymd(t);
+  try {
+    const sc = await getSchedule();
+    const order = { '대회': 0, '접수': 1, '연습라운딩': 2 };
+    const td = sc.filter(e => ymd(e.start) <= tn && ymd(e.end) >= tn).sort((a, b) => (order[a.type] ?? 9) - (order[b.type] ?? 9) || a.start - b.start);
+    $('#today').innerHTML = td.length ? td.map(e => eventRow(e)).join('') : '<div class="empty">오늘 등록된 일정이 없습니다.</div>';
+    const dl = sc.filter(e => e.type === '접수' && ymd(e.end) >= tn && (e.end - t) / 864e5 <= 7).sort((a, b) => a.end - b.end);
+    $('#deadline').innerHTML = dl.length ? dl.map(e => eventRow(e)).join('') : '<div class="empty">7일 안에 마감되는 접수가 없습니다.</div>';
+  } catch (e) { showError($('#today'), e); $('#deadline').innerHTML = ''; }
+  try {
+    const nw = await getNews();
+    if (!nw.length) { $('#news').innerHTML = '<div class="empty">등록된 뉴스가 없습니다.</div>'; return; }
+    const f = nw[0], fi = f.images[0];
+    $('#news').innerHTML = `<a class="card featured" href="article.html?id=${f.id}">
+      <div class="thumb ${fi ? '' : 'ph'}" style="${fi ? `background-image:url('${esc(fi)}');` : 'display:flex;align-items:center;justify-content:center;'}">${fi ? '' : '<img src="assets/logo.png" alt="" style="width:90px;opacity:.5">'}</div>
+      <div class="body"><span><span class="tag">${esc(f.cat)}</span></span><h3>${esc(f.title)}</h3><p>${esc(f.summary)}</p><div class="meta" style="color:var(--muted);font-size:.85rem">${fmtDate(f.date)}</div></div></a>
+      <div class="grid">${nw.slice(1, 7).map(newsCard).join('')}</div>`;
+  } catch (e) { showError($('#news'), e); }
+})();
+</script>
+</body>
+</html>

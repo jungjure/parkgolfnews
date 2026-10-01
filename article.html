@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>파크골프뉴스</title>
+<meta name="description" content="파크골프뉴스 기사">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap cols">
+  <main class="article" id="art"><div class="loading">불러오는 중...</div></main>
+  <div id="side"></div>
+</div>
+<script src="assets/app.js"></script>
+<script>
+(async () => {
+  const S = await layout('news');
+  $('#side').innerHTML = sideBox(S);
+  const id = new URLSearchParams(location.search).get('id');
+  try {
+    const all = await getNews();
+    const n = all.find(x => x.id === id);
+    if (!n) { $('#art').innerHTML = '<div class="empty">기사를 찾을 수 없습니다.<br><br><a class="btn green" href="news.html">뉴스 목록으로</a></div>'; return; }
+    document.title = n.title + ' - 파크골프뉴스';
+    const setMeta = (sel, attr, v) => { let m = document.querySelector(sel); if (!m) { m = document.createElement('meta'); document.head.appendChild(m); } m.setAttribute(attr, v); };
+    setMeta('meta[name=description]', 'content', n.summary);
+    const og = (p, v) => { let m = document.querySelector(`meta[property="${p}"]`); if (!m) { m = document.createElement('meta'); m.setAttribute('property', p); document.head.appendChild(m); } m.setAttribute('content', v); };
+    og('og:title', n.title); og('og:description', n.summary); og('og:type', 'article'); if (n.images[0]) og('og:image', n.images[0]);
+    const idx = all.indexOf(n), prev = all[idx + 1], next = all[idx - 1];
+    $('#art').innerHTML = `
+      <span class="tag">${esc(n.cat)}</span>
+      <h1>${esc(n.title)}</h1>
+      <div class="meta">${fmtDate(n.date)}${n.writer ? ' · ' + esc(n.writer) : ' · 파크골프뉴스'}</div>
+      <div class="content">${n.images.map(u => `<img src="${esc(u)}" alt="${esc(n.title)}" loading="lazy">`).join('')}${renderBody(n)}</div>
+      ${n.link ? `<div class="src">${n.source ? esc(n.source) + ' · ' : '관련 링크 · '}<a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(n.link)}</a></div>` : ''}
+      <div class="share">
+        <button class="btn green" onclick="navigator.clipboard.writeText(location.href).then(()=>this.textContent='주소가 복사되었습니다')">기사 주소 복사</button>
+        <a class="btn green" target="_blank" rel="noopener" href="https://band.us/plugin/share?body=${encodeURIComponent(n.title + '\n' + location.href)}&route=${encodeURIComponent(location.href)}">밴드로 공유</a>
+        <a class="btn green" href="news.html">목록</a>
+      </div>
+      <div class="grid" style="margin-top:24px">${[next, prev].filter(Boolean).map(newsCard).join('')}</div>`;
+  } catch (e) { showError($('#art'), e); }
+})();
+</script>
+</body>
+</html>
