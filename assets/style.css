@@ -173,3 +173,5 @@ nav.main a.auth.on,nav.main a.auth:hover{background:var(--g700);color:#fff}
 .mylist .ev .acts button{border:2px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;font-weight:700;cursor:pointer;font-size:.85rem}
 .mylist .ev .acts button.del{color:var(--red);border-color:#f3c3be}
 .tag.hide{background:#eee;color:#666}
+
+@media(min-width:761px){nav.main{gap:0;flex-wrap:nowrap}nav.main a{padding:8px 11px;white-space:nowrap}nav.main a.auth{margin-left:6px;padding:6px 14px}header.site .wrap{gap:10px}}
