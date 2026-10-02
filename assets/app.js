@@ -2,7 +2,8 @@
 const CONFIG = {
   SHEET_ID: '1sl-4jdTKIqpiUM-s2kjPAF-jJoIrCnBnoM8mmcY36cc',   // 구글시트 주소의 /d/ 와 /edit 사이 긴 문자열
   TABS: { news: '뉴스', schedule: '일정', calendar: '캘린더', settings: '설정' },
-  CACHE_MIN: 3
+  CACHE_MIN: 3,
+  API_URL: 'https://script.google.com/macros/s/AKfycby4zEPx3AB25E7x4peqc9UTlYsGgywDjew64Xh8Va7VhM4zMG8clQGM0eCUZIQqsW2tVg/exec'   // 글쓰기·로그인용 Apps Script 웹앱 주소 (배포 후 여기에 넣습니다)
 };
 
 const DEFAULTS = {
@@ -179,14 +180,16 @@ async function getSchedule() {
 /* ---------- 공통 레이아웃 ---------- */
 async function layout(active) {
   const S = await getSettings();
-  const nav = [['index.html', '홈', 'home'], ['news.html', '뉴스', 'news'], ['schedule.html', '대회일정', 'schedule'], ['about.html', '소개·연락처', 'about']];
+  const nav = [['index.html', '홈', 'home'], ['news.html', '뉴스', 'news'], ['today.html', '오늘일정', 'today'], ['schedule.html', '대회일정', 'schedule'], ['about.html', '회사소개', 'about']];
+  const me = Auth.get();
+  const authNav = me ? `<a href="write.html" class="${active === 'write' ? 'on' : ''}">글쓰기</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>` : `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a>`;
   document.body.insertAdjacentHTML('afterbegin', `
     <div class="topbar"><div class="wrap"><span>${esc(S.슬로건)}</span>
     <span><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a> · <a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">오픈채팅방</a> · ${esc(S.전화)}</span></div></div>
     <header class="site"><div class="wrap">
       <a class="brand" href="index.html"><img src="assets/logo.png" alt="">${esc(S.사이트명)}</a>
       <button class="menu-btn" aria-label="메뉴" onclick="document.querySelector('nav.main').classList.toggle('open')">메뉴</button>
-      <nav class="main">${nav.map(n => `<a href="${n[0]}" class="${n[2] === active ? 'on' : ''}">${n[1]}</a>`).join('')}</nav>
+      <nav class="main">${nav.map(n => `<a href="${n[0]}" class="${n[2] === active ? 'on' : ''}">${n[1]}</a>`).join('')}${authNav}</nav>
     </div></header>
     ${S.공지 ? `<div class="notice"><div class="wrap">공지 | ${esc(S.공지)}</div></div>` : ''}`);
   document.body.insertAdjacentHTML('beforeend', `
@@ -231,3 +234,33 @@ function eventRow(e, opts = {}) {
 function showError(el, e) {
   el.innerHTML = `<div class="empty">내용을 불러오지 못했습니다.<br><small>${esc(e.message || e)}</small></div>`;
 }
+
+
+/* ---------- 로그인 / 서버 통신 (Apps Script) ---------- */
+const Auth = {
+  get() {
+    try {
+      const v = JSON.parse(localStorage.getItem('pgn_auth') || sessionStorage.getItem('pgn_auth') || 'null');
+      if (v && v.exp > Date.now()) return v;
+    } catch (e) {}
+    this.clear(); return null;
+  },
+  set(v, keep) { this.clear(); (keep ? localStorage : sessionStorage).setItem('pgn_auth', JSON.stringify(v)); },
+  clear() { localStorage.removeItem('pgn_auth'); sessionStorage.removeItem('pgn_auth'); },
+  logout() { this.clear(); location.href = 'index.html'; }
+};
+
+async function api(action, data = {}) {
+  if (!CONFIG.API_URL) throw new Error('서버 연결이 아직 설정되지 않았습니다.');
+  const a = Auth.get();
+  const res = await fetch(CONFIG.API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },   /* 사전요청(CORS preflight)을 피하기 위해 text/plain 사용 */
+    body: JSON.stringify({ action, token: a ? a.token : '', ...data })
+  });
+  if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
+  const out = await res.json();
+  if (!out.ok) { if (out.auth) Auth.clear(); throw new Error(out.error || '요청에 실패했습니다.'); }
+  return out;
+}
+function clearSheetCache() { Object.keys(sessionStorage).filter(k => k.startsWith('pgn_') && k !== 'pgn_auth').forEach(k => sessionStorage.removeItem(k)); }

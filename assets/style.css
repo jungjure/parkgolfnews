@@ -121,3 +121,55 @@ footer.site{background:var(--g900);color:#cfe8d7;margin-top:40px;padding:26px 0;
 footer.site .wrap{display:flex;gap:28px;flex-wrap:wrap;justify-content:space-between}
 footer.site b{color:#fff}
 footer.site a:hover{text-decoration:underline}
+
+/* nav: 로그인 */
+nav.main a.auth{border:2px solid var(--g700);margin-left:6px}
+nav.main a.auth.on,nav.main a.auth:hover{background:var(--g700);color:#fff}
+
+/* 오늘일정 */
+.daynav{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.daynav .dl{font-weight:800;font-size:1.25rem;flex:1;min-width:180px}
+.daynav button{border:2px solid var(--line);background:#fff;border-radius:10px;padding:6px 14px;font-size:1rem;font-weight:700;cursor:pointer}
+.daynav button.on{background:var(--g700);border-color:var(--g700);color:#fff}
+.sumline{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.sumline .tag{font-size:.9rem;padding:4px 12px}
+
+/* 로그인 */
+.authbox{max-width:420px;margin:30px auto;padding:26px}
+.authbox h2{margin:0 0 6px;font-size:1.4rem;color:var(--g900)}
+.authbox p.sub{margin:0 0 18px;color:var(--muted);font-size:.92rem}
+.field{display:block;margin-bottom:14px}
+.field>span{display:block;font-weight:800;margin-bottom:5px;font-size:.95rem}
+.field input,.field select,.field textarea{width:100%;padding:11px 13px;border:2px solid var(--line);border-radius:10px;font-size:1rem;font-family:inherit;background:#fff;color:var(--ink)}
+.field textarea{resize:vertical;line-height:1.6}
+.field input:focus,.field select:focus,.field textarea:focus{outline:0;border-color:var(--g600)}
+.field small{display:block;color:var(--muted);margin-top:4px;font-size:.82rem}
+.btn.big{width:100%;padding:13px;font-size:1.08rem;text-align:center}
+.btn.gray{background:#fff;color:var(--ink);border-color:var(--line)}
+.msg{padding:10px 14px;border-radius:10px;margin:12px 0;font-weight:700;font-size:.95rem}
+.msg.err{background:#fdecea;color:var(--red)}
+.msg.ok{background:var(--g100);color:var(--g900)}
+.msg.warn{background:#fff8e1;color:#6b4e00}
+.chk{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-weight:700}
+.chk input{width:20px;height:20px}
+
+/* 글쓰기 */
+.editor{padding:20px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:620px){.row2{grid-template-columns:1fr}}
+.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.tabs button{border:2px solid var(--line);background:#fff;border-radius:10px 10px 0 0;padding:8px 16px;font-weight:800;cursor:pointer;font-size:.98rem}
+.tabs button.on{background:var(--g700);border-color:var(--g700);color:#fff}
+.editor textarea.code{font-family:Consolas,"Courier New",monospace;font-size:.9rem;min-height:300px;white-space:pre;tab-size:2}
+.editor textarea.plain{min-height:300px}
+.counter{text-align:right;font-size:.82rem;color:var(--muted)}
+.counter.over{color:var(--red);font-weight:800}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.actions .btn{flex:1;min-width:140px;text-align:center}
+.previewbox{border:2px dashed var(--line);border-radius:12px;padding:16px;margin-top:14px}
+.previewbox h4{margin:0 0 8px;color:var(--muted);font-size:.85rem}
+.mylist .ev{align-items:center}
+.mylist .ev .acts{display:flex;gap:6px;flex-wrap:wrap}
+.mylist .ev .acts button{border:2px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;font-weight:700;cursor:pointer;font-size:.85rem}
+.mylist .ev .acts button.del{color:var(--red);border-color:#f3c3be}
+.tag.hide{background:#eee;color:#666}
