@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>글쓰기 - 파크골프뉴스</title>
+<meta name="description" content="파크골프뉴스 글쓰기">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap cols">
+  <main>
+    <h2 class="sec">글쓰기</h2>
+    <div class="tabs" id="top"><button data-t="new" class="on">새 글 쓰기</button><button data-t="list">내 글 관리</button></div>
+
+    <div id="pNew" class="card editor">
+      <div id="editing"></div>
+      <label class="field"><span>제목</span><input id="title" maxlength="150" placeholder="기사 제목"></label>
+      <div class="row2">
+        <label class="field"><span>카테고리</span><input id="cat" list="cats" placeholder="예: 뉴스, 대회결과, 협회소식"><datalist id="cats"></datalist></label>
+        <label class="field"><span>날짜</span><input id="date" type="date"></label>
+      </div>
+      <label class="field"><span>요약 (비워두면 본문에서 자동으로 만듭니다)</span><input id="summary" maxlength="300" placeholder="목록에 보일 한두 줄 요약"></label>
+
+      <div class="field" style="margin-bottom:0"><span>본문</span></div>
+      <div class="tabs" id="modes"><button data-m="text" class="on">일반 글</button><button data-m="html">HTML · 아티팩트</button></div>
+      <div id="mText"><label class="field" style="margin:0"><textarea id="bodyText" class="plain" placeholder="내용을 입력하세요. 줄을 바꾸면 문단이 나뉘고, 주소(https://...)는 자동으로 링크가 됩니다."></textarea></label></div>
+      <div id="mHtml" hidden>
+        <div class="msg ok" style="margin-top:0">완성된 HTML 문서(인포그래픽, 표, 지도, 계산기 등)를 그대로 붙여넣으면 안전한 칸 안에서 기사 본문으로 보입니다.</div>
+        <div class="actions" style="margin:0 0 8px"><label class="btn green" style="margin:0;cursor:pointer">HTML 파일 불러오기<input type="file" id="file" accept=".html,.htm,text/html" hidden></label></div>
+        <label class="field" style="margin:0"><textarea id="bodyHtml" class="code" spellcheck="false" placeholder="&lt;!doctype html&gt; ... 또는 &lt;div&gt;...&lt;/div&gt; 붙여넣기"></textarea></label>
+      </div>
+      <div class="counter" id="cnt"></div>
+
+      <label class="field" style="margin-top:12px"><span>이미지 주소 (여러 장이면 줄바꿈, 구글드라이브 공유링크도 가능)</span><textarea id="images" rows="2" placeholder="https://..."></textarea></label>
+      <label class="field"><span>외부 아티팩트 임베드 주소 (선택)</span><input id="embed" type="url" placeholder="https://..."><small>다른 사이트에 올려둔 HTML 페이지를 본문 위에 넣고 싶을 때만 입력하세요.</small></label>
+      <div class="row2">
+        <label class="field"><span>출처 (선택)</span><input id="source"></label>
+        <label class="field"><span>출처 링크 (선택)</span><input id="link" type="url"></label>
+      </div>
+      <label class="field"><span>작성자</span><input id="writer" value="파크골프뉴스"></label>
+      <label class="chk"><input type="checkbox" id="pub" checked> 바로 공개</label>
+      <div id="msg"></div>
+      <div class="actions">
+        <button class="btn gray" id="pv" type="button">미리보기</button>
+        <button class="btn green" id="save" type="button">게시하기</button>
+      </div>
+      <div class="previewbox" id="prev" hidden><h4>미리보기</h4><div class="article"><div class="content" id="pvbody"></div></div></div>
+    </div>
+
+    <div id="pList" hidden>
+      <div class="card mylist" id="mine"><div class="loading">불러오는 중...</div></div>
+    </div>
+  </main>
+  <div id="side"></div>
+</div>
+<script src="assets/app.js"></script>
+<script>
+(async () => {
+  const S = await layout('write');
+  $('#side').innerHTML = sideBox(S);
+  if (!Auth.get()) { location.replace('login.html'); return; }
+  const MAX = 50000; let mode = 'text', editRow = 0;
+  const v = id => $('#' + id).value;
+  const bodyVal = () => mode === 'html' ? v('bodyHtml') : v('bodyText');
+  const msg = (t, k) => $('#msg').innerHTML = t ? '<div class="msg ' + (k || 'err') + '">' + esc(t) + '</div>' : '';
+  const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const count = () => { const n = bodyVal().length; const c = $('#cnt'); c.textContent = n.toLocaleString() + ' / ' + MAX.toLocaleString() + '자'; c.classList.toggle('over', n > MAX); };
+  const setMode = m => { mode = m; $('#mText').hidden = m !== 'text'; $('#mHtml').hidden = m !== 'html'; document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === m)); count(); };
+  const reset = () => { editRow = 0; $('#editing').innerHTML = ''; ['title', 'cat', 'summary', 'bodyText', 'bodyHtml', 'images', 'embed', 'source', 'link'].forEach(i => $('#' + i).value = ''); $('#date').value = today(); $('#writer').value = '파크골프뉴스'; $('#pub').checked = true; $('#save').textContent = '게시하기'; $('#prev').hidden = true; msg(''); setMode('text'); };
+  const showTab = t => { $('#pNew').hidden = t !== 'new'; $('#pList').hidden = t !== 'list'; document.querySelectorAll('#top button').forEach(b => b.classList.toggle('on', b.dataset.t === t)); if (t === 'list') loadMine(); };
+
+  $('#top').onclick = e => { const b = e.target.closest('[data-t]'); if (b) showTab(b.dataset.t); };
+  $('#modes').onclick = e => { const b = e.target.closest('[data-m]'); if (b) setMode(b.dataset.m); };
+  ['bodyText', 'bodyHtml'].forEach(i => $('#' + i).addEventListener('input', count));
+  $('#bodyHtml').addEventListener('keydown', e => { if (e.key === 'Tab') { e.preventDefault(); const t = e.target, s = t.selectionStart; t.value = t.value.slice(0, s) + '  ' + t.value.slice(t.selectionEnd); t.selectionStart = t.selectionEnd = s + 2; } });
+  $('#file').onchange = async e => { const f = e.target.files[0]; if (!f) return; $('#bodyHtml').value = await f.text(); if (!v('title')) $('#title').value = (f.name || '').replace(/\.html?$/i, ''); count(); e.target.value = ''; };
+
+  $('#pv').onclick = () => {
+    const b = bodyVal(); if (!b.trim() && !v('embed')) { msg('본문을 입력해 주세요.'); return; }
+    msg('');
+    const n = { body: b, summary: v('summary'), embed: /^https?:\/\//.test(v('embed')) ? v('embed') : '' };
+    $('#pvbody').innerHTML = imgList(v('images')).map(u => '<img src="' + esc(u) + '" alt="">').join('') + renderBody(n);
+    $('#prev').hidden = false; $('#prev').scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const collect = () => ({ 공개: $('#pub').checked ? 'Y' : 'N', 날짜: v('date') || today(), 카테고리: v('cat').trim() || '뉴스', 제목: v('title').trim(), 요약: v('summary').trim(), 본문: bodyVal(), 이미지: v('images').trim(), 출처: v('source').trim(), 출처링크: v('link').trim(), 작성자: v('writer').trim(), 임베드: v('embed').trim() });
+
+  $('#save').onclick = async () => {
+    const d = collect();
+    if (!d.제목) { msg('제목을 입력해 주세요.'); return; }
+    if (!d.본문.trim() && !d.임베드) { msg('본문을 입력해 주세요.'); return; }
+    if (d.본문.length > MAX) { msg('본문이 ' + MAX.toLocaleString() + '자를 넘었습니다. 이미지는 주소로 넣고 글을 줄여 주세요.'); return; }
+    const b = $('#save'); b.disabled = true; b.textContent = '저장 중...'; msg('');
+    try {
+      await api(editRow ? 'update' : 'post', { row: editRow, data: d });
+      clearSheetCache();
+      msg(editRow ? '수정되었습니다.' : (d.공개 === 'Y' ? '게시되었습니다. 홈페이지 반영까지 몇 분 걸릴 수 있습니다.' : '비공개로 저장되었습니다.'), 'ok');
+      setTimeout(() => { reset(); showTab('list'); }, 900);
+    } catch (e) { msg(e.message); }
+    b.disabled = false; b.textContent = editRow ? '수정 저장' : '게시하기';
+  };
+
+  async function loadMine() {
+    const box = $('#mine'); box.innerHTML = '<div class="loading">불러오는 중...</div>';
+    try {
+      const r = await api('list');
+      if (!r.items.length) { box.innerHTML = '<div class="empty">등록된 글이 없습니다.</div>'; return; }
+      box.innerHTML = r.items.map(n => '<div class="ev"><div class="date">' + esc(n.날짜.slice(5).replace('-', '/')) + '<small>' + esc(n.날짜.slice(0, 4)) + '</small></div><div style="flex:1"><div><span class="tag">' + esc(n.카테고리) + '</span> ' + (n.공개 === 'Y' ? '' : '<span class="tag hide">비공개</span>') + '</div><h4>' + esc(n.제목) + '</h4><div class="acts" data-row="' + n.row + '" data-title="' + esc(n.제목) + '"><button data-a="edit">수정</button><button data-a="toggle" data-pub="' + n.공개 + '">' + (n.공개 === 'Y' ? '숨기기' : '공개하기') + '</button><button data-a="del" class="del">삭제</button></div></div></div>').join('');
+    } catch (e) { box.innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; if (!Auth.get()) setTimeout(() => location.replace('login.html'), 1200); }
+  }
+  $('#mine').onclick = async e => {
+    const b = e.target.closest('[data-a]'); if (!b) return;
+    const w = b.closest('.acts'), row = +w.dataset.row, title = w.dataset.title, a = b.dataset.a;
+    try {
+      if (a === 'del') { if (!confirm('"' + title + '" 글을 삭제할까요? 되돌릴 수 없습니다.')) return; await api('delete', { row, title }); clearSheetCache(); loadMine(); }
+      else if (a === 'toggle') { await api('setpublic', { row, title, 공개: b.dataset.pub === 'Y' ? 'N' : 'Y' }); clearSheetCache(); loadMine(); }
+      else if (a === 'edit') {
+        const r = await api('get', { row, title }), d = r.item;
+        reset(); editRow = row;
+        $('#title').value = d.제목; $('#cat').value = d.카테고리; $('#date').value = d.날짜; $('#summary').value = d.요약; $('#images').value = d.이미지; $('#embed').value = d.임베드; $('#source').value = d.출처; $('#link').value = d.출처링크; $('#writer').value = d.작성자; $('#pub').checked = d.공개 === 'Y';
+        const isHtml = /<\/?[a-z][^>]*>/i.test(d.본문);
+        if (isHtml) $('#bodyHtml').value = d.본문; else $('#bodyText').value = d.본문;
+        setMode(isHtml ? 'html' : 'text');
+        $('#editing').innerHTML = '<div class="msg warn">기존 글을 수정하는 중입니다.</div>'; $('#save').textContent = '수정 저장';
+        showTab('new'); scrollTo(0, 0);
+      }
+    } catch (err) { alert(err.message); }
+  };
+
+  try { const nw = await getNews(); $('#cats').innerHTML = [...new Set(['뉴스', '공지', '대회결과', '협회소식', '행사', ...nw.map(n => n.cat)])].map(c => '<option value="' + esc(c) + '">').join(''); } catch (e) {}
+  reset();
+})();
+</script>
+</body>
+</html>

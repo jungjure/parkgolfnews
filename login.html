@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>로그인 - 파크골프뉴스</title>
+<meta name="description" content="파크골프뉴스 관리자 로그인">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="card authbox">
+    <h2>관리자 로그인</h2>
+    <p class="sub">글쓰기는 로그인 후 사용할 수 있습니다.</p>
+    <div id="notice"></div>
+    <form id="f" autocomplete="on">
+      <label class="field"><span>아이디</span><input id="id" name="username" autocomplete="username" required></label>
+      <label class="field"><span>비밀번호</span><input id="pw" name="password" type="password" autocomplete="current-password" required></label>
+      <label class="chk"><input type="checkbox" id="keep"> 이 기기에서 로그인 유지 (7일)</label>
+      <div id="msg"></div>
+      <button class="btn green big" id="go" type="submit">로그인</button>
+    </form>
+  </div>
+</div>
+<script src="assets/app.js"></script>
+<script>
+(async () => {
+  await layout('login');
+  if (Auth.get()) { location.replace('write.html'); return; }
+  if (!CONFIG.API_URL) $('#notice').innerHTML = '<div class="msg warn">서버 연결이 아직 설정되지 않았습니다. 설정이 끝나면 로그인할 수 있습니다.</div>';
+  $('#f').onsubmit = async ev => {
+    ev.preventDefault();
+    const b = $('#go'), m = $('#msg'); b.disabled = true; b.textContent = '확인 중...'; m.innerHTML = '';
+    try {
+      const r = await api('login', { id: $('#id').value.trim(), pw: $('#pw').value });
+      Auth.set({ token: r.token, exp: r.exp, name: r.name || '' }, $('#keep').checked);
+      location.href = 'write.html';
+    } catch (e) { m.innerHTML = '<div class="msg err">' + esc(e.message) + '</div>'; b.disabled = false; b.textContent = '로그인'; $('#pw').value = ''; }
+  };
+})();
+</script>
+</body>
+</html>
