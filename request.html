@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>개선요청 - 파크골프뉴스</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.rq{max-width:680px;margin:0 auto;padding:22px 0 10px}
+.rq .box{padding:22px;margin-bottom:16px}
+.rq .box h3{margin:0 0 4px;font-size:1.15rem;color:var(--g900)}
+.rq .box p.sub{margin:0 0 16px;color:var(--muted);font-size:.9rem}
+.rq select,.rq input[type=text],.rq textarea{width:100%;padding:11px 13px;border:2px solid var(--line);border-radius:10px;font-size:1rem;font-family:inherit;box-sizing:border-box;background:#fff}
+.rq textarea{resize:vertical;line-height:1.6}
+</style>
+</head>
+<body>
+<script src="assets/app.js?v=20261004c"></script>
+<script>
+(async () => {
+  const me = Auth.get();
+  if (!me) { location.replace('login.html?next=request.html'); return; }
+  if (me.role === 'admin') { location.replace('requests.html'); return; }
+  await layout('request');
+  document.querySelector('footer.site').insertAdjacentHTML('beforebegin', `<div class="wrap"><main class="rq">
+    <h2 class="sec">개선요청사항 접수</h2>
+    <div class="card box"><h3>개선요청 남기기</h3>
+      <p class="sub">사이트 오류, 바라는 기능, 기사에 대한 의견을 남겨 주세요. 내용은 운영자만 볼 수 있고, 보낸 뒤에는 마이페이지의 \u201c개선요청\u201d에서 처리 상태와 운영자 답변을 확인할 수 있습니다. 다른 회원에게는 보이지 않습니다.</p>
+      <form id="fRq" autocomplete="off">
+        <label class="field"><span>분류</span><select id="rCat"><option>오류 신고</option><option>기능 제안</option><option>콘텐츠 의견</option><option selected>기타</option></select></label>
+        <label class="field"><span>제목</span><input type="text" id="rTitle" maxlength="100" required placeholder="한 줄 요약 (100자 이내)"></label>
+        <label class="field"><span>내용</span><textarea id="rText" rows="8" maxlength="2000" required placeholder="자세한 내용을 적어 주세요 (2000자 이내)"></textarea><small id="rCnt">0 / 2000자</small></label>
+        <div id="rMsg"></div>
+        <button class="btn green big" id="rSend" type="submit">보내기</button>
+        <a class="btn" href="mypage.html#rq" style="margin-left:8px">내 개선요청 보기</a>
+      </form>
+    </div></main></div>`);
+  const say = (t, k) => { $('#rMsg').innerHTML = t ? '<div class="msg ' + (k || 'err') + '">' + esc(t) + '</div>' : ''; };
+  $('#rText').oninput = () => { $('#rCnt').textContent = $('#rText').value.length + ' / 2000자'; };
+  $('#fRq').onsubmit = async ev => {
+    ev.preventDefault(); const b = $('#rSend'); say(''); b.disabled = true; b.textContent = '보내는 중...';
+    try {
+      await api('reqpost', { cat: $('#rCat').value, title: $('#rTitle').value, text: $('#rText').value });
+      $('#rTitle').value = ''; $('#rText').value = ''; $('#rCnt').textContent = '0 / 2000자';
+      say('개선요청을 접수했습니다. 마이페이지에서 처리 상태를 확인할 수 있습니다.', 'ok');
+    } catch (e) {
+      if (!Auth.get()) { location.replace('login.html?next=request.html'); return; }
+      say(e.message);
+    }
+    b.disabled = false; b.textContent = '보내기';
+  };
+})();
+</script>
+</body>
+</html>

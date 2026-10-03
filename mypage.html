@@ -39,11 +39,15 @@
 .mp .wl a{display:flex;gap:10px;align-items:center;padding:11px 2px;border-top:1px solid var(--line);font-weight:700}
 .mp .wl a:first-child{border-top:0}
 .mp .wl small{color:var(--muted);font-weight:600;margin-left:auto;white-space:nowrap}
+.mp .st{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.8rem;font-weight:800;background:#eee;color:#555;margin-right:6px}
+.mp .st.s0{background:#ffe9c7;color:#8a5200}.mp .st.s1{background:#dbeafe;color:#1d4ed8}.mp .st.s2{background:#d4f5df;color:#0b6b2e}.mp .st.s3{background:#eee;color:#666}
+.mp .rp{margin-top:8px;padding:10px 12px;background:var(--g50);border-radius:10px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.mp .rp b{color:var(--g900)}
 .mp h4.sub2{margin:20px 0 10px;font-size:1.02rem;color:var(--g900)}
 </style>
 </head>
 <body>
-<script src="assets/app.js?v=20261004b"></script>
+<script src="assets/app.js?v=20261004c"></script>
 <script>
 (async () => {
   if (!Auth.get()) { location.replace('login.html?next=mypage.html'); return; }
@@ -56,16 +60,26 @@
       ${admin ? '' : '<button data-t="cats">관심 카테고리</button>'}
       <button data-t="cm">내 댓글 <small id="nCm"></small></button>
       <button data-t="wr">내가 쓴 글</button>
+      <button data-t="rq">개선요청 <small id="nRq"></small></button>
     </div>
     <section class="panel" id="p-info"><div class="loading">불러오는 중...</div></section>
     <section class="panel" id="p-cats"><div class="loading">불러오는 중...</div></section>
     <section class="panel" id="p-cm"><div class="card box"><div class="loading">불러오는 중...</div></div></section>
     <section class="panel" id="p-wr"><div class="card box"><div class="loading">불러오는 중...</div></div></section>
+    <section class="panel" id="p-rq"><div class="card box"><div class="loading">불러오는 중...</div></div></section>
   </main></div>`);
 
+  /* 저장 후 직전에 보던 화면으로 돌아가기 */
+  const prevUrl = (() => {
+    let r = '';
+    try { const u = new URL(document.referrer || '', location.href); r = (document.referrer && u.origin === location.origin && !/\/(mypage|login|signup|find|oauth)(\.html)?$/.test(u.pathname)) ? u.href : ''; } catch (e) { r = ''; }
+    if (r) sessionStorage.setItem('pgn_prev', r); else r = sessionStorage.getItem('pgn_prev') || '';
+    return r;
+  })();
+  const goBack = ms => setTimeout(() => { location.href = prevUrl || 'index.html'; }, ms || 1200);
   const say = (sel, t, k) => { $(sel).innerHTML = t ? '<div class="msg ' + (k || 'err') + '">' + esc(t) + '</div>' : ''; };
   const digits = s => String(s || '').replace(/[^0-9]/g, '');
-  const TABS = admin ? ['info', 'cm', 'wr'] : ['info', 'cats', 'cm', 'wr'];
+  const TABS = admin ? ['info', 'cm', 'wr', 'rq'] : ['info', 'cats', 'cm', 'wr', 'rq'];
   const show = t => {
     if (!TABS.includes(t)) t = 'info';
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
@@ -147,7 +161,7 @@
         $('#mNick').value = r.nick; $('#mEmail').value = r.email; $('#mPhone').value = r.phone; if ($('#mCur')) $('#mCur').value = '';
         const a = Auth.get(); if (a) Auth.set({ ...a, name: r.nick }, !!localStorage.getItem('pgn_auth'));
         const w = document.querySelector('nav.main .who'); if (w) w.textContent = r.nick + '님';
-        sync(); say('#iMsg', '회원 정보를 저장했습니다.', 'ok');
+        sync(); say('#iMsg', '회원 정보를 저장했습니다. 이전 화면으로 돌아갑니다...', 'ok'); goBack(); return;
       } catch (e) {
         if (!Auth.get()) { location.replace('login.html?next=mypage.html'); return; }
         say('#iMsg', e.message);
@@ -162,7 +176,7 @@
       try {
         await api('mepw', { curPw: $('#pCur').value, pw: $('#pNew').value });
         $('#pCur').value = $('#pNew').value = $('#pNew2').value = '';
-        say('#pMsg', '비밀번호를 변경했습니다. 다음 로그인부터 새 비밀번호를 쓰세요.', 'ok');
+        say('#pMsg', '비밀번호를 변경했습니다. 이전 화면으로 돌아갑니다...', 'ok'); goBack(); return;
       } catch (e) { say('#pMsg', e.message); }
       b.disabled = false;
     };
@@ -271,8 +285,25 @@
     load();
   }
 
+  /* ---------- 개선요청 (본인 것만: 서버가 로그인 아이디로 걸러서 보냄) ---------- */
+  async function loadRequests() {
+    const box = $('#p-rq');
+    if (admin) {
+      box.innerHTML = '<div class="card box"><h3>개선요청</h3><p class="sub">회원이 보낸 개선요청은 관리자 전용 화면에서 확인하고 답변합니다.</p><a class="btn green" href="requests.html">개선요청 관리 화면 열기</a></div>';
+      return;
+    }
+    try {
+      const r = await api('reqmine'), ST = ['접수', '확인중', '완료', '보류'];
+      $('#nRq').textContent = r.items.length ? '(' + r.items.length + ')' : '';
+      box.innerHTML = '<div class="card box"><h3>내 개선요청</h3><p class="sub">내가 보낸 개선요청과 처리 상태를 최신순으로 보여 줍니다. 나만 볼 수 있고 운영자만 내용을 확인합니다.</p><div style="margin-bottom:10px"><a class="btn green" href="request.html">개선요청 남기기</a></div>' + (r.items.length ? r.items.map(x => '<div class="mc"><span class="t"><span class="st s' + Math.max(0, ST.indexOf(x.status)) + '">' + esc(x.status) + '</span>[' + esc(x.cat) + '] ' + esc(x.title) + '</span><div class="x">' + esc(x.text) + '</div>' + (x.reply ? '<div class="rp"><b>운영자 답변</b> <small>' + esc(x.replyAt) + '</small><br>' + esc(x.reply) + '</div>' : '') + '<div class="d"><span>' + esc(x.at) + '</span></div></div>').join('') : '<div class="empty" style="padding:18px">아직 보낸 개선요청이 없습니다.</div>') + '</div>';
+    } catch (e) {
+      if (!Auth.get()) { location.replace('login.html?next=mypage.html%23rq'); return; }
+      box.innerHTML = '<div class="card box"><div class="msg err">' + esc(e.message) + '</div></div>';
+    }
+  }
+
   const infoP = loadInfo();
-  loadComments(); loadWrites(); loadCats();
+  loadComments(); loadWrites(); loadCats(); loadRequests();
 })();
 </script>
 </body>

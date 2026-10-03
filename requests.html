@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>개선요청 관리 - 파크골프뉴스</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.rstat{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.rstat .box{flex:1;min-width:110px;padding:12px 14px;text-align:center}
+.rstat b{display:block;font-size:1.6rem;color:var(--g900)}
+.rtools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.rtools select,.rtools input{padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:1rem;background:#fff}
+.rtools input{flex:1;min-width:160px}
+.rtools .btn{padding:8px 16px;border-color:var(--g700);color:var(--g900);background:#fff}
+.ri{padding:16px 18px;margin-bottom:12px}
+.ri .h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.ri .h b{font-size:1.05rem;color:var(--g900);word-break:keep-all}
+.ri .m{font-size:.85rem;color:#777;margin-bottom:8px}
+.ri .x{white-space:pre-wrap;word-break:break-word;line-height:1.65;background:var(--g50);padding:10px 12px;border-radius:10px;margin-bottom:10px}
+.ri .ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
+.ri textarea{flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:.95rem;font-family:inherit;box-sizing:border-box}
+.ri select{padding:9px 10px;border:1px solid var(--line);border-radius:10px;font-size:.95rem;background:#fff}
+.ri .btn{padding:8px 16px}
+.st{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.8rem;font-weight:800;background:#eee;color:#555}
+.st.s0{background:#ffe9c7;color:#8a5200}.st.s1{background:#dbeafe;color:#1d4ed8}.st.s2{background:#d4f5df;color:#0b6b2e}.st.s3{background:#eee;color:#666}
+</style>
+</head>
+<body>
+<script src="assets/app.js?v=20261004c"></script>
+<script>
+(async () => {
+  const me = Auth.get();
+  if (!me) { location.replace('login.html?next=requests.html'); return; }
+  if (me.role !== 'admin') { location.replace('index.html'); return; }
+  await layout('requests');
+  const ST = ['접수', '확인중', '완료', '보류'];
+  document.querySelector('footer.site').insertAdjacentHTML('beforebegin', `<div class="wrap"><main class="article" style="max-width:none">
+    <h2 class="sec">개선요청 관리 <small style="font-size:.6em;color:#777">관리자 전용</small></h2>
+    <div class="rstat"><div class="card box"><b id="nAll">-</b>전체</div><div class="card box"><b id="n0">-</b>접수(새 글)</div><div class="card box"><b id="n1">-</b>확인중</div><div class="card box"><b id="n2">-</b>완료</div><div class="card box"><b id="n3">-</b>보류</div></div>
+    <div class="rtools"><select id="fs"><option value="">전체 상태</option>${ST.map(s => '<option>' + s + '</option>').join('')}</select><input id="q" placeholder="제목·내용·닉네임·아이디 검색"><button class="btn" id="rf">새로고침</button><small id="upd" style="color:#777"></small></div>
+    <div id="msg"></div><div id="list"><div class="loading">불러오는 중...</div></div>
+    <p style="color:#777;font-size:.9rem">상태와 답변을 저장하면 요청한 회원의 마이페이지에만 표시됩니다. 요청 내용은 다른 회원에게 보이지 않습니다.</p>
+  </main></div>`);
+  let items = [];
+  const cls = s => 's' + Math.max(0, ST.indexOf(s));
+  const draw = () => {
+    const q = $('#q').value.trim().toLowerCase(), fs = $('#fs').value;
+    const rows = items.filter(x => (!fs || x.status === fs) && (!q || (x.title + ' ' + x.text + ' ' + x.nick + ' ' + x.uid).toLowerCase().includes(q)));
+    $('#list').innerHTML = rows.map(x => '<div class="card ri" data-id="' + esc(x.id) + '"><div class="h"><span class="st ' + cls(x.status) + '">' + esc(x.status) + '</span><span class="tag">' + esc(x.cat) + '</span><b>' + esc(x.title) + '</b></div><div class="m">' + esc(x.nick) + ' (' + esc(x.uid.indexOf(':') > 0 ? x.uid.split(':')[0] + ' 로그인' : x.uid) + ') · ' + esc(x.at) + (x.replyAt ? ' · 답변 ' + esc(x.replyAt) : '') + '</div><div class="x">' + esc(x.text) + '</div><div class="ctl"><select>' + ST.map(s => '<option' + (s === x.status ? ' selected' : '') + '>' + s + '</option>').join('') + '</select><textarea rows="2" maxlength="1000" placeholder="회원에게 보여 줄 답변 (선택)">' + esc(x.reply) + '</textarea><button class="btn green" data-save>저장</button></div><div class="rm"></div></div>').join('') || '<div class="empty" style="padding:24px">개선요청이 없습니다.</div>';
+  };
+  const count = () => { $('#nAll').textContent = items.length; ST.forEach((s, i) => { $('#n' + i).textContent = items.filter(x => x.status === s).length; }); };
+  const load = async () => {
+    try { items = (await api('reqlist')).items; $('#msg').innerHTML = ''; count(); draw(); $('#upd').textContent = new Date().toLocaleTimeString('ko-KR') + ' 기준'; }
+    catch (e) { if (!Auth.get()) { location.replace('login.html?next=requests.html'); return; } $('#msg').innerHTML = '<div class="msg err">' + esc(e.message) + '</div>'; $('#list').innerHTML = ''; }
+  };
+  $('#list').onclick = async e => {
+    const b = e.target.closest('[data-save]'); if (!b) return;
+    const card = b.closest('.ri'), id = card.dataset.id, st = card.querySelector('select').value, reply = card.querySelector('textarea').value;
+    b.disabled = true; b.textContent = '저장 중...';
+    try {
+      await api('reqset', { rid: id, status: st, reply });
+      const it = items.find(x => x.id === id); it.status = st; it.reply = reply.trim();
+      if (reply.trim()) it.replyAt = new Date().toISOString().slice(0, 10);
+      count(); card.querySelector('.st').className = 'st ' + cls(st); card.querySelector('.st').textContent = st;
+      card.querySelector('.rm').innerHTML = '<div class="msg ok" style="margin-top:8px">저장했습니다.</div>';
+    } catch (err) { card.querySelector('.rm').innerHTML = '<div class="msg err" style="margin-top:8px">' + esc(err.message) + '</div>'; }
+    b.disabled = false; b.textContent = '저장';
+  };
+  $('#q').oninput = draw; $('#fs').onchange = draw; $('#rf').onclick = load;
+  load();
+})();
+</script>
+</body>
+</html>
