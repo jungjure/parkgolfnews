@@ -264,3 +264,58 @@ async function api(action, data = {}) {
   return out;
 }
 function clearSheetCache() { Object.keys(sessionStorage).filter(k => k.startsWith('pgn_') && k !== 'pgn_auth').forEach(k => sessionStorage.removeItem(k)); }
+
+
+/* ---------- 소셜 로그인 (구글 / 카카오 / 네이버) ---------- */
+const OAUTH_REDIRECT = location.origin + '/oauth.html';
+let _cfg = null;
+async function getConfig() {
+  if (_cfg) return _cfg;
+  try { _cfg = await api('config'); } catch (e) { _cfg = { sms: false, google: '', kakao: '', naver: '' }; }
+  return _cfg;
+}
+function loginDone(r, next) {
+  Auth.set({ token: r.token, exp: r.exp, role: r.role, name: r.name || '' }, true);
+  location.href = next || 'index.html';
+}
+function socialStart(provider, cid, next) {
+  const st = provider + '.' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  sessionStorage.setItem('pgn_oauth_state', st); sessionStorage.setItem('pgn_oauth_next', next || '');
+  const q = 'response_type=code&client_id=' + encodeURIComponent(cid) + '&redirect_uri=' + encodeURIComponent(OAUTH_REDIRECT) + '&state=' + encodeURIComponent(st);
+  location.href = provider === 'kakao' ? 'https://kauth.kakao.com/oauth/authorize?' + q : 'https://nid.naver.com/oauth2.0/authorize?' + q;
+}
+async function socialResult(r, next) {
+  if (r.needNick) { showNickForm(r, next); return; }
+  loginDone(r, next);
+}
+function showNickForm(r, next) {
+  document.body.insertAdjacentHTML('beforeend', '<div class="modal" id="nickModal"><div class="card authbox" style="margin:0;max-width:420px;width:92%"><h2>닉네임 정하기</h2><p class="sub">처음 오셨네요. 댓글에 표시될 닉네임을 정해 주세요.</p><label class="field"><span>닉네임</span><input id="nk" maxlength="12"><small>2~12자</small></label><div class="terms"><b>개인정보 수집·이용 안내</b><br>수집 항목: 소셜 계정 고유번호, 닉네임<br>이용 목적: 회원 식별 및 댓글 작성 관리<br>보유 기간: 회원 탈퇴 요청 시까지</div><label class="chk"><input type="checkbox" id="nkagree"> 위 내용에 동의합니다</label><div id="nkmsg"></div><button class="btn green big" id="nkgo">가입 완료</button></div></div>');
+  $('#nk').value = r.suggest || '';
+  $('#nkgo').onclick = async () => {
+    const m = $('#nkmsg'), b = $('#nkgo'); m.innerHTML = '';
+    if (!$('#nkagree').checked) { m.innerHTML = '<div class="msg err">개인정보 수집·이용에 동의해 주세요.</div>'; return; }
+    b.disabled = true; b.textContent = '처리 중...';
+    try { loginDone(await api('socialjoin', { pending: r.pending, nick: $('#nk').value.trim(), agree: true }), next); }
+    catch (e) { m.innerHTML = '<div class="msg err">' + esc(e.message) + '</div>'; b.disabled = false; b.textContent = '가입 완료'; }
+  };
+}
+async function renderSocial(el, next) {
+  const c = await getConfig();
+  if (!c.google && !c.kakao && !c.naver) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="or"><span>또는 간편하게</span></div>' +
+    (c.kakao ? '<button type="button" class="sbtn kakao" data-p="kakao">카카오로 시작하기</button>' : '') +
+    (c.naver ? '<button type="button" class="sbtn naver" data-p="naver">네이버로 시작하기</button>' : '') +
+    (c.google ? '<div id="gbtn" style="display:flex;justify-content:center;margin-top:8px"></div>' : '');
+  el.onclick = e => { const b = e.target.closest('[data-p]'); if (b) socialStart(b.dataset.p, c[b.dataset.p], next); };
+  if (c.google) {
+    const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+    s.onload = () => {
+      google.accounts.id.initialize({ client_id: c.google, callback: async resp => {
+        try { socialResult(await api('social', { provider: 'google', credential: resp.credential }), next); }
+        catch (e) { alert(e.message); }
+      } });
+      google.accounts.id.renderButton($('#gbtn'), { theme: 'outline', size: 'large', text: 'continue_with', locale: 'ko', width: 280 });
+    };
+    document.head.appendChild(s);
+  }
+}
