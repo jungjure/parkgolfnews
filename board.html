@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>자유게시판 - 파크골프뉴스</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.bd{max-width:860px;margin:0 auto;padding:22px 0 10px}
+.bd .rules{background:var(--g50);border:1px solid var(--g100);border-radius:12px;padding:12px 16px;font-size:.88rem;line-height:1.7;color:#345;margin-bottom:14px}
+.bd .rules b{color:var(--g900)}
+.bd .tools{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.bd .tools input{flex:1;min-width:160px;padding:10px 13px;border:2px solid var(--line);border-radius:10px;font-size:1rem;font-family:inherit}
+.bd .tools .btn{padding:9px 20px;white-space:nowrap}
+.bitem{display:block;padding:13px 16px;border-top:1px solid var(--line);color:inherit}
+.bitem:first-child{border-top:0}
+.bitem:hover{background:var(--g50)}
+.bitem .bt{font-weight:800;font-size:1.02rem;word-break:break-all}
+.bitem .bt em{font-style:normal;color:var(--g700);font-size:.9rem;margin-left:4px}
+.bitem .bm{font-size:.85rem;color:var(--muted);margin-top:3px}
+.bpost{padding:22px}
+.bpost h1{margin:0 0 6px;font-size:1.4rem;line-height:1.4;word-break:break-all}
+.bpost .bm{font-size:.9rem;color:var(--muted);padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.bpost .bbody{white-space:pre-wrap;word-break:break-word;line-height:1.8;font-size:1.03rem;min-height:80px}
+.bpost .bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}
+.bpost .bar .btn{padding:8px 18px;font-size:.95rem}
+.btn.red{background:#fff;color:var(--red);border-color:var(--red)}
+.bd textarea.big{min-height:260px}
+</style>
+</head>
+<body>
+<script src="assets/app.js?v=20261004e"></script>
+<script>
+(async () => {
+  await layout('board');
+  const me = Auth.get(), isAdmin = me.role === 'admin';
+  document.querySelector('footer.site').insertAdjacentHTML('beforebegin', '<div class="wrap"><main class="bd" id="bd"></main></div>');
+  const bd = $('#bd'), q = new URLSearchParams(location.search);
+  const RULES = '<div class="rules"><b>자유게시판 이용 안내</b><br>회원끼리 파크골프 이야기, 질문, 후기, 모임 소식을 자유롭게 나누는 곳입니다. 아래 내용은 올릴 수 없으며 자동으로 차단되거나 신고·삭제될 수 있습니다.<br>&middot; 욕설·비방·혐오 표현, 선정적이거나 음란한 내용<br>&middot; 도박·불법 광고, 폭력·자해를 부추기는 내용, 개인정보 노출, 인터넷 주소(링크)<br>&middot; 회원 ' + 3 + '명이 신고하면 글이 자동으로 숨겨지고 운영자가 확인합니다.</div>';
+  const go = p => { location.href = 'board.html' + (p ? '?' + p : ''); };
+  const say = (el, t, k) => { el.innerHTML = t ? '<div class="msg ' + (k || 'err') + '">' + esc(t) + '</div>' : ''; };
+  const errOut = e => { if (!Auth.get()) { location.replace('login.html?next=' + encodeURIComponent(loginNext())); } return e.message; };
+
+  /* ---------- 목록 ---------- */
+  async function showList() {
+    document.title = '자유게시판 - 파크골프뉴스';
+    bd.innerHTML = '<h2 class="sec">자유게시판</h2>' + RULES +
+      '<div class="tools"><input id="bs" placeholder="제목·글쓴이 검색"><a class="btn green" href="board.html?write=1">글쓰기</a></div><div class="card" id="blist"><div class="loading">불러오는 중...</div></div><div class="pager" id="bpg"></div>';
+    let all = [], page = 1, kw = '';
+    const PER = 15;
+    const draw = () => {
+      const k = kw.trim().toLowerCase();
+      const f = k ? all.filter(x => x.title.toLowerCase().includes(k) || x.nick.toLowerCase().includes(k)) : all;
+      const pages = Math.max(1, Math.ceil(f.length / PER)); if (page > pages) page = pages;
+      $('#blist').innerHTML = f.length ? f.slice((page - 1) * PER, page * PER).map(x =>
+        '<a class="bitem" href="board.html?id=' + esc(x.id) + '"><div class="bt">' + esc(x.title) + (x.cm ? '<em>[' + x.cm + ']</em>' : '') + (x.status === '숨김' ? ' <span class="tag hide">숨김</span>' : '') + (isAdmin && x.reports ? ' <span class="tag 접수">신고 ' + x.reports + '</span>' : '') + '</div><div class="bm">' + esc(x.nick) + ' · ' + esc(x.at.slice(5)) + '</div></a>').join('')
+        : '<div class="empty">' + (k ? '검색 결과가 없습니다.' : '아직 글이 없습니다. 첫 글을 남겨 보세요.') + '</div>';
+      $('#bpg').innerHTML = pages > 1 ? Array.from({ length: pages }, (_, i) => '<button class="btn ' + (i + 1 === page ? 'green' : 'gray') + '" data-p="' + (i + 1) + '" style="padding:6px 14px">' + (i + 1) + '</button>').join('') : '';
+    };
+    $('#bpg').onclick = e => { const b = e.target.closest('[data-p]'); if (b) { page = +b.dataset.p; draw(); window.scrollTo(0, 0); } };
+    $('#bs').oninput = e => { kw = e.target.value; page = 1; draw(); };
+    try { all = (await api('blist')).items; draw(); }
+    catch (e) { $('#blist').innerHTML = '<div class="empty">목록을 불러오지 못했습니다.<br><small>' + esc(errOut(e)) + '</small></div>'; }
+  }
+
+  /* ---------- 글 보기 ---------- */
+  async function showView(id) {
+    bd.innerHTML = '<div class="loading">불러오는 중...</div>';
+    let p;
+    try { p = (await api('bget', { id })).item; }
+    catch (e) { bd.innerHTML = '<div class="empty">' + esc(errOut(e)) + '<br><br><a class="btn green" href="board.html">목록으로</a></div>'; return; }
+    document.title = p.title + ' - 자유게시판';
+    const btns = [];
+    if (p.mine) btns.push('<a class="btn green" href="board.html?edit=' + esc(p.id) + '">수정</a>');
+    if (p.mine || isAdmin) btns.push('<button class="btn red" id="bdel">삭제</button>');
+    if (!p.mine && !isAdmin && p.status === '정상') btns.push('<button class="btn gray" id="brep"' + (p.reported ? ' disabled' : '') + '>' + (p.reported ? '신고함' : '신고') + '</button>');
+    if (isAdmin) btns.push('<button class="btn gray" id="bhide">' + (p.status === '숨김' ? '숨김 해제' : '숨기기') + '</button>');
+    bd.innerHTML = '<h2 class="sec">자유게시판</h2><article class="card bpost"><h1>' + esc(p.title) + (p.status === '숨김' ? ' <span class="tag hide">숨김</span>' : '') + '</h1>' +
+      '<div class="bm">' + esc(p.nick) + ' · ' + esc(p.at) + (p.edited ? ' (수정 ' + esc(p.edited) + ')' : '') + (isAdmin && p.reports ? ' · 신고 ' + p.reports + '건' : '') + '</div>' +
+      (p.status === '숨김' ? '<div class="msg warn">' + (p.mine ? '신고가 쌓여 다른 회원에게는 보이지 않는 글입니다. 운영자가 확인 중입니다.' : '신고가 쌓여 숨겨진 글입니다.') + '</div>' : '') +
+      '<div class="bbody">' + esc(p.text) + '</div><div id="bmsg"></div><div class="bar">' + btns.join('') + '<a class="btn gray" href="board.html">목록</a></div></article>' +
+      '<section class="card comments" id="cm"><h3>댓글 <span id="ccount"></span></h3><div id="cbox"></div><div id="clist"><div class="loading">불러오는 중...</div></div></section>';
+    const msg = $('#bmsg');
+    if ($('#bdel')) $('#bdel').onclick = async () => { if (!confirm('이 글을 삭제할까요?')) return; try { await api('bdelete', { id }); go(); } catch (e) { say(msg, errOut(e)); } };
+    if ($('#brep')) $('#brep').onclick = async () => {
+      if (!confirm('이 글을 신고할까요?\n선정적이거나 욕설·비방 등 운영 원칙에 어긋나는 글만 신고해 주세요.')) return;
+      try { const r = await api('breport', { id }); say(msg, r.hidden ? '신고가 접수되어 글이 숨겨졌습니다. 운영자가 확인합니다.' : '신고를 접수했습니다. 감사합니다.', 'ok'); $('#brep').disabled = true; $('#brep').textContent = '신고함'; }
+      catch (e) { say(msg, errOut(e)); }
+    };
+    if ($('#bhide')) $('#bhide').onclick = async () => { try { await api('bset', { id, status: p.status === '숨김' ? '정상' : '숨김' }); showView(id); } catch (e) { say(msg, errOut(e)); } };
+    loadComments('board:' + id);
+  }
+
+  async function loadComments(aid) {
+    $('#cbox').innerHTML = '<div class="cform"><textarea id="ctext" maxlength="1000" placeholder="댓글을 입력하세요 (1000자 이내, 욕설·선정적인 표현·링크는 올릴 수 없습니다)"></textarea><div class="bar"><small>' + esc(me.name) + '님으로 작성</small><button class="btn green" id="csend">댓글 등록</button></div><div id="cmsg"></div></div>';
+    const draw = async () => {
+      try {
+        const r = await api('comments', { aid });
+        $('#ccount').textContent = r.items.length ? '(' + r.items.length + ')' : '';
+        $('#clist').innerHTML = r.items.length ? r.items.map(c => '<div class="citem"><div class="ch"><b>' + esc(c.nick) + '</b><span>' + esc(c.at) + '</span>' + (c.mine ? '<button data-id="' + esc(c.id) + '">삭제</button>' : '') + '</div><div class="ct">' + esc(c.text) + '</div></div>').join('') : '<div class="empty" style="padding:18px">첫 댓글을 남겨 보세요.</div>';
+      } catch (e) { $('#clist').innerHTML = '<div class="empty" style="padding:18px">댓글을 불러오지 못했습니다.<br><small>' + esc(e.message) + '</small></div>'; }
+    };
+    await draw();
+    $('#clist').onclick = async e => {
+      const b = e.target.closest('button[data-id]'); if (!b || !confirm('이 댓글을 삭제할까요?')) return;
+      try { await api('cdelete', { cid: b.dataset.id }); draw(); } catch (err) { alert(err.message); }
+    };
+    $('#csend').onclick = async () => {
+      const send = $('#csend'), t = $('#ctext').value.trim(), m = $('#cmsg');
+      if (!t) { say(m, '댓글 내용을 입력해 주세요.'); return; }
+      send.disabled = true; send.textContent = '등록 중...'; m.innerHTML = '';
+      try { await api('cpost', { aid, text: t }); $('#ctext').value = ''; await draw(); }
+      catch (err) { say(m, errOut(err)); }
+      send.disabled = false; send.textContent = '댓글 등록';
+    };
+  }
+
+  /* ---------- 글쓰기 / 수정 ---------- */
+  async function showForm(editId) {
+    let old = null;
+    if (editId) {
+      bd.innerHTML = '<div class="loading">불러오는 중...</div>';
+      try { old = (await api('bget', { id: editId })).item; if (!old.mine) throw new Error('본인이 쓴 글만 고칠 수 있습니다.'); }
+      catch (e) { bd.innerHTML = '<div class="empty">' + esc(errOut(e)) + '<br><br><a class="btn green" href="board.html">목록으로</a></div>'; return; }
+    }
+    document.title = (editId ? '글 수정' : '글쓰기') + ' - 자유게시판';
+    bd.innerHTML = '<h2 class="sec">' + (editId ? '글 수정' : '글쓰기') + '</h2>' + RULES +
+      '<div class="card bpost"><form id="bf" autocomplete="off">' +
+      '<label class="field"><span>제목</span><input id="bt" maxlength="80" required placeholder="제목 (80자 이내)"></label>' +
+      '<label class="field"><span>내용</span><textarea id="bx" class="big" maxlength="3000" required placeholder="내용을 입력하세요 (3000자 이내)"></textarea><small id="bc">0 / 3000자</small></label>' +
+      '<div id="bmsg"></div><button class="btn green big" id="bgo" type="submit">' + (editId ? '수정 저장' : '등록') + '</button>' +
+      '<p style="text-align:center;margin:10px 0 0"><a href="' + (editId ? 'board.html?id=' + esc(editId) : 'board.html') + '" style="color:var(--muted)">취소</a></p></form></div>';
+    if (old) { $('#bt').value = old.title; $('#bx').value = old.text; $('#bc').textContent = old.text.length + ' / 3000자'; }
+    $('#bx').oninput = () => { $('#bc').textContent = $('#bx').value.length + ' / 3000자'; };
+    $('#bf').onsubmit = async ev => {
+      ev.preventDefault(); const b = $('#bgo'), m = $('#bmsg'); m.innerHTML = ''; b.disabled = true; b.textContent = '확인 중...';
+      try {
+        const data = { title: $('#bt').value, text: $('#bx').value };
+        if (editId) { await api('bupdate', { id: editId, ...data }); go('id=' + encodeURIComponent(editId)); }
+        else { const r = await api('bpost', data); go('id=' + encodeURIComponent(r.id)); }
+        return;
+      } catch (e) { say(m, errOut(e)); }
+      b.disabled = false; b.textContent = editId ? '수정 저장' : '등록';
+    };
+  }
+
+  if (q.get('id')) showView(q.get('id'));
+  else if (q.get('edit')) showForm(q.get('edit'));
+  else if (q.get('write')) showForm('');
+  else showList();
+})();
+</script>
+</body>
+</html>

@@ -239,52 +239,30 @@
     box.innerHTML = '<div class="card box"><h3>내가 쓴 글</h3><p class="sub">공개된 기사 ' + news.length + '건입니다. 수정·숨기기·삭제는 글쓰기 화면의 \u201c내 글 관리\u201d에서 합니다.</p><div style="margin-bottom:10px"><a class="btn green" href="write.html">글쓰기 / 내 글 관리</a></div><div class="wl">' + (news.length ? news.slice(0, 100).map(n => '<a href="article.html?id=' + esc(n.id) + '"><span class="tag">' + esc(n.cat) + '</span><span>' + esc(n.title) + '</span><small>' + fmtDate(n.date) + '</small></a>').join('') : '<div class="empty" style="padding:18px">공개된 글이 없습니다.</div>') + '</div></div>';
   }
 
-  /* 회원 글쓰기: 작성 / 수정 / 삭제 */
+  /* 회원 글: 뉴스가 아니라 자유게시판에 올린다 (여기서는 내 글 목록과 바로가기만) */
   function memberWrites(box) {
-    let items = [], editing = null;
-    const idOf = p => { const d = parseDate(p.date) || new Date(2000, 0, 1); return ymd(d) + '-' + hash(p.title.trim()); };
+    let items = [];
     const draw = () => {
-      const e = editing;
-      box.innerHTML = `<div class="card box"><h3>${e ? '글 수정' : '새 글 쓰기'}</h3>
-        <p class="sub">\u201c회원글\u201d 카테고리로 올라가며 바로 공개됩니다. HTML 코드는 쓸 수 없고 글만 쓸 수 있습니다. 운영 기준에 맞지 않는 글은 운영자가 숨기거나 삭제할 수 있습니다.</p>
-        <form id="fWr" autocomplete="off">
-          <label class="field"><span>제목</span><input id="wTitle" maxlength="100" required placeholder="제목 (100자 이내)"></label>
-          <label class="field"><span>내용</span><textarea id="wBody" rows="9" maxlength="5000" required placeholder="내용을 입력하세요 (5000자 이내). 주소(https://...)는 자동으로 링크가 됩니다."></textarea><small id="wCnt">0 / 5000자</small></label>
-          <div id="wMsg"></div>
-          <button class="btn green big" id="wSave" type="submit">${e ? '수정 저장' : '글 올리기'}</button>
-          ${e ? '<button class="btn" id="wCancel" type="button" style="margin-left:8px">취소</button>' : ''}
-        </form></div>
+      box.innerHTML = `<div class="card box"><h3>자유게시판에 글쓰기</h3>
+        <p class="sub">회원이 쓰는 글은 뉴스가 아니라 <b>자유게시판</b>에 올라갑니다. 욕설·선정적 내용·도박/불법 광고·링크 등은 자동으로 차단됩니다.</p>
+        <a class="btn green big" href="board.html?write=1">자유게시판에 새 글 쓰기</a></div>
         <div class="card box"><h3>내가 쓴 글 ${items.length ? '(' + items.length + ')' : ''}</h3>
-          ${items.length ? items.map(p => '<div class="mc">' + (p.open ? '<a class="t" href="article.html?id=' + esc(idOf(p)) + '">' + esc(p.title) + '</a>' : '<span class="t gone">' + esc(p.title) + ' <small>(비공개: 운영자가 숨김)</small></span>') + '<div class="x">' + esc(p.body.length > 120 ? p.body.slice(0, 120) + '...' : p.body) + '</div><div class="d"><span>' + esc(p.date) + '</span><a href="#" data-e="' + p.row + '">수정</a><button data-d="' + p.row + '">삭제</button></div></div>').join('') : '<div class="empty" style="padding:18px">아직 쓴 글이 없습니다. 위에서 첫 글을 써 보세요.</div>'}
-          <p class="sub" style="margin:12px 0 0">새 글이 뉴스 목록에 보이기까지 1~2분 걸릴 수 있습니다.</p></div>`;
-      if (e) { $('#wTitle').value = e.title; $('#wBody').value = e.body; }
-      const cnt = () => { $('#wCnt').textContent = $('#wBody').value.length + ' / 5000자'; };
-      $('#wBody').oninput = cnt; cnt();
-      if ($('#wCancel')) $('#wCancel').onclick = () => { editing = null; draw(); };
-      $('#fWr').onsubmit = async ev => {
-        ev.preventDefault(); const b = $('#wSave'); say('#wMsg', ''); b.disabled = true; b.textContent = '처리 중...';
-        try {
-          if (editing) await api('mpupdate', { row: editing.row, oldTitle: editing.title, title: $('#wTitle').value, body: $('#wBody').value });
-          else await api('mpost', { title: $('#wTitle').value, body: $('#wBody').value });
-          clearSheetCache(); editing = null; say('#wMsg', '저장했습니다. 뉴스 화면으로 이동합니다...', 'ok'); setTimeout(() => { location.href = 'news.html'; }, 1200); return;
-        } catch (err) {
-          if (!Auth.get()) { location.replace('login.html?next=mypage.html%23wr'); return; }
-          say('#wMsg', err.message); b.disabled = false; b.textContent = editing ? '수정 저장' : '글 올리기';
-        }
-      };
-      box.querySelectorAll('[data-e]').forEach(a => a.onclick = ev => { ev.preventDefault(); editing = items.find(x => String(x.row) === a.dataset.e); draw(); scrollTo(0, 0); });
+          ${items.length ? items.map(p => '<div class="mc">' + (p.status === '숨김' ? '<span class="t gone">' + esc(p.title) + ' <small>(숨김 처리됨)</small></span>' : '<a class="t" href="board.html?id=' + esc(p.id) + '">' + esc(p.title) + (p.cm ? ' [' + p.cm + ']' : '') + '</a>') + '<div class="d"><span>' + esc(p.at) + '</span><a href="board.html?edit=' + esc(p.id) + '">수정</a><button data-d="' + esc(p.id) + '">삭제</button></div></div>').join('') : '<div class="empty" style="padding:18px">아직 쓴 글이 없습니다. 위 버튼으로 첫 글을 써 보세요.</div>'}
+          <div id="wMsg"></div></div>`;
       box.querySelectorAll('[data-d]').forEach(bt => bt.onclick = async () => {
-        const p = items.find(x => String(x.row) === bt.dataset.d); if (!p || !confirm('\u201c' + p.title + '\u201d 글을 삭제할까요? 되돌릴 수 없습니다.')) return;
-        try { await api('mpdelete', { row: p.row, oldTitle: p.title }); clearSheetCache(); await load(true); } catch (err) { alert(err.message); }
+        const p = items.find(x => x.id === bt.dataset.d); if (!p || !confirm('\u201c' + p.title + '\u201d 글을 삭제할까요? 되돌릴 수 없습니다.')) return;
+        try { await api('bdelete', { id: p.id }); await load(true); } catch (err) { say('#wMsg', err.message); }
       });
     };
     const load = async (ok) => {
-      try { items = (await api('mposts')).items; draw(); if (ok) say('#wMsg', '처리했습니다.', 'ok'); }
-      catch (err) { box.innerHTML = '<div class="card box"><div class="msg err">' + esc(err.message) + '</div></div>'; }
+      try { items = (await api('blist')).items.filter(x => x.mine); draw(); if (ok) say('#wMsg', '삭제했습니다.', 'ok'); }
+      catch (err) {
+        if (!Auth.get()) { location.replace('login.html?next=mypage.html%23wr'); return; }
+        box.innerHTML = '<div class="card box"><div class="msg err">' + esc(err.message) + '</div></div>';
+      }
     };
     load();
   }
-
   /* ---------- 개선요청 (본인 것만: 서버가 로그인 아이디로 걸러서 보냄) ---------- */
   async function loadRequests() {
     const box = $('#p-rq');
