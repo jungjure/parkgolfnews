@@ -144,7 +144,7 @@ async function getSettings() {
 async function getNews() {
   const rows = await loadTab(CONFIG.TABS.news);
   return rows
-    .filter(r => !/^(n|no|아니오|비공개|x)$/i.test(r['공개'] || 'Y') && (r['제목'] || '').trim())
+    .filter(r => !/^(n|no|아니오|비공개|x)$/i.test(r['공개'] || 'Y') && (r['제목'] || '').trim() && (r['카테고리'] || '') !== '회원글')   // 회원글은 자유게시판으로 이동
     .map((r, idx) => {
       const d = parseDate(r['날짜']) || new Date(2000, 0, 1);
       const body = r['본문'] || r['요약'] || '';
@@ -181,7 +181,7 @@ async function getSchedule() {
 async function layout(active, opts) {
   opts = opts || {};
   const S = await getSettings();
-  const nav = [['index.html', '홈', 'home'], ['news.html', '뉴스', 'news'], ['today.html', '오늘일정', 'today'], ['schedule.html', '대회일정', 'schedule'], ['about.html', '회사소개', 'about']];
+  const nav = [['index.html', '홈', 'home'], ['news.html', '뉴스', 'news'], ['board.html', '자유게시판', 'board'], ['today.html', '오늘일정', 'today'], ['schedule.html', '대회일정', 'schedule'], ['about.html', '회사소개', 'about']];
   const me = Auth.get();
   const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="write.html" class="${active === 'write' ? 'on' : ''}">글쓰기</a><a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a>` : '') + (me.role === 'admin' ? '' : '<a href="mypage.html#wr">글쓰기</a>') + `<a href="mypage.html" class="${active === 'mypage' ? 'on' : ''}">마이페이지</a><span class="who">${esc(me.name)}님</span><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   document.body.insertAdjacentHTML('afterbegin', `
@@ -207,7 +207,7 @@ async function layout(active, opts) {
       showLoginGate(false, a.getAttribute('href'));
     });
   }
-  else if (['news', 'write', 'members', 'mypage', 'request', 'requests'].includes(active)) { showLoginGate(true); return new Promise(() => {}); }   // 뉴스·기사·글쓰기: 로그인 전에는 진행 불가
+  else if (['news', 'board', 'write', 'members', 'mypage', 'request', 'requests'].includes(active)) { showLoginGate(true); return new Promise(() => {}); }   // 뉴스·기사·글쓰기: 로그인 전에는 진행 불가
   else if (['home', 'today', 'schedule'].includes(active)) watchScrollGate();                                  // 홈·일정: 스크롤하면 로그인 안내
   return S;
 }
