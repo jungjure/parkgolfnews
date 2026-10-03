@@ -178,7 +178,8 @@ async function getSchedule() {
 }
 
 /* ---------- 공통 레이아웃 ---------- */
-async function layout(active) {
+async function layout(active, opts) {
+  opts = opts || {};
   const S = await getSettings();
   const nav = [['index.html', '홈', 'home'], ['news.html', '뉴스', 'news'], ['today.html', '오늘일정', 'today'], ['schedule.html', '대회일정', 'schedule'], ['about.html', '회사소개', 'about']];
   const me = Auth.get();
@@ -198,6 +199,14 @@ async function layout(active) {
       <div><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 ${esc(S.밴드.replace(/^https?:\/\//, ''))}</a><br><a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">카카오 오픈채팅방</a><br>&copy; ${new Date().getFullYear()} ${esc(S.사이트명)}. All rights reserved.</div>
     </div></footer>`);
   if (me) startPing();
+  else if (opts.openList) {   // 뉴스 목록: 로그인 없이 기사 목록을 보여 주고, 기사를 누르면 로그인 페이지로 이동
+    document.addEventListener('click', e => {
+      const a = e.target.closest && e.target.closest('a[href*="article.html"]');
+      if (!a || e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
+      e.preventDefault();
+      location.href = 'login.html?next=' + encodeURIComponent(a.getAttribute('href'));
+    });
+  }
   else if (['news', 'write', 'members'].includes(active)) { showLoginGate(true); return new Promise(() => {}); }   // 뉴스·기사·글쓰기: 로그인 전에는 진행 불가
   else if (['home', 'today', 'schedule'].includes(active)) watchScrollGate();                                  // 홈·일정: 스크롤하면 로그인 안내
   return S;
