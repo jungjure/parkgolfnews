@@ -145,18 +145,18 @@ async function getNews() {
   const rows = await loadTab(CONFIG.TABS.news);
   return rows
     .filter(r => !/^(n|no|아니오|비공개|x)$/i.test(r['공개'] || 'Y') && (r['제목'] || '').trim())
-    .map(r => {
+    .map((r, idx) => {
       const d = parseDate(r['날짜']) || new Date(2000, 0, 1);
       const body = r['본문'] || r['요약'] || '';
       return {
         id: ymd(d) + '-' + hash((r['제목'] || '')),
-        date: d, cat: r['카테고리'] || '뉴스', title: r['제목'],
+        date: d, idx, cat: r['카테고리'] || '뉴스', title: r['제목'],
         summary: r['요약'] || body.replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120),
         embed: /^https?:\/\//.test(r['임베드'] || '') ? r['임베드'] : '',
         body, images: imgList(r['이미지']), link: r['출처링크'] || r['링크'] || '', source: r['출처'] || '', writer: r['작성자'] || ''
       };
     })
-    .sort((a, b) => b.date - a.date);
+    .sort((a, b) => b.date - a.date || b.idx - a.idx);   // 최신 날짜 먼저, 같은 날은 나중에 올린 글 먼저
 }
 
 async function getSchedule() {
