@@ -134,12 +134,13 @@
       '<p style="text-align:center;margin:10px 0 0"><a href="' + (editId ? 'board.html?id=' + esc(editId) : 'board.html') + '" style="color:var(--muted)">취소</a></p></form></div>';
     if (old) { $('#bt').value = old.title; $('#bx').value = old.text; $('#bc').textContent = old.text.length + ' / 3000자'; }
     $('#bx').oninput = () => { $('#bc').textContent = $('#bx').value.length + ' / 3000자'; };
+    $('#bx').onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $('#bf').requestSubmit(); } };
     $('#bf').onsubmit = async ev => {
       ev.preventDefault(); const b = $('#bgo'), m = $('#bmsg'); m.innerHTML = ''; b.disabled = true; b.textContent = '확인 중...';
       try {
         const data = { title: $('#bt').value, text: $('#bx').value };
-        if (editId) { await api('bupdate', { id: editId, ...data }); go('id=' + encodeURIComponent(editId)); }
-        else { const r = await api('bpost', data); go('id=' + encodeURIComponent(r.id)); }
+        if (editId) { await api('bupdate', { id: editId, ...data }); go(); }
+        else { await api('bpost', data); go(); }
         return;
       } catch (e) { say(m, errOut(e)); }
       b.disabled = false; b.textContent = editId ? '수정 저장' : '등록';
