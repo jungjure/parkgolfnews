@@ -7,6 +7,13 @@
 <meta name="description" content="파크골프뉴스 회사소개와 연락처, 제보·제휴 문의 안내.">
 <link rel="icon" href="assets/logo.png">
 <link rel="stylesheet" href="assets/style.css">
+<style>
+.about-contact{display:flex;align-items:stretch;gap:20px;padding:18px;margin-top:18px}
+.about-logo{flex:0 0 240px;position:relative;overflow:hidden;min-height:220px}
+.about-logo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scale(1.45)}
+.about-info{flex:1;min-width:0;line-height:2;text-align:left;align-self:center;overflow-wrap:anywhere}
+@media(max-width:640px){.about-contact{flex-direction:column;align-items:center}.about-logo{flex-basis:auto;width:200px;height:200px;min-height:0}.about-info{align-self:stretch}}
+</style>
 </head>
 <body>
 <div class="wrap cols">
@@ -17,7 +24,7 @@
       <p>매일 아침 오늘의 일정과 뉴스를 정리해 네이버 밴드에 올리고, 이 홈페이지에서도 함께 볼 수 있습니다.</p>
       <p>대회 소식 제보, 보도자료, 광고·제휴 문의는 아래 연락처로 보내주세요.</p>
     </div>
-    <div class="card" style="padding:18px;margin-top:18px" id="contact"></div>
+    <div class="card about-contact" id="contact"></div>
   </main>
   <div id="side"></div>
 </div>
@@ -26,7 +33,7 @@
 (async () => {
   const S = await layout('about');
   $('#side').innerHTML = sideBox(S);
-  $('#contact').innerHTML = `<div class="info" style="line-height:2"><b>업체명</b> ${esc(S.사이트명)}<br><b>주소</b> ${esc(S.주소)}<br><b>전화</b> ${esc(S.전화)}<br><b>팩스</b> ${esc(S.팩스)}<br><b>담당</b> ${esc(S.담당)}<br><b>네이버 밴드</b> <a href="${esc(S.밴드)}" target="_blank" rel="noopener" style="color:var(--g700)">${esc(S.밴드)}</a><br><b>오픈채팅방</b> <a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener" style="color:var(--g700)">${esc(S.오픈채팅)}</a></div>`;
+  $('#contact').innerHTML = `<div class="about-logo"><img src="assets/logo.png" alt="파크골프뉴스 로고"></div><div class="info about-info"><b>업체명</b> ${esc(S.사이트명)}<br><b>주소</b> ${esc(S.주소)}<br><b>전화</b> ${esc(S.전화)}<br><b>팩스</b> ${esc(S.팩스)}<br><b>담당</b> ${esc(S.담당)}<br><b>네이버 밴드</b> <a href="${esc(S.밴드)}" target="_blank" rel="noopener" style="color:var(--g700)">${esc(S.밴드)}</a><br><b>오픈채팅방</b> <a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener" style="color:var(--g700)">${esc(S.오픈채팅)}</a></div>`;
 })();
 </script>
 </body>
