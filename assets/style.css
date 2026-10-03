@@ -208,3 +208,17 @@ nav.main .who{align-self:center;padding:0 8px;font-weight:700;color:var(--g900);
 .phrow input{flex:1;min-width:0}
 .phrow button{white-space:nowrap;border:2px solid var(--g700);background:#fff;color:var(--g900);border-radius:10px;font-weight:800;padding:0 14px;cursor:pointer;font-size:.95rem}
 .phrow button:disabled{opacity:.5;cursor:default}
+
+.pwwrap{position:relative}
+.pwwrap input{padding-right:78px}
+.pweye{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:var(--g100);color:var(--g900);font-weight:800;font-size:.85rem;padding:7px 12px;border-radius:8px;cursor:pointer}
+.linkrow.finds a{margin:0 10px}
+.linkrow.finds span{color:var(--line)}
+.ftabs{display:flex;gap:8px;margin-bottom:18px}
+.ftabs button{flex:1;padding:11px 0;border:2px solid var(--g700);background:#fff;color:var(--g900);border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer}
+.ftabs button.on{background:var(--g700);color:#fff}
+.foundid{font-size:1.4rem;font-weight:900;text-align:center;letter-spacing:1px;padding:14px;background:var(--g50);border-radius:10px;margin:8px 0 14px}
+.chips{display:flex;gap:8px;margin-bottom:12px}
+.chips label{flex:1;text-align:center;padding:9px 0;border:2px solid var(--line);border-radius:10px;font-weight:700;cursor:pointer}
+.chips input{display:none}
+.chips label:has(input:checked){border-color:var(--g700);background:var(--g50);color:var(--g900)}

@@ -334,3 +334,16 @@ async function renderSocial(el, next) {
     document.head.appendChild(s);
   }
 }
+
+/* 비밀번호 보기/숨기기 단추 */
+function pwEye(...sels) {
+  sels.forEach(sel => {
+    const inp = $(sel); if (!inp || inp.dataset.eye) return; inp.dataset.eye = '1';
+    const w = document.createElement('div'); w.className = 'pwwrap';
+    inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'pweye'; b.textContent = '보기'; b.setAttribute('aria-label', '비밀번호 보기'); b.setAttribute('aria-pressed', 'false');
+    b.onmousedown = e => e.preventDefault();
+    b.onclick = () => { const on = inp.type === 'password'; inp.type = on ? 'text' : 'password'; b.textContent = on ? '숨기기' : '보기'; b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? '비밀번호 숨기기' : '비밀번호 보기'); };
+    w.appendChild(b);
+  });
+}
