@@ -198,30 +198,41 @@ async function layout(active) {
       <div><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 ${esc(S.밴드.replace(/^https?:\/\//, ''))}</a><br><a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">카카오 오픈채팅방</a><br>&copy; ${new Date().getFullYear()} ${esc(S.사이트명)}. All rights reserved.</div>
     </div></footer>`);
   if (me) startPing();
-  else if (['news', 'write', 'members'].includes(active)) { showLoginGate(); return new Promise(() => {}); }   // 뉴스·기사·글쓰기: 로그인 전에는 진행 불가
+  else if (['news', 'write', 'members'].includes(active)) { showLoginGate(true); return new Promise(() => {}); }   // 뉴스·기사·글쓰기: 로그인 전에는 진행 불가
   else if (['home', 'today', 'schedule'].includes(active)) watchScrollGate();                                  // 홈·일정: 스크롤하면 로그인 안내
   return S;
 }
 
 /* ---------- 로그인 안내 (회사소개 제외) ---------- */
 function loginNext() { return (location.pathname.split('/').pop() || 'index.html') + location.search; }   // 로그인 후 돌아올 주소(보던 뉴스·일정)
-function showLoginGate() {
+function showLoginGate(hard) {
   if (document.getElementById('pgn-gate')) return;
   const nx = encodeURIComponent(loginNext());
   document.body.insertAdjacentHTML('beforeend', `
     <style>#pgn-gate{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:18px}
     #pgn-gate .box{background:#fff;border-radius:14px;max-width:380px;width:100%;padding:28px 24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3)}
     #pgn-gate h3{margin:0 0 10px;font-size:1.25rem}#pgn-gate p{margin:0 0 20px;line-height:1.6;color:#444}
-    #pgn-gate .row{display:flex;gap:10px}#pgn-gate .row a{flex:1}</style>
+    #pgn-gate .row{display:flex;gap:10px}#pgn-gate .row a{flex:1}
+    #pgn-gate .box{position:relative}#pgn-gate .x{position:absolute;top:8px;right:10px;border:0;background:none;font-size:1.9rem;line-height:1;color:#666;cursor:pointer;padding:4px 10px}#pgn-gate .x:hover{color:#000}</style>
     <div id="pgn-gate" role="dialog" aria-modal="true"><div class="box">
+      <button type="button" class="x" aria-label="닫기" title="닫기">&times;</button>
       <h3>로그인이 필요합니다</h3>
       <p>로그인하셔야 계속 보실 수 있습니다.<br>로그인하면 보시던 페이지로 바로 돌아옵니다.</p>
       <div class="row"><a class="btn green big" href="login.html?next=${nx}">로그인</a><a class="btn green big" href="signup.html?next=${nx}">회원가입</a></div>
     </div></div>`);
   document.body.style.overflow = 'hidden';
+  // 닫기: 일정·홈은 안내창만 닫고(다시 스크롤하면 또 나옴), 뉴스·기사·글쓰기는 홈으로 이동
+  const close = () => {
+    document.removeEventListener('keydown', onKey);
+    if (hard) { location.href = 'index.html'; return; }
+    document.getElementById('pgn-gate').remove(); document.body.style.overflow = ''; watchScrollGate();
+  };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  document.querySelector('#pgn-gate .x').onclick = close;
 }
 function watchScrollGate() {
-  const trip = () => { ['scroll', 'wheel', 'touchmove'].forEach(e => window.removeEventListener(e, trip)); window.scrollTo(0, 0); showLoginGate(); };
+  const trip = () => { ['scroll', 'wheel', 'touchmove'].forEach(e => window.removeEventListener(e, trip)); window.scrollTo(0, 0); showLoginGate(false); };
   ['scroll', 'wheel', 'touchmove'].forEach(e => window.addEventListener(e, trip, { passive: true }));
 }
 
