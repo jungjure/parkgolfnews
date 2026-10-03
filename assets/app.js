@@ -183,7 +183,7 @@ async function layout(active, opts) {
   const S = await getSettings();
   const nav = [['index.html', '홈', 'home'], ['news.html', '뉴스', 'news'], ['today.html', '오늘일정', 'today'], ['schedule.html', '대회일정', 'schedule'], ['about.html', '회사소개', 'about']];
   const me = Auth.get();
-  const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="write.html" class="${active === 'write' ? 'on' : ''}">글쓰기</a><a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a>` : '') + (me.role === 'admin' ? '' : '<a href="mypage.html#wr">글쓰기</a>') + `<a href="mypage.html" class="${active === 'mypage' ? 'on' : ''}">마이페이지</a><span class="who">${esc(me.name)}님</span><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
+  const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="write.html" class="${active === 'write' ? 'on' : ''}">글쓰기</a><a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a>` : '') + (me.role === 'admin' ? '' : '<a href="mypage.html#wr">글쓰기</a>') + `<a href="mypage.html" class="${active === 'mypage' ? 'on' : ''}">마이페이지</a><span class="who">${esc(me.name)}님</span><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   document.body.insertAdjacentHTML('afterbegin', `
     <div class="topbar"><div class="wrap"><span>${esc(S.슬로건)}</span>
     <span><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a> · <a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">오픈채팅방</a> · ${esc(S.전화)}</span></div></div>
@@ -196,7 +196,7 @@ async function layout(active, opts) {
   document.body.insertAdjacentHTML('beforeend', `
     <footer class="site"><div class="wrap">
       <div><b>${esc(S.사이트명)}</b><br>주소 : ${esc(S.주소)}<br>전화 : ${esc(S.전화)} · 팩스 : ${esc(S.팩스)}<br>담당 : ${esc(S.담당)}</div>
-      <div><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 ${esc(S.밴드.replace(/^https?:\/\//, ''))}</a><br><a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">카카오 오픈채팅방</a><br>개선요청사항 접수 : <a href="mailto:parkgolfnews@gmail.com">parkgolfnews@gmail.com</a><br><br>&copy; ${new Date().getFullYear()} ${esc(S.사이트명)}. All rights reserved.</div>
+      <div><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 ${esc(S.밴드.replace(/^https?:\/\//, ''))}</a><br><a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">카카오 오픈채팅방</a><br>개선요청사항 접수 : <a href="request.html">개선요청 남기기</a><br><br>&copy; ${new Date().getFullYear()} ${esc(S.사이트명)}. All rights reserved.</div>
     </div></footer>`);
   if (me) startPing();
   else if (opts.openList) {   // 뉴스 목록: 로그인 없이 기사 목록을 보여 주고, 기사를 누르면 로그인 안내창
@@ -207,7 +207,7 @@ async function layout(active, opts) {
       showLoginGate(false, a.getAttribute('href'));
     });
   }
-  else if (['news', 'write', 'members', 'mypage'].includes(active)) { showLoginGate(true); return new Promise(() => {}); }   // 뉴스·기사·글쓰기: 로그인 전에는 진행 불가
+  else if (['news', 'write', 'members', 'mypage', 'request', 'requests'].includes(active)) { showLoginGate(true); return new Promise(() => {}); }   // 뉴스·기사·글쓰기: 로그인 전에는 진행 불가
   else if (['home', 'today', 'schedule'].includes(active)) watchScrollGate();                                  // 홈·일정: 스크롤하면 로그인 안내
   return S;
 }
