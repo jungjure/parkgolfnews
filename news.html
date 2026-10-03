@@ -19,10 +19,10 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261003c"></script>
+<script src="assets/app.js?v=20261003d"></script>
 <script>
 (async () => {
-  const S = await layout('news');
+  const S = await layout('news', { openList: true });
   $('#side').innerHTML = sideBox(S);
   const PER = 12; let all = [], cat = '전체', page = 1, q = '';
   const draw = () => {
