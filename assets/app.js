@@ -182,7 +182,7 @@ async function layout(active) {
   const S = await getSettings();
   const nav = [['index.html', '홈', 'home'], ['news.html', '뉴스', 'news'], ['today.html', '오늘일정', 'today'], ['schedule.html', '대회일정', 'schedule'], ['about.html', '회사소개', 'about']];
   const me = Auth.get();
-  const authNav = me ? `<a href="write.html" class="${active === 'write' ? 'on' : ''}">글쓰기</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>` : `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a>`;
+  const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="write.html" class="${active === 'write' ? 'on' : ''}">글쓰기</a>` : '') + `<span class="who">${esc(me.name)}님</span><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   document.body.insertAdjacentHTML('afterbegin', `
     <div class="topbar"><div class="wrap"><span>${esc(S.슬로건)}</span>
     <span><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a> · <a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">오픈채팅방</a> · ${esc(S.전화)}</span></div></div>
@@ -241,7 +241,7 @@ const Auth = {
   get() {
     try {
       const v = JSON.parse(localStorage.getItem('pgn_auth') || sessionStorage.getItem('pgn_auth') || 'null');
-      if (v && v.exp > Date.now()) return v;
+      if (v && v.exp > Date.now() && v.role) return v;
     } catch (e) {}
     this.clear(); return null;
   },
