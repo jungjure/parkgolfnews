@@ -97,7 +97,8 @@
     try {
       await api(editRow ? 'update' : 'post', { row: editRow, data: d });
       clearSheetCache();
-      msg(editRow ? '수정되었습니다.' : (d.공개 === 'Y' ? '게시되었습니다. 홈페이지 반영까지 몇 분 걸릴 수 있습니다.' : '비공개로 저장되었습니다.'), 'ok');
+      msg(editRow ? '수정되었습니다. 뉴스 화면으로 이동합니다...' : (d.공개 === 'Y' ? '게시되었습니다. 뉴스 화면으로 이동합니다. (홈페이지 반영까지 몇 분 걸릴 수 있습니다.)' : '비공개로 저장되었습니다.'), 'ok');
+      if (editRow || d.공개 === 'Y') { setTimeout(() => { location.href = 'news.html'; }, 1200); return; }
       setTimeout(() => { reset(); showTab('list'); }, 900);
     } catch (e) { msg(e.message); }
     b.disabled = false; b.textContent = editRow ? '수정 저장' : '게시하기';

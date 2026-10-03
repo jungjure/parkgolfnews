@@ -266,7 +266,7 @@
         try {
           if (editing) await api('mpupdate', { row: editing.row, oldTitle: editing.title, title: $('#wTitle').value, body: $('#wBody').value });
           else await api('mpost', { title: $('#wTitle').value, body: $('#wBody').value });
-          clearSheetCache(); editing = null; await load(true);
+          clearSheetCache(); editing = null; say('#wMsg', '저장했습니다. 뉴스 화면으로 이동합니다...', 'ok'); setTimeout(() => { location.href = 'news.html'; }, 1200); return;
         } catch (err) {
           if (!Auth.get()) { location.replace('login.html?next=mypage.html%23wr'); return; }
           say('#wMsg', err.message); b.disabled = false; b.textContent = editing ? '수정 저장' : '글 올리기';
