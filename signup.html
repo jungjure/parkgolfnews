@@ -21,11 +21,17 @@
       <label class="field"><span>비밀번호</span><input id="pw" name="new-password" type="password" autocomplete="new-password" maxlength="50" required><small>6자 이상</small></label>
       <label class="field"><span>비밀번호 확인</span><input id="pw2" type="password" autocomplete="new-password" maxlength="50" required></label>
       <label class="field"><span>이메일 (선택)</span><input id="email" type="email" autocomplete="email"><small>비밀번호를 잊었을 때 본인 확인용으로만 쓰입니다.</small></label>
-      <div class="terms"><b>개인정보 수집·이용 안내</b><br>수집 항목: 아이디, 닉네임, 비밀번호(암호화 저장), 이메일(선택)<br>이용 목적: 회원 식별 및 댓글 작성 관리<br>보유 기간: 회원 탈퇴 요청 시까지. 탈퇴를 원하시면 연락처로 알려 주세요.<br>욕설·광고·허위 내용 댓글은 삭제될 수 있습니다.</div>
+      <div id="phBox" hidden>
+        <label class="field" style="margin-bottom:6px"><span>휴대폰 번호</span><div class="phrow"><input id="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="13" placeholder="010-1234-5678"><button type="button" id="phSend">인증번호 받기</button></div></label>
+        <div id="phCodeRow" hidden><label class="field" style="margin-bottom:6px"><div class="phrow"><input id="phCode" inputmode="numeric" maxlength="6" placeholder="인증번호 6자리"><button type="button" id="phCheck">확인</button></div></label></div>
+        <div id="phMsg" style="margin-bottom:12px"></div>
+      </div>
+      <div class="terms"><b>개인정보 수집·이용 안내</b><br>수집 항목: 아이디, 닉네임, 비밀번호(암호화 저장), 휴대폰 번호(본인 확인용, 암호화 저장·끝 4자리만 보관), 이메일(선택)<br>이용 목적: 회원 식별 및 댓글 작성 관리<br>보유 기간: 회원 탈퇴 요청 시까지. 탈퇴를 원하시면 연락처로 알려 주세요.<br>욕설·광고·허위 내용 댓글은 삭제될 수 있습니다.</div>
       <label class="chk"><input type="checkbox" id="agree"> 위 내용에 동의합니다</label>
       <div id="msg"></div>
       <button class="btn green big" id="go" type="submit">가입하기</button>
     </form>
+    <div id="social"></div>
     <div class="linkrow">이미 회원이신가요? <a id="tologin" href="login.html">로그인</a></div>
   </div>
 </div>
@@ -36,16 +42,36 @@
   const nextUrl = () => { const n = new URLSearchParams(location.search).get('next') || ''; return /^[\w.\-]+\.html(\?[\w=&%\-]*)?$/.test(n) ? n : ''; };
   if (nextUrl()) $('#tologin').href = 'login.html?next=' + encodeURIComponent(nextUrl());
   if (Auth.get()) { location.replace(nextUrl() || 'index.html'); return; }
+  let phoneToken = '', smsOn = false;
+  const pm = (t, k) => $('#phMsg').innerHTML = t ? '<div class="msg ' + (k || 'err') + '" style="margin:0">' + esc(t) + '</div>' : '';
+  getConfig().then(c => {
+    smsOn = !!c.sms; $('#phBox').hidden = !smsOn;
+  });
+  renderSocial($('#social'), nextUrl());
+  const fmt = v => v.replace(/[^0-9]/g, '').slice(0, 11).replace(/^(\d{3})(\d{3,4})(\d{0,4}).*/, (m, a, b, c) => c ? a + '-' + b + '-' + c : a + '-' + b);
+  $('#phone').addEventListener('input', e => { e.target.value = fmt(e.target.value); phoneToken = ''; $('#phCodeRow').hidden = true; pm(''); $('#phSend').textContent = '인증번호 받기'; });
+  $('#phSend').onclick = async () => {
+    const b = $('#phSend'); b.disabled = true; pm('');
+    try { await api('smssend', { phone: $('#phone').value }); $('#phCodeRow').hidden = false; $('#phCode').value = ''; $('#phCode').focus(); pm('인증번호를 문자로 보냈습니다. 5분 안에 입력해 주세요.', 'ok'); b.textContent = '다시 받기'; setTimeout(() => b.disabled = false, 60000); }
+    catch (e) { pm(e.message); b.disabled = false; }
+  };
+  $('#phCheck').onclick = async () => {
+    const b = $('#phCheck'); b.disabled = true;
+    try { const r = await api('smsverify', { phone: $('#phone').value, code: $('#phCode').value.trim() }); phoneToken = r.phoneToken; $('#phCodeRow').hidden = true; pm('휴대폰 번호 인증이 완료되었습니다.', 'ok'); }
+    catch (e) { pm(e.message); }
+    b.disabled = false;
+  };
   if (!CONFIG.API_URL) $('#notice').innerHTML = '<div class="msg warn">서버 연결이 아직 설정되지 않았습니다.</div>';
   $('#f').onsubmit = async ev => {
     ev.preventDefault();
     const b = $('#go'), m = $('#msg'), err = t => { m.innerHTML = '<div class="msg err">' + esc(t) + '</div>'; };
     m.innerHTML = '';
     if ($('#pw').value !== $('#pw2').value) return err('비밀번호 확인이 일치하지 않습니다.');
+    if (smsOn && !phoneToken) return err('휴대폰 번호 인증을 먼저 완료해 주세요.');
     if (!$('#agree').checked) return err('개인정보 수집·이용에 동의해 주세요.');
     b.disabled = true; b.textContent = '가입 중...';
     try {
-      const r = await api('signup', { id: $('#id').value.trim(), nick: $('#nick').value.trim(), pw: $('#pw').value, email: $('#email').value.trim(), agree: true });
+      const r = await api('signup', { id: $('#id').value.trim(), nick: $('#nick').value.trim(), pw: $('#pw').value, email: $('#email').value.trim(), phoneToken, agree: true });
       Auth.set({ token: r.token, exp: r.exp, role: r.role, name: r.name || '' }, false);
       location.href = nextUrl() || 'index.html';
     } catch (e) { err(e.message); b.disabled = false; b.textContent = '가입하기'; }

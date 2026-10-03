@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>로그인 처리 중 - 파크골프뉴스</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap"><div class="card authbox" style="text-align:center"><h2>로그인 처리 중</h2><div id="st" class="loading">잠시만 기다려 주세요...</div></div></div>
+<script src="assets/app.js"></script>
+<script>
+(async () => {
+  await layout('login');
+  const q = new URLSearchParams(location.search), code = q.get('code'), state = q.get('state') || '';
+  const saved = sessionStorage.getItem('pgn_oauth_state'), next = sessionStorage.getItem('pgn_oauth_next') || '';
+  const fail = t => { $('#st').className = 'msg err'; $('#st').innerHTML = esc(t) + '<br><br><a class="btn green" href="login.html">로그인 화면으로</a>'; };
+  if (q.get('error')) return fail('로그인이 취소되었거나 허용되지 않았습니다.');
+  if (!code || !saved || state !== saved) return fail('잘못된 접근입니다. 로그인 화면에서 다시 시도해 주세요.');
+  sessionStorage.removeItem('pgn_oauth_state');
+  try {
+    const r = await api('social', { provider: state.split('.')[0], code, state, redirect: OAUTH_REDIRECT });
+    $('#st').textContent = '확인되었습니다.';
+    socialResult(r, next);
+  } catch (e) { fail(e.message); }
+})();
+</script>
+</body>
+</html>
