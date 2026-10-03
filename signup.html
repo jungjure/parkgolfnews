@@ -39,6 +39,7 @@
 <script>
 (async () => {
   await layout('signup');
+  pwEye('#pw', '#pw2');
   const nextUrl = () => { const n = new URLSearchParams(location.search).get('next') || ''; return /^[\w.\-]+\.html(\?[\w=&%\-]*)?$/.test(n) ? n : ''; };
   if (nextUrl()) $('#tologin').href = 'login.html?next=' + encodeURIComponent(nextUrl());
   if (Auth.get()) { location.replace(nextUrl() || 'index.html'); return; }

@@ -22,6 +22,7 @@
       <div id="msg"></div>
       <button class="btn green big" id="go" type="submit">로그인</button>
     </form>
+    <div class="linkrow finds"><a href="find.html?tab=id">아이디 찾기</a><span>|</span><a href="find.html?tab=pw">비밀번호 찾기</a></div>
     <div id="social"></div>
     <div class="linkrow">아직 회원이 아니신가요? <a id="tosignup" href="signup.html">회원가입</a></div>
   </div>
@@ -30,6 +31,7 @@
 <script>
 (async () => {
   await layout('login');
+  pwEye('#pw');
   const nextUrl = () => { const n = new URLSearchParams(location.search).get('next') || ''; return /^[\w.\-]+\.html(\?[\w=&%\-]*)?$/.test(n) ? n : ''; };
   const go = r => { const n = nextUrl(); location.href = n || (r === 'admin' ? 'write.html' : 'index.html'); };
   if (nextUrl()) $('#tosignup').href = 'signup.html?next=' + encodeURIComponent(nextUrl());

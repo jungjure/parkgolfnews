@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>아이디·비밀번호 찾기 - 파크골프뉴스</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="card authbox">
+    <h2>아이디·비밀번호 찾기</h2>
+    <p class="sub">가입할 때 입력한 정보로 확인합니다.</p>
+    <div class="ftabs"><button type="button" id="tId">아이디 찾기</button><button type="button" id="tPw">비밀번호 찾기</button></div>
+
+    <form id="fId" autocomplete="off">
+      <label class="field"><span>닉네임</span><input id="iNick" maxlength="12" required></label>
+      <div class="chips" id="iVia"><label><input type="radio" name="iv" value="phone" checked><span>휴대폰 번호로</span></label><label><input type="radio" name="iv" value="email"><span>이메일로</span></label></div>
+      <label class="field"><span id="iLab">휴대폰 번호</span><input id="iVal" required placeholder="010-1234-5678" inputmode="numeric"></label>
+      <div id="iMsg"></div>
+      <button class="btn green big" id="iGo" type="submit">아이디 찾기</button>
+    </form>
+
+    <form id="fPw" autocomplete="off" hidden>
+      <div id="p1">
+        <label class="field"><span>아이디</span><input id="pId" maxlength="20" autocomplete="username" required></label>
+        <div class="chips" id="pVia"><label><input type="radio" name="pv" value="email" checked><span>이메일로 받기</span></label><label id="pSmsLab" hidden><input type="radio" name="pv" value="sms"><span>문자로 받기</span></label></div>
+        <label class="field"><span id="pLab">가입할 때 입력한 이메일</span><input id="pVal" required placeholder="name@example.com"></label>
+        <div id="pMsg1"></div>
+        <button class="btn green big" id="pSend" type="submit">인증번호 받기</button>
+      </div>
+      <div id="p2" hidden>
+        <div id="pInfo"></div>
+        <label class="field"><span>인증번호 6자리</span><input id="pCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></label>
+        <label class="field"><span>새 비밀번호</span><input id="pw" type="password" autocomplete="new-password" maxlength="50"><small>6자 이상</small></label>
+        <label class="field"><span>새 비밀번호 확인</span><input id="pw2" type="password" autocomplete="new-password" maxlength="50"></label>
+        <div id="pMsg2"></div>
+        <button class="btn green big" id="pGo" type="button">비밀번호 변경</button>
+        <div class="linkrow"><a href="#" id="pBack">처음부터 다시</a></div>
+      </div>
+    </form>
+
+    <div class="linkrow finds"><a href="login.html">로그인</a><span>|</span><a href="signup.html">회원가입</a></div>
+  </div>
+</div>
+<script src="assets/app.js"></script>
+<script>
+(async () => {
+  await layout('login');
+  pwEye('#pw', '#pw2');
+  if (!CONFIG.API_URL) { document.querySelector('.sub').textContent = '서버 연결이 아직 설정되지 않았습니다.'; }
+  const say = (sel, t, k) => $(sel).innerHTML = t ? '<div class="msg ' + (k || 'err') + '">' + esc(t) + '</div>' : '';
+  const val = n => (document.querySelector('input[name=' + n + ']:checked') || {}).value;
+  const show = tab => {
+    $('#fId').hidden = tab !== 'id'; $('#fPw').hidden = tab !== 'pw';
+    $('#tId').classList.toggle('on', tab === 'id'); $('#tPw').classList.toggle('on', tab === 'pw');
+  };
+  $('#tId').onclick = () => show('id'); $('#tPw').onclick = () => show('pw');
+  show(new URLSearchParams(location.search).get('tab') === 'pw' ? 'pw' : 'id');
+  getConfig().then(c => { if (c.sms) $('#pSmsLab').hidden = false; });
+
+  // ----- 아이디 찾기 -----
+  const iSync = () => { const ph = val('iv') === 'phone'; $('#iLab').textContent = ph ? '휴대폰 번호' : '이메일'; $('#iVal').placeholder = ph ? '010-1234-5678' : 'name@example.com'; $('#iVal').inputMode = ph ? 'numeric' : 'email'; $('#iVal').value = ''; };
+  document.querySelectorAll('input[name=iv]').forEach(r => r.onchange = iSync);
+  $('#iVal').addEventListener('input', e => { if (val('iv') === 'phone') e.target.value = fmtPhone(e.target.value); });
+  $('#fId').onsubmit = async ev => {
+    ev.preventDefault(); const b = $('#iGo'); b.disabled = true; say('#iMsg', '');
+    try {
+      const r = await api('findid', { nick: $('#iNick').value.trim(), via: val('iv'), value: $('#iVal').value.trim() });
+      $('#iMsg').innerHTML = '<div class="msg ok">회원님의 아이디입니다. (개인정보 보호를 위해 일부는 * 로 가립니다)</div><div class="foundid">' + esc(r.id) + '</div><div class="linkrow finds"><a href="login.html">로그인하기</a><span>|</span><a href="#" id="toPw">비밀번호도 잊으셨나요?</a></div>';
+      $('#toPw').onclick = e => { e.preventDefault(); show('pw'); };
+    } catch (e) { say('#iMsg', e.message); }
+    b.disabled = false;
+  };
+
+  // ----- 비밀번호 찾기 -----
+  const pSync = () => { const sms = val('pv') === 'sms'; $('#pLab').textContent = sms ? '가입할 때 입력한 휴대폰 번호' : '가입할 때 입력한 이메일'; $('#pVal').placeholder = sms ? '010-1234-5678' : 'name@example.com'; $('#pVal').value = ''; };
+  document.querySelectorAll('input[name=pv]').forEach(r => r.onchange = pSync);
+  $('#pVal').addEventListener('input', e => { if (val('pv') === 'sms') e.target.value = fmtPhone(e.target.value); });
+  $('#fPw').onsubmit = async ev => {
+    ev.preventDefault(); const b = $('#pSend'); b.disabled = true; say('#pMsg1', '');
+    try {
+      const r = await api('pwsend', { id: $('#pId').value.trim(), via: val('pv'), value: $('#pVal').value.trim() });
+      $('#p1').hidden = true; $('#p2').hidden = false;
+      say('#pInfo', (r.to ? r.to + ' (으)로 ' : '') + '인증번호를 보냈습니다. 10분 안에 입력해 주세요. 메일이 안 보이면 스팸함도 확인해 주세요.', 'ok');
+      $('#pCode').focus();
+    } catch (e) { say('#pMsg1', e.message); }
+    b.disabled = false;
+  };
+  $('#pBack').onclick = e => { e.preventDefault(); $('#p2').hidden = true; $('#p1').hidden = false; say('#pMsg2', ''); };
+  $('#pGo').onclick = async () => {
+    const b = $('#pGo'); say('#pMsg2', '');
+    if ($('#pw').value !== $('#pw2').value) return say('#pMsg2', '새 비밀번호 확인이 일치하지 않습니다.');
+    b.disabled = true;
+    try {
+      await api('pwreset', { id: $('#pId').value.trim(), code: $('#pCode').value.trim(), pw: $('#pw').value });
+      $('#fPw').innerHTML = '<div class="msg ok">비밀번호를 변경했습니다. 새 비밀번호로 로그인해 주세요.</div><a class="btn green big" href="login.html" style="display:block;text-align:center">로그인하러 가기</a>';
+    } catch (e) { say('#pMsg2', e.message); b.disabled = false; }
+  };
+})();
+</script>
+</body>
+</html>
