@@ -182,7 +182,7 @@ async function layout(active) {
   const S = await getSettings();
   const nav = [['index.html', '홈', 'home'], ['news.html', '뉴스', 'news'], ['today.html', '오늘일정', 'today'], ['schedule.html', '대회일정', 'schedule'], ['about.html', '회사소개', 'about']];
   const me = Auth.get();
-  const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="write.html" class="${active === 'write' ? 'on' : ''}">글쓰기</a>` : '') + `<span class="who">${esc(me.name)}님</span><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
+  const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="write.html" class="${active === 'write' ? 'on' : ''}">글쓰기</a><a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a>` : '') + `<span class="who">${esc(me.name)}님</span><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   document.body.insertAdjacentHTML('afterbegin', `
     <div class="topbar"><div class="wrap"><span>${esc(S.슬로건)}</span>
     <span><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a> · <a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">오픈채팅방</a> · ${esc(S.전화)}</span></div></div>
@@ -197,7 +197,19 @@ async function layout(active) {
       <div><b>${esc(S.사이트명)}</b><br>주소 : ${esc(S.주소)}<br>전화 : ${esc(S.전화)} · 팩스 : ${esc(S.팩스)}<br>담당 : ${esc(S.담당)}</div>
       <div><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 ${esc(S.밴드.replace(/^https?:\/\//, ''))}</a><br><a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">카카오 오픈채팅방</a><br>&copy; ${new Date().getFullYear()} ${esc(S.사이트명)}. All rights reserved.</div>
     </div></footer>`);
+  if (me) startPing();
   return S;
+}
+
+/* 접속 표시: 로그인한 회원이 페이지를 보고 있으면 1분마다 알립니다 (실패해도 조용히 무시) */
+function pingOnce() {
+  const a = Auth.get(); if (!a || !CONFIG.API_URL || a.role === 'admin') return;
+  fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'ping', token: a.token }) }).catch(() => {});
+}
+function startPing() {
+  pingOnce();
+  setInterval(() => { if (!document.hidden) pingOnce(); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) pingOnce(); });
 }
 
 function sideBox(S) {
@@ -266,6 +278,8 @@ async function api(action, data = {}) {
 function clearSheetCache() { Object.keys(sessionStorage).filter(k => k.startsWith('pgn_') && k !== 'pgn_auth').forEach(k => sessionStorage.removeItem(k)); }
 
 
+const fmtPhone = v => v.replace(/[^0-9]/g, '').slice(0, 11).replace(/^(\d{3})(\d{3,4})(\d{0,4}).*/, (m, x, y, z) => z ? x + '-' + y + '-' + z : x + '-' + y);
+
 /* ---------- 소셜 로그인 (구글 / 카카오 / 네이버) ---------- */
 const OAUTH_REDIRECT = location.origin + '/oauth.html';
 let _cfg = null;
@@ -289,13 +303,14 @@ async function socialResult(r, next) {
   loginDone(r, next);
 }
 function showNickForm(r, next) {
-  document.body.insertAdjacentHTML('beforeend', '<div class="modal" id="nickModal"><div class="card authbox" style="margin:0;max-width:420px;width:92%"><h2>닉네임 정하기</h2><p class="sub">처음 오셨네요. 댓글에 표시될 닉네임을 정해 주세요.</p><label class="field"><span>닉네임</span><input id="nk" maxlength="12"><small>2~12자</small></label><div class="terms"><b>개인정보 수집·이용 안내</b><br>수집 항목: 소셜 계정 고유번호, 닉네임<br>이용 목적: 회원 식별 및 댓글 작성 관리<br>보유 기간: 회원 탈퇴 요청 시까지</div><label class="chk"><input type="checkbox" id="nkagree"> 위 내용에 동의합니다</label><div id="nkmsg"></div><button class="btn green big" id="nkgo">가입 완료</button></div></div>');
+  document.body.insertAdjacentHTML('beforeend', '<div class="modal" id="nickModal"><div class="card authbox" style="margin:0;max-width:420px;width:92%"><h2>닉네임 정하기</h2><p class="sub">처음 오셨네요. 댓글에 표시될 닉네임을 정해 주세요.</p><label class="field"><span>닉네임</span><input id="nk" maxlength="12"><small>2~12자</small></label><label class="field"><span>휴대폰 번호</span><input id="nkph" type="tel" inputmode="numeric" maxlength="13" placeholder="010-1234-5678"><small>운영자 연락용</small></label><div class="terms"><b>개인정보 수집·이용 안내</b><br>수집 항목: 소셜 계정 고유번호, 닉네임, 휴대폰 번호<br>이용 목적: 회원 식별, 댓글 작성 관리, 운영자 연락(공지·문의 응대). 휴대폰 번호는 관리자만 볼 수 있습니다.<br>보유 기간: 회원 탈퇴 요청 시까지</div><label class="chk"><input type="checkbox" id="nkagree"> 위 내용에 동의합니다</label><div id="nkmsg"></div><button class="btn green big" id="nkgo">가입 완료</button></div></div>');
   $('#nk').value = r.suggest || '';
+  $('#nkph').addEventListener('input', e => { e.target.value = fmtPhone(e.target.value); });
   $('#nkgo').onclick = async () => {
     const m = $('#nkmsg'), b = $('#nkgo'); m.innerHTML = '';
     if (!$('#nkagree').checked) { m.innerHTML = '<div class="msg err">개인정보 수집·이용에 동의해 주세요.</div>'; return; }
     b.disabled = true; b.textContent = '처리 중...';
-    try { loginDone(await api('socialjoin', { pending: r.pending, nick: $('#nk').value.trim(), agree: true }), next); }
+    try { loginDone(await api('socialjoin', { pending: r.pending, nick: $('#nk').value.trim(), phone: $('#nkph').value, agree: true }), next); }
     catch (e) { m.innerHTML = '<div class="msg err">' + esc(e.message) + '</div>'; b.disabled = false; b.textContent = '가입 완료'; }
   };
 }
