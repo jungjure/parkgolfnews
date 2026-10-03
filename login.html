@@ -27,7 +27,7 @@
     <div class="linkrow">아직 회원이 아니신가요? <a id="tosignup" href="signup.html">회원가입</a></div>
   </div>
 </div>
-<script src="assets/app.js?v=20261003b"></script>
+<script src="assets/app.js?v=20261003c"></script>
 <script>
 (async () => {
   await layout('login');
@@ -35,6 +35,7 @@
   const nextUrl = () => { const n = new URLSearchParams(location.search).get('next') || ''; return /^[\w.\-]+\.html(\?[\w=&%\-]*)?$/.test(n) ? n : ''; };
   const go = r => { const n = nextUrl(); location.href = n || (r === 'admin' ? 'write.html' : 'index.html'); };
   if (nextUrl()) $('#tosignup').href = 'signup.html?next=' + encodeURIComponent(nextUrl());
+  if (nextUrl()) $('#notice').innerHTML = '<div class="msg warn">로그인이 필요한 페이지입니다. 로그인하시면 보시던 페이지로 바로 이동합니다.</div>';
   const cur = Auth.get(); if (cur) { go(cur.role); return; }
   if (!CONFIG.API_URL) $('#notice').innerHTML = '<div class="msg warn">서버 연결이 아직 설정되지 않았습니다. 설정이 끝나면 로그인할 수 있습니다.</div>';
   renderSocial($('#social'), nextUrl());
