@@ -8,7 +8,8 @@
 <link rel="icon" href="assets/logo.png">
 <link rel="stylesheet" href="assets/style.css">
 <style>
-.mp{max-width:780px;margin:0 auto}
+.mp{max-width:780px;margin:0 auto;padding:22px 0 10px}
+.mp [hidden]{display:none!important}
 .mp .panel{display:none}
 .mp .panel.on{display:block}
 .mp .box{padding:22px;margin-bottom:16px}
@@ -48,7 +49,7 @@
   if (!Auth.get()) { location.replace('login.html?next=mypage.html'); return; }
   await layout('mypage');
   const admin = Auth.get().role === 'admin';
-  document.body.insertAdjacentHTML('beforeend', `<div class="wrap"><main class="mp">
+  document.querySelector('footer.site').insertAdjacentHTML('beforebegin', `<div class="wrap"><main class="mp">
     <h2 class="sec">마이페이지</h2>
     <div class="tabs" id="tabs">
       <button data-t="info">내 정보</button>
