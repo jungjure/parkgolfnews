@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>마이페이지 - 파크골프뉴스</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.mp{max-width:780px;margin:0 auto}
+.mp .panel{display:none}
+.mp .panel.on{display:block}
+.mp .box{padding:22px;margin-bottom:16px}
+.mp .box h3{margin:0 0 4px;font-size:1.15rem;color:var(--g900)}
+.mp .box p.sub{margin:0 0 16px;color:var(--muted);font-size:.9rem}
+.mp .ro{display:flex;gap:10px;align-items:center;padding:10px 13px;background:var(--g50);border-radius:10px;margin-bottom:14px;font-size:.98rem;flex-wrap:wrap}
+.mp .ro b{min-width:64px;color:var(--g900)}
+.mp .tabs{margin-bottom:14px}
+.mp .tabs button small{font-weight:700;opacity:.85}
+.mp .catgrid{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 16px}
+.mp .catgrid label{cursor:pointer}
+.mp .catgrid input{display:none}
+.mp .catgrid span{display:inline-block;border:2px solid var(--line);background:#fff;border-radius:999px;padding:8px 16px;font-weight:800;font-size:.95rem}
+.mp .catgrid input:checked+span{background:var(--g700);border-color:var(--g700);color:#fff}
+.mp .catgrid input:checked+span::before{content:"\2713\00a0"}
+.mp .vrow{display:flex;gap:8px;margin-bottom:8px}
+.mp .vrow input{flex:1;padding:11px 13px;border:2px solid var(--line);border-radius:10px;font-size:1rem}
+.mp .vrow button{white-space:nowrap;border:2px solid var(--g700);background:#fff;color:var(--g900);border-radius:10px;font-weight:800;padding:0 14px;cursor:pointer}
+.mp .mc{padding:14px 2px;border-top:1px solid var(--line)}
+.mp .mc:first-child{border-top:0}
+.mp .mc .t{font-weight:800;color:var(--g900);display:block;margin-bottom:4px;word-break:keep-all}
+.mp .mc .t.gone{color:var(--muted);font-weight:700}
+.mp .mc .x{white-space:pre-wrap;word-break:break-word;line-height:1.65}
+.mp .mc .d{display:flex;gap:10px;align-items:center;font-size:.85rem;color:var(--muted);margin-top:4px}
+.mp .mc .d button{margin-left:auto;border:0;background:none;color:var(--red);cursor:pointer;font-weight:700}
+.mp .mc .d a{color:var(--g700);font-weight:700}
+.mp .wl a{display:flex;gap:10px;align-items:center;padding:11px 2px;border-top:1px solid var(--line);font-weight:700}
+.mp .wl a:first-child{border-top:0}
+.mp .wl small{color:var(--muted);font-weight:600;margin-left:auto;white-space:nowrap}
+.mp h4.sub2{margin:20px 0 10px;font-size:1.02rem;color:var(--g900)}
+</style>
+</head>
+<body>
+<script src="assets/app.js?v=20261004a"></script>
+<script>
+(async () => {
+  if (!Auth.get()) { location.replace('login.html?next=mypage.html'); return; }
+  await layout('mypage');
+  const admin = Auth.get().role === 'admin';
+  document.body.insertAdjacentHTML('beforeend', `<div class="wrap"><main class="mp">
+    <h2 class="sec">마이페이지</h2>
+    <div class="tabs" id="tabs">
+      <button data-t="info">내 정보</button>
+      ${admin ? '' : '<button data-t="cats">관심 카테고리</button>'}
+      <button data-t="cm">내 댓글 <small id="nCm"></small></button>
+      <button data-t="wr">내가 쓴 글</button>
+    </div>
+    <section class="panel" id="p-info"><div class="loading">불러오는 중...</div></section>
+    <section class="panel" id="p-cats"><div class="loading">불러오는 중...</div></section>
+    <section class="panel" id="p-cm"><div class="card box"><div class="loading">불러오는 중...</div></div></section>
+    <section class="panel" id="p-wr"><div class="card box"><div class="loading">불러오는 중...</div></div></section>
+  </main></div>`);
+
+  const say = (sel, t, k) => { $(sel).innerHTML = t ? '<div class="msg ' + (k || 'err') + '">' + esc(t) + '</div>' : ''; };
+  const digits = s => String(s || '').replace(/[^0-9]/g, '');
+  const TABS = admin ? ['info', 'cm', 'wr'] : ['info', 'cats', 'cm', 'wr'];
+  const show = t => {
+    if (!TABS.includes(t)) t = 'info';
+    document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+    document.querySelectorAll('.mp .panel').forEach(p => p.classList.toggle('on', p.id === 'p-' + t));
+    history.replaceState(null, '', '#' + t);
+  };
+  $('#tabs').onclick = e => { const b = e.target.closest('button[data-t]'); if (b) show(b.dataset.t); };
+  show(location.hash.slice(1));
+
+  let news = [], newsErr = null, me = null;
+  const newsP = getNews().then(n => { news = n; }).catch(e => { newsErr = e; });
+
+  /* ---------- 내 정보 ---------- */
+  async function loadInfo() {
+    try { me = await api('me'); }
+    catch (e) { if (!Auth.get()) { location.replace('login.html?next=mypage.html'); return; } $('#p-info').innerHTML = '<div class="card box"><div class="msg err">' + esc(e.message) + '</div></div>'; return; }
+    if (me.admin) {
+      $('#p-info').innerHTML = '<div class="card box"><h3>관리자 계정</h3><p class="sub">관리자 아이디와 비밀번호는 보안을 위해 이 화면에서 바꿀 수 없습니다.</p><div class="ro"><b>표시 이름</b>' + esc(me.nick) + '</div><div class="ro"><b>아이디</b>' + esc(me.id) + '</div><p class="sub" style="margin:0">아이디·비밀번호 변경은 Apps Script의 스크립트 속성(ADMIN_ID, ADMIN_PW)에서 합니다.</p></div>';
+      return;
+    }
+    const socialName = { google: '구글', kakao: '카카오', naver: '네이버' }[me.social] || me.social;
+    $('#p-info').innerHTML = `
+      <div class="card box"><h3>회원 정보</h3><p class="sub">아이디는 바꿀 수 없습니다. 나머지 정보는 아래에서 수정하세요.</p>
+        <div class="ro"><b>아이디</b>${me.social ? esc(socialName) + ' 로그인 계정' : esc(me.id)}</div>
+        <div class="ro"><b>가입일</b>${esc((me.joined || '').slice(0, 10))}</div>
+        <form id="fInfo" autocomplete="off">
+          <label class="field"><span>닉네임</span><input id="mNick" maxlength="12" required><small>2~12자. 댓글에 표시되며, 바꾸면 이전 댓글의 이름도 함께 바뀝니다.</small></label>
+          <label class="field"><span>이메일 <small style="display:inline">(선택)</small></span><input id="mEmail" type="email" maxlength="80" placeholder="name@example.com"><small>비밀번호 찾기 안내 메일을 받을 주소입니다.</small></label>
+          <label class="field"><span>휴대폰 번호</span><input id="mPhone" type="tel" inputmode="numeric" maxlength="13" placeholder="010-1234-5678" required><small>운영자 연락용이며 관리자만 볼 수 있습니다.</small></label>
+          <div id="vBox" hidden>
+            <div class="vrow"><input id="vCode" inputmode="numeric" maxlength="6" placeholder="인증번호 6자리"><button type="button" id="vSend">인증번호 받기</button><button type="button" id="vOk">확인</button></div>
+            <div id="vMsg"></div>
+          </div>
+          ${me.hasPw ? '<label class="field" id="curBox" hidden><span>현재 비밀번호</span><input id="mCur" type="password" autocomplete="current-password" maxlength="50"><small>이메일이나 휴대폰 번호를 바꿀 때만 필요합니다.</small></label>' : ''}
+          <div id="iMsg"></div>
+          <button class="btn green big" id="iSave" type="submit">저장</button>
+        </form>
+      </div>
+      ${me.hasPw ? `<div class="card box"><h3>비밀번호 변경</h3><p class="sub">현재 비밀번호를 확인한 뒤 새 비밀번호로 바꿉니다.</p>
+        <form id="fPw" autocomplete="off">
+          <label class="field"><span>현재 비밀번호</span><input id="pCur" type="password" autocomplete="current-password" maxlength="50" required></label>
+          <label class="field"><span>새 비밀번호</span><input id="pNew" type="password" autocomplete="new-password" maxlength="50" required><small>6자 이상</small></label>
+          <label class="field"><span>새 비밀번호 확인</span><input id="pNew2" type="password" autocomplete="new-password" maxlength="50" required></label>
+          <div id="pMsg"></div>
+          <button class="btn green big" id="pSave" type="submit">비밀번호 변경</button>
+        </form></div>` : ''}`;
+    if (me.hasPw) pwEye('#mCur', '#pCur', '#pNew', '#pNew2');
+    $('#mNick').value = me.nick; $('#mEmail').value = me.email; $('#mPhone').value = me.phone;
+    let orig = { email: me.email.trim().toLowerCase(), phone: digits(me.phone) }, phoneToken = '';
+    const sync = () => {
+      const pc = digits($('#mPhone').value) !== orig.phone, ec = $('#mEmail').value.trim().toLowerCase() !== orig.email;
+      if ($('#curBox')) $('#curBox').hidden = !(pc || ec);
+      $('#vBox').hidden = !(me.sms && pc);
+      if (!pc) phoneToken = '';
+    };
+    $('#mPhone').addEventListener('input', e => { e.target.value = fmtPhone(e.target.value); phoneToken = ''; say('#vMsg', ''); sync(); });
+    $('#mEmail').addEventListener('input', sync);
+    $('#vSend').onclick = async () => {
+      const b = $('#vSend'); b.disabled = true; say('#vMsg', '');
+      try { await api('smssend', { phone: $('#mPhone').value }); say('#vMsg', '인증번호를 문자로 보냈습니다. 5분 안에 입력해 주세요.', 'ok'); }
+      catch (e) { say('#vMsg', e.message); }
+      b.disabled = false;
+    };
+    $('#vOk').onclick = async () => {
+      const b = $('#vOk'); b.disabled = true;
+      try { phoneToken = (await api('smsverify', { phone: $('#mPhone').value, code: $('#vCode').value })).phoneToken; say('#vMsg', '휴대폰 번호 인증이 완료되었습니다. 저장을 눌러 주세요.', 'ok'); }
+      catch (e) { say('#vMsg', e.message); }
+      b.disabled = false;
+    };
+    $('#fInfo').onsubmit = async ev => {
+      ev.preventDefault(); const b = $('#iSave'); say('#iMsg', '');
+      const pc = digits($('#mPhone').value) !== orig.phone;
+      if (me.sms && pc && !phoneToken) return say('#iMsg', '바꾼 휴대폰 번호의 인증을 먼저 해 주세요.');
+      b.disabled = true; b.textContent = '저장 중...';
+      try {
+        const r = await api('meupdate', { nick: $('#mNick').value.trim(), email: $('#mEmail').value.trim(), phone: $('#mPhone').value, curPw: $('#mCur') ? $('#mCur').value : '', phoneToken });
+        me.nick = r.nick; me.email = r.email; me.phone = r.phone;
+        orig = { email: r.email.trim().toLowerCase(), phone: digits(r.phone) }; phoneToken = '';
+        $('#mNick').value = r.nick; $('#mEmail').value = r.email; $('#mPhone').value = r.phone; if ($('#mCur')) $('#mCur').value = '';
+        const a = Auth.get(); if (a) Auth.set({ ...a, name: r.nick }, !!localStorage.getItem('pgn_auth'));
+        const w = document.querySelector('nav.main .who'); if (w) w.textContent = r.nick + '님';
+        sync(); say('#iMsg', '회원 정보를 저장했습니다.', 'ok');
+      } catch (e) {
+        if (!Auth.get()) { location.replace('login.html?next=mypage.html'); return; }
+        say('#iMsg', e.message);
+      }
+      b.disabled = false; b.textContent = '저장';
+    };
+    sync();
+    if ($('#fPw')) $('#fPw').onsubmit = async ev => {
+      ev.preventDefault(); const b = $('#pSave'); say('#pMsg', '');
+      if ($('#pNew').value !== $('#pNew2').value) return say('#pMsg', '새 비밀번호 확인이 일치하지 않습니다.');
+      b.disabled = true;
+      try {
+        await api('mepw', { curPw: $('#pCur').value, pw: $('#pNew').value });
+        $('#pCur').value = $('#pNew').value = $('#pNew2').value = '';
+        say('#pMsg', '비밀번호를 변경했습니다. 다음 로그인부터 새 비밀번호를 쓰세요.', 'ok');
+      } catch (e) { say('#pMsg', e.message); }
+      b.disabled = false;
+    };
+  }
+
+  /* ---------- 관심 카테고리 ---------- */
+  async function loadCats() {
+    if (admin) return;
+    if (!me) { await infoP; }
+    if (!me || me.admin) return;
+    await newsP;
+    let sel = new Set(me.cats);
+    const allCats = [...new Set([...news.map(n => n.cat), ...me.cats])];
+    const drawNews = () => {
+      const f = news.filter(n => sel.has(n.cat)).slice(0, 6);
+      $('#cNews').innerHTML = !sel.size ? '<div class="empty" style="padding:18px">관심 카테고리를 고르면 해당 기사가 여기에 모입니다.</div>'
+        : f.length ? '<div class="grid">' + f.map(newsCard).join('') + '</div>' : '<div class="empty" style="padding:18px">선택한 카테고리의 기사가 아직 없습니다.</div>';
+    };
+    $('#p-cats').innerHTML = `<div class="card box"><h3>관심 카테고리</h3><p class="sub">관심 있는 분야를 고르세요. 뉴스 목록에서 \u201c내 관심\u201d 단추로 골라 볼 수 있습니다.</p>
+      ${newsErr ? '<div class="msg warn">카테고리 목록을 불러오지 못했습니다. ' + esc(newsErr.message) + '</div>' : ''}
+      <div class="catgrid" id="cGrid">${allCats.map(c => '<label><input type="checkbox" value="' + esc(c) + '"' + (sel.has(c) ? ' checked' : '') + '><span>' + esc(c) + '</span></label>').join('') || '<small style="color:#777">선택할 카테고리가 없습니다.</small>'}</div>
+      <div id="cMsg"></div>
+      <button class="btn green big" id="cSave" type="button">관심 카테고리 저장</button>
+      <h4 class="sub2">내 관심 카테고리 최신 기사</h4><div id="cNews"></div></div>`;
+    drawNews();
+    $('#cGrid').onchange = () => { sel = new Set([...document.querySelectorAll('#cGrid input:checked')].map(i => i.value)); drawNews(); say('#cMsg', ''); };
+    $('#cSave').onclick = async () => {
+      const b = $('#cSave'); b.disabled = true; say('#cMsg', '');
+      try { const r = await api('mecats', { cats: [...sel] }); me.cats = r.cats; say('#cMsg', r.cats.length ? '관심 카테고리를 저장했습니다. (' + r.cats.join(', ') + ')' : '관심 카테고리를 모두 해제했습니다.', 'ok'); }
+      catch (e) { say('#cMsg', e.message); }
+      b.disabled = false;
+    };
+  }
+
+  /* ---------- 내 댓글 ---------- */
+  async function loadComments() {
+    const box = $('#p-cm');
+    try {
+      const [r] = await Promise.all([api('mycomments'), newsP]);
+      const byId = Object.fromEntries(news.map(n => [n.id, n]));
+      const draw = items => {
+        $('#nCm').textContent = items.length ? '(' + items.length + ')' : '';
+        box.innerHTML = '<div class="card box"><h3>내 댓글</h3><p class="sub">내가 쓴 댓글을 최신순으로 보여 줍니다. 제목을 누르면 기사로 이동합니다.</p>' + (items.length ? items.map(c => {
+          const n = byId[c.aid];
+          return '<div class="mc">' + (n ? '<a class="t" href="article.html?id=' + esc(c.aid) + '">' + esc(n.title) + '</a>' : '<span class="t gone">(삭제되었거나 비공개된 기사)</span>') + '<div class="x">' + esc(c.text) + '</div><div class="d"><span>' + esc(c.at) + '</span>' + (n ? '<a href="article.html?id=' + esc(c.aid) + '">기사 보기</a>' : '') + '<button data-id="' + esc(c.id) + '">삭제</button></div></div>';
+        }).join('') : '<div class="empty" style="padding:18px">아직 쓴 댓글이 없습니다.<br><br><a class="btn green" href="news.html">뉴스 보러 가기</a></div>') + '</div>';
+        box.onclick = async e => {
+          const b = e.target.closest('button[data-id]'); if (!b || !confirm('이 댓글을 삭제할까요?')) return;
+          try { await api('cdelete', { cid: b.dataset.id }); draw(items.filter(x => x.id !== b.dataset.id)); } catch (err) { alert(err.message); }
+        };
+      };
+      draw(r.items);
+    } catch (e) { box.innerHTML = '<div class="card box"><div class="msg err">' + esc(e.message) + '</div></div>'; }
+  }
+
+  /* ---------- 내가 쓴 글 ---------- */
+  async function loadWrites() {
+    const box = $('#p-wr'); await newsP;
+    if (!admin) {
+      box.innerHTML = '<div class="card box"><h3>내가 쓴 글</h3><p class="sub">현재는 운영자만 기사를 작성합니다. 회원 글쓰기가 열리면 내가 쓴 글이 여기에 모입니다.</p><div class="empty" style="padding:18px">작성한 글이 없습니다.<br><small>내가 남긴 댓글은 \u201c내 댓글\u201d 탭에서 볼 수 있습니다.</small></div></div>';
+      return;
+    }
+    box.innerHTML = '<div class="card box"><h3>내가 쓴 글</h3><p class="sub">공개된 기사 ' + news.length + '건입니다. 수정·숨기기·삭제는 글쓰기 화면의 \u201c내 글 관리\u201d에서 합니다.</p><div style="margin-bottom:10px"><a class="btn green" href="write.html">글쓰기 / 내 글 관리</a></div><div class="wl">' + (news.length ? news.slice(0, 100).map(n => '<a href="article.html?id=' + esc(n.id) + '"><span class="tag">' + esc(n.cat) + '</span><span>' + esc(n.title) + '</span><small>' + fmtDate(n.date) + '</small></a>').join('') : '<div class="empty" style="padding:18px">공개된 글이 없습니다.</div>') + '</div></div>';
+  }
+
+  const infoP = loadInfo();
+  loadComments(); loadWrites(); loadCats();
+})();
+</script>
+</body>
+</html>
