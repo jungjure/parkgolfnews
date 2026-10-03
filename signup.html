@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>회원가입 - 파크골프뉴스</title>
+<meta name="description" content="파크골프뉴스 회원가입. 회원이 되면 기사에 댓글을 쓸 수 있습니다.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="card authbox">
+    <h2>회원가입</h2>
+    <p class="sub">가입하면 기사에 댓글을 쓸 수 있습니다.</p>
+    <div id="notice"></div>
+    <form id="f" autocomplete="on">
+      <label class="field"><span>아이디</span><input id="id" name="username" autocomplete="username" maxlength="20" required><small>영문 소문자·숫자·밑줄(_) 4~20자</small></label>
+      <label class="field"><span>닉네임 (댓글에 표시됩니다)</span><input id="nick" maxlength="12" required><small>2~12자</small></label>
+      <label class="field"><span>비밀번호</span><input id="pw" name="new-password" type="password" autocomplete="new-password" maxlength="50" required><small>6자 이상</small></label>
+      <label class="field"><span>비밀번호 확인</span><input id="pw2" type="password" autocomplete="new-password" maxlength="50" required></label>
+      <label class="field"><span>이메일 (선택)</span><input id="email" type="email" autocomplete="email"><small>비밀번호를 잊었을 때 본인 확인용으로만 쓰입니다.</small></label>
+      <div class="terms"><b>개인정보 수집·이용 안내</b><br>수집 항목: 아이디, 닉네임, 비밀번호(암호화 저장), 이메일(선택)<br>이용 목적: 회원 식별 및 댓글 작성 관리<br>보유 기간: 회원 탈퇴 요청 시까지. 탈퇴를 원하시면 연락처로 알려 주세요.<br>욕설·광고·허위 내용 댓글은 삭제될 수 있습니다.</div>
+      <label class="chk"><input type="checkbox" id="agree"> 위 내용에 동의합니다</label>
+      <div id="msg"></div>
+      <button class="btn green big" id="go" type="submit">가입하기</button>
+    </form>
+    <div class="linkrow">이미 회원이신가요? <a id="tologin" href="login.html">로그인</a></div>
+  </div>
+</div>
+<script src="assets/app.js"></script>
+<script>
+(async () => {
+  await layout('signup');
+  const nextUrl = () => { const n = new URLSearchParams(location.search).get('next') || ''; return /^[\w.\-]+\.html(\?[\w=&%\-]*)?$/.test(n) ? n : ''; };
+  if (nextUrl()) $('#tologin').href = 'login.html?next=' + encodeURIComponent(nextUrl());
+  if (Auth.get()) { location.replace(nextUrl() || 'index.html'); return; }
+  if (!CONFIG.API_URL) $('#notice').innerHTML = '<div class="msg warn">서버 연결이 아직 설정되지 않았습니다.</div>';
+  $('#f').onsubmit = async ev => {
+    ev.preventDefault();
+    const b = $('#go'), m = $('#msg'), err = t => { m.innerHTML = '<div class="msg err">' + esc(t) + '</div>'; };
+    m.innerHTML = '';
+    if ($('#pw').value !== $('#pw2').value) return err('비밀번호 확인이 일치하지 않습니다.');
+    if (!$('#agree').checked) return err('개인정보 수집·이용에 동의해 주세요.');
+    b.disabled = true; b.textContent = '가입 중...';
+    try {
+      const r = await api('signup', { id: $('#id').value.trim(), nick: $('#nick').value.trim(), pw: $('#pw').value, email: $('#email').value.trim(), agree: true });
+      Auth.set({ token: r.token, exp: r.exp, role: r.role, name: r.name || '' }, false);
+      location.href = nextUrl() || 'index.html';
+    } catch (e) { err(e.message); b.disabled = false; b.textContent = '가입하기'; }
+  };
+})();
+</script>
+</body>
+</html>

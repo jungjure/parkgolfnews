@@ -40,8 +40,37 @@
         <a class="btn green" target="_blank" rel="noopener" href="https://band.us/plugin/share?body=${encodeURIComponent(n.title + '\n' + location.href)}&route=${encodeURIComponent(location.href)}">밴드로 공유</a>
         <a class="btn green" href="news.html">목록</a>
       </div>
+      <section class="card comments" id="cm"><h3>댓글 <span id="ccount"></span></h3><div id="cbox"></div><div id="clist"><div class="loading">불러오는 중...</div></div></section>
       <div class="grid" style="margin-top:24px">${[next, prev].filter(Boolean).map(newsCard).join('')}</div>`;
+    loadComments(n.id);
   } catch (e) { showError($('#art'), e); }
+
+  async function loadComments(aid) {
+    const me = Auth.get(), here = location.pathname.split('/').pop() + location.search;
+    $('#cbox').innerHTML = me
+      ? '<div class="cform"><textarea id="ctext" maxlength="1000" placeholder="댓글을 입력하세요 (1000자 이내)"></textarea><div class="bar"><small>' + esc(me.name) + '님으로 작성</small><button class="btn green" id="csend">댓글 등록</button></div><div id="cmsg"></div></div>'
+      : '<div class="cneed">댓글은 회원만 쓸 수 있습니다.<br><a class="btn green" href="login.html?next=' + encodeURIComponent(here) + '">로그인</a><a class="btn green" href="signup.html?next=' + encodeURIComponent(here) + '">회원가입</a></div>';
+    const draw = async () => {
+      try {
+        const r = await api('comments', { aid });
+        $('#ccount').textContent = r.items.length ? '(' + r.items.length + ')' : '';
+        $('#clist').innerHTML = r.items.length ? r.items.map(c => '<div class="citem"><div class="ch"><b>' + esc(c.nick) + '</b><span>' + esc(c.at) + '</span>' + (c.mine ? '<button data-id="' + esc(c.id) + '">삭제</button>' : '') + '</div><div class="ct">' + esc(c.text) + '</div></div>').join('') : '<div class="empty" style="padding:18px">첫 댓글을 남겨 보세요.</div>';
+      } catch (e) { $('#clist').innerHTML = '<div class="empty" style="padding:18px">댓글을 불러오지 못했습니다.<br><small>' + esc(e.message) + '</small></div>'; }
+    };
+    await draw();
+    $('#clist').onclick = async e => {
+      const b = e.target.closest('button[data-id]'); if (!b || !confirm('이 댓글을 삭제할까요?')) return;
+      try { await api('cdelete', { cid: b.dataset.id }); draw(); } catch (err) { alert(err.message); }
+    };
+    const send = $('#csend'); if (!send) return;
+    send.onclick = async () => {
+      const t = $('#ctext').value.trim(), m = $('#cmsg'); if (!t) { m.innerHTML = '<div class="msg err">댓글 내용을 입력해 주세요.</div>'; return; }
+      send.disabled = true; send.textContent = '등록 중...'; m.innerHTML = '';
+      try { await api('cpost', { aid, text: t }); $('#ctext').value = ''; await draw(); }
+      catch (err) { m.innerHTML = '<div class="msg err">' + esc(err.message) + '</div>'; if (!Auth.get()) setTimeout(() => location.reload(), 1500); }
+      send.disabled = false; send.textContent = '댓글 등록';
+    };
+  }
 })();
 </script>
 </body>

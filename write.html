@@ -61,7 +61,7 @@
 (async () => {
   const S = await layout('write');
   $('#side').innerHTML = sideBox(S);
-  if (!Auth.get()) { location.replace('login.html'); return; }
+  const au = Auth.get(); if (!au) { location.replace('login.html?next=write.html'); return; } if (au.role !== 'admin') { location.replace('index.html'); return; }
   const MAX = 50000; let mode = 'text', editRow = 0;
   const v = id => $('#' + id).value;
   const bodyVal = () => mode === 'html' ? v('bodyHtml') : v('bodyText');
