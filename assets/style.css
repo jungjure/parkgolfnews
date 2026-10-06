@@ -234,4 +234,4 @@ header.site .wrap,.topbar .wrap{max-width:905px}
 /* 모든 메뉴 페이지 본문 너비: 오늘일정(869px)과 동일 */
 .wrap>main,.wrap>main.article{width:100%;max-width:869px!important;margin-left:auto!important;margin-right:auto!important}
 
-.tag.시범운영{background:#e0f2fe;color:#0369a1}
+.tag.시범운영{background:#ccfbf1;color:#0f766e}
