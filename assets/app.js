@@ -266,7 +266,7 @@ function newsCard(n) {
   const img = n.images[0];
   return `<a class="card news-card" href="article.html?id=${n.id}">
     <div class="thumb ${img ? '' : 'ph'}" ${img ? `style="background-image:url('${esc(img)}')"` : ''}>${img ? '' : '<img src="assets/logo.png" alt="">'}</div>
-    <div class="body"><span><span class="tag">${esc(n.cat)}</span></span><h3>${esc(n.title)}</h3><p>${esc(n.summary)}</p><div class="meta">${fmtDate(n.date)}</div></div></a>`;
+    <div class="body"><span><span class="tag">${esc(n.cat)}</span></span><h3>${esc(n.title)}</h3><p>${esc(n.summary)}</p><div class="meta">${fmtDate(n.date)}</div><div class="rx" data-id="${esc(n.id)}"></div></div></a>`;
 }
 
 function eventRow(e, opts = {}) {
@@ -385,3 +385,55 @@ function pwEye(...sels) {
     w.appendChild(b);
   });
 }
+
+
+/* ---------- 뉴스 반응 (최고예요·좋아요·싫어요) ---------- */
+const RX_DEF = [['best', '\u{1F60D}', '최고예요'], ['like', '\u{1F44D}', '좋아요'], ['dislike', '\u{1F44E}', '싫어요']];
+const RX = { counts: {}, mine: {}, loaded: false, p: null };
+(function () {
+  const st = document.createElement('style');
+  st.textContent = '.rx{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}' +
+    '.rx button{font:inherit;font-size:.85rem;background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;color:var(--ink);line-height:1.4}' +
+    '.rx button .e{font-size:1.15rem}.rx button .t{display:none}' +
+    '.rx button:hover{border-color:var(--g600);background:var(--g50)}' +
+    '.rx button.on{background:var(--g100);border-color:var(--g700);font-weight:800;color:var(--g900)}' +
+    '.rx button:disabled{opacity:.6;cursor:wait}' +
+    '.rx.big{gap:10px;margin:10px 0 4px;justify-content:center}' +
+    '.rx.big button{font-size:1rem;padding:8px 16px}.rx.big button .e{font-size:1.7rem}.rx.big button .t{display:inline}' +
+    '.rxhead{text-align:center;font-weight:800;margin:24px 0 0;color:var(--g900)}';
+  document.head.appendChild(st);
+})();
+function rxHtml(id) {
+  const c = RX.counts[id] || {}, m = RX.mine[id];
+  return RX_DEF.map(([k, e, t]) => '<button type="button" data-k="' + k + '" class="' + (m === k ? 'on' : '') + '" title="' + t + '" aria-label="' + t + '" aria-pressed="' + (m === k) + '"><span class="e">' + e + '</span><span class="t">' + t + '</span> <b>' + (c[k] || 0) + '</b></button>').join('');
+}
+function rxPaint(id) {
+  document.querySelectorAll('.rx[data-id]').forEach(el => { if (!id || el.dataset.id === id) { el.dataset.ok = 1; el.innerHTML = rxHtml(el.dataset.id); } });
+}
+function rxLoad() {
+  if (!RX.p) RX.p = api('rlist').then(r => { RX.counts = r.counts || {}; RX.mine = r.mine || {}; }).catch(() => {}).then(() => { RX.loaded = true; });
+  return RX.p;
+}
+let _rxT;
+function rxScan() {
+  const els = [...document.querySelectorAll('.rx[data-id]:not([data-ok])')];
+  if (!els.length) return;
+  rxLoad().then(() => els.forEach(el => { el.dataset.ok = 1; el.innerHTML = rxHtml(el.dataset.id); }));
+}
+new MutationObserver(() => { clearTimeout(_rxT); _rxT = setTimeout(rxScan, 40); }).observe(document.documentElement, { childList: true, subtree: true });
+document.addEventListener('click', async e => {
+  const b = e.target.closest('.rx button[data-k]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const box = b.closest('.rx'), id = box.dataset.id;
+  if (!Auth.get()) {
+    if (confirm('반응을 남기려면 로그인이 필요합니다.\n로그인 화면으로 이동할까요?')) location.href = 'login.html?next=' + encodeURIComponent(location.pathname.split('/').pop() + location.search);
+    return;
+  }
+  const all = box.querySelectorAll('button'); all.forEach(x => x.disabled = true);
+  try {
+    const r = await api('react', { aid: id, kind: b.dataset.k });
+    RX.counts[id] = (r.counts && r.counts[id]) || { best: 0, like: 0, dislike: 0 };
+    if (r.mine && r.mine[id]) RX.mine[id] = r.mine[id]; else delete RX.mine[id];
+    rxPaint(id);
+  } catch (err) { alert(err.message); all.forEach(x => x.disabled = false); }
+}, true);
