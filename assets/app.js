@@ -307,7 +307,7 @@ document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target
 
 function eventRow(e, opts = {}) {
   const same = ymd(e.start) === ymd(e.end);
-  let dateTxt = same ? fmtShort(e.start) : `${fmtShort(e.start)}<small>~ ${fmtShort(e.end)}</small>`;
+  let dateTxt = same ? fmtShort(e.start) : `~ ${fmtShort(e.end)}`;
   const t = today0();
   /* 접수는 마감일만(~ 10/8(목)), 대회·연습라운딩은 날짜 칸을 비워 둠 (시범운영은 그대로) */
   let blank = false;
