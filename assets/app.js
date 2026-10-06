@@ -269,12 +269,14 @@ function newsCard(n) {
     <div class="body"><span><span class="tag">${esc(n.cat)}</span></span><h3>${esc(n.title)}</h3><p>${esc(n.summary)}</p><div class="meta">${fmtDate(n.date)}</div><div class="rx" data-id="${esc(n.id)}"></div></div></a>`;
 }
 
+/* 제목·비고·장소에 시범운영(시범 운영) 문구가 있으면 시범운영 일정 */
+function isTrial(e) { return new RegExp('시범\\s*운영').test([e.name, e.note, e.place].join(' ')); }
 function eventRow(e, opts = {}) {
   const same = ymd(e.start) === ymd(e.end);
   const dateTxt = same ? fmtShort(e.start) : `${fmtShort(e.start)}<small>~ ${fmtShort(e.end)}</small>`;
   const t = today0();
   const dl = e.type === '접수' && ymd(e.end) >= ymd(t) && (e.end - t) / 864e5 <= 3;
-  const trial = /시범\s*운영/.test([e.name, e.note, e.place].join(' '));   // 제목·비고에 시범운영 문구가 있으면 태그 표시
+  const trial = isTrial(e);
   return `<div class="ev ${dl ? 'deadline' : ''}">
     <div class="date">${dateTxt}</div>
     <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;gap:10px"><h4 style="flex:1;min-width:0"${opts.max && e.name.length > opts.max ? ` title="${esc(e.name)}"` : ''}>${esc(opts.max && e.name.length > opts.max ? e.name.slice(0, opts.max) + '...' : e.name)}</h4><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap">${trial ? '<span class="tag 시범운영">시범운영</span>' : `<span class="tag ${esc(e.type)}">${esc(e.type)}</span>${dl ? '<span class="tag 접수">마감임박</span>' : ''}`}</div></div><div class="sub">${[e.region, e.place, e.note].filter(Boolean).map(esc).join(' · ')}</div>
