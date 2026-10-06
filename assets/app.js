@@ -468,14 +468,14 @@ setTimeout(rqCheck, 1500);
 
 /* ---------- 일정 카드 행 높이: 화면에 있는 가장 높은 행에 모두 맞춤 ---------- */
 (function () {
-  const st = document.createElement('style'); st.textContent = '.ev.eq{align-items:center}'; document.head.appendChild(st);
+  const st = document.createElement('style'); st.textContent = '.ev,.ev.eq{padding:4mm 14px;align-items:center}';   /* 행 위아래 여백 4mm, 높이는 내용에 맞춤 */ document.head.appendChild(st);
   let T;
   function eqRows() {
     const rows = [...document.querySelectorAll('.ev')].filter(r => !r.closest('.mylist'));
     if (!rows.length) return;
     rows.forEach(r => { r.style.minHeight = ''; r.classList.add('eq'); });
     let m = 0; rows.forEach(r => { m = Math.max(m, r.getBoundingClientRect().height); });
-    rows.forEach(r => { r.style.minHeight = Math.ceil(m) + 'px'; });
+    rows.forEach(r => { r.style.minHeight = ''; });
   }
   const later = ms => { clearTimeout(T); T = setTimeout(eqRows, ms); };
   new MutationObserver(() => later(60)).observe(document.documentElement, { childList: true, subtree: true });
