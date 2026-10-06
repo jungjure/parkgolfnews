@@ -28,7 +28,7 @@
   const t = today0(); let y = t.getFullYear(), m = t.getMonth();
   const draw = () => {
     $('#ml').textContent = `${y}년 ${m + 1}월`;
-    const first = new Date(y, m, 1), last = new Date(y, m + 1, 0);
+    const first = (y === t.getFullYear() && m === t.getMonth()) ? new Date(t) : new Date(y, m, 1), last = new Date(y, m + 1, 0);   /* 이번 달은 지나간 날을 빼고 오늘부터 보여줌 */
     const f = all.filter(e => e.end >= first && e.start <= last && (type === '전체' || e.type === type) && (!q || (e.name + e.region + e.place).includes(q)));
     if (!f.length) { $('#list').innerHTML = '<div class="empty">이 달에 등록된 일정이 없습니다.</div>'; return; }
     /* 시작일 기준으로 묶기 (이번 달 이전에 시작한 일정은 1일로) */
