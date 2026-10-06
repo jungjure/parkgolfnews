@@ -273,12 +273,15 @@ function newsCard(n) {
 function isTrial(e) { return new RegExp('시범\\s*운영').test([e.name, e.note, e.place].join(' ')); }
 function eventRow(e, opts = {}) {
   const same = ymd(e.start) === ymd(e.end);
-  const dateTxt = same ? fmtShort(e.start) : `${fmtShort(e.start)}<small>~ ${fmtShort(e.end)}</small>`;
+  let dateTxt = same ? fmtShort(e.start) : `${fmtShort(e.start)}<small>~ ${fmtShort(e.end)}</small>`;
   const t = today0();
+  /* 접수는 마감일만(~ 10/8(목)), 대회·연습라운딩은 날짜 칸을 비워 둠 (시범운영은 그대로) */
+  let blank = false;
+  if (!isTrial(e)) { if (e.type === '접수' && !same) dateTxt = `~ ${fmtShort(e.end)}`; else if (e.type === '대회' || e.type === '연습라운딩') blank = true; }
   const dl = e.type === '접수' && ymd(e.end) >= ymd(t) && (e.end - t) / 864e5 <= 3;
   const trial = isTrial(e);
   return `<div class="ev ${dl ? 'deadline' : ''}">
-    <div class="date">${dateTxt}</div>
+    <div class="date"${blank ? ' style="visibility:hidden"' : ''}>${blank ? '&nbsp;' : dateTxt}</div>
     <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;gap:10px"><h4 style="flex:1;min-width:0"${opts.max && e.name.length > opts.max ? ` title="${esc(e.name)}"` : ''}>${esc(opts.max && e.name.length > opts.max ? e.name.slice(0, opts.max) + '...' : e.name)}</h4><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap">${trial ? '<span class="tag 시범운영">시범운영</span>' : `<span class="tag ${esc(e.type)}">${esc(e.type)}</span>${dl ? '<span class="tag 접수">마감임박</span>' : ''}`}</div></div><div class="sub">${[e.region, e.place, e.note].filter(Boolean).map(esc).join(' · ')}</div>
     ${e.link ? `<a class="go" href="${esc(e.link)}" target="_blank" rel="noopener">자세히 보기 &rarr;</a>` : ''}</div></div>`;
 }
