@@ -170,7 +170,7 @@ async function getSchedule() {
     .map(r => {
       const s = parseDate(r['시작일']); if (!s) return null;
       const e = parseDate(r['종료일']) || s;
-      return { start: s, end: e < s ? s : e, type: r['구분'] || '대회', name: r['대회명'].replace(/^[\s\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]+/u, ''), region: r['지역'] || '', place: r['장소'] || '', link: (r['링크'] || '').replace(/[)\]\.,;]+$/, ''), note: r['비고'] || '' };
+      return { start: s, end: e < s ? s : e, type: r['구분'] || '대회', name: r['대회명'].replace(/^[\s\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]+/u, ''), region: r['지역'] || '', place: r['장소'] || '', link: (r['링크'] || '').replace(/[)\]\.,;]+$/, ''), note: r['비고'] || '', detail: r['상세'] || '' };
     })
     .filter(Boolean)
     .filter(e => { const k = ymd(e.start) + '|' + ymd(e.end) + '|' + e.type + '|' + e.name; if (seen.has(k)) return false; seen.add(k); return true; })
@@ -278,6 +278,33 @@ function siteName(u) {
   const M = { 'martincarat.com': '마틴캐럿', 'kpga7330.com': '대한파크골프협회', 'park-ro.com': '파크로', 'vcparkgolf.com': '보이스파크', 'parkmoa.kr': '파크모아', 'xn--bb0bp9it32a1kcc8ci3c.com': '파크골프대회.com' };
   return M[h] || h;
 }
+/* 일정 제목 클릭 -> 상세내용 */
+const EV_REG = [];
+function evReg(e) { EV_REG.push(e); return EV_REG.length - 1; }
+function showEv(i) {
+  const e = EV_REG[i]; if (!e) return;
+  if (!document.getElementById('evd-css')) {
+    const st = document.createElement('style'); st.id = 'evd-css';
+    st.textContent = '#evd{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}.evd-box{background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:85vh;overflow:auto;padding:24px 26px;position:relative;font-size:1.05rem}.evd-box h3{font-size:1.25rem;line-height:1.4;margin:0 36px 14px 0}.evd-x{position:absolute;top:10px;right:14px;border:0;background:none;font-size:2rem;cursor:pointer;line-height:1}.evd-box dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0 0 12px}.evd-box dt{font-weight:700;color:#555}.evd-box dd{margin:0}.evd-link{font-weight:700;margin-bottom:12px}.evd-link a{color:var(--g700)}.evd-body{white-space:pre-wrap;line-height:1.6;border-top:1px solid #e5e5e5;padding-top:12px}.evd-body a{color:var(--g700);word-break:break-all}h4.evt{cursor:pointer}h4.evt:hover{text-decoration:underline}';
+    document.head.appendChild(st);
+  }
+  const same = ymd(e.start) === ymd(e.end);
+  const when = same ? fmtShort(e.start) : fmtShort(e.start) + ' ~ ' + fmtShort(e.end);
+  const rows = [['구분', e.type], ['기간', when], ['장소', [e.region, e.place].filter(Boolean).join(' · ')]].filter(r => r[1]);
+  const link = e.link && e.type === '접수' ? '<div class="evd-link">접수처 : <a href="' + esc(e.link) + '" target="_blank" rel="noopener">' + esc(siteName(e.link)) + '</a></div>' : '';
+  const body = e.detail ? esc(e.detail).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>') : '등록된 상세 내용이 없습니다.';
+  const old = document.getElementById('evd'); if (old) old.remove();
+  const el = document.createElement('div'); el.id = 'evd';
+  el.innerHTML = '<div class="evd-box" role="dialog" aria-modal="true"><button class="evd-x" aria-label="닫기">&times;</button><h3>' + esc(e.name) + '</h3><dl>' + rows.map(r => '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>').join('') + '</dl>' + link + '<div class="evd-body">' + body + '</div></div>';
+  document.body.appendChild(el);
+  const onKey = ev => { if (ev.key === 'Escape') close(); };
+  const close = () => { el.remove(); document.removeEventListener('keydown', onKey); };
+  el.addEventListener('click', ev => { if (ev.target === el || ev.target.closest('.evd-x')) close(); });
+  document.addEventListener('keydown', onKey);
+}
+document.addEventListener('click', ev => { const h = ev.target.closest && ev.target.closest('h4.evt'); if (h) showEv(+h.dataset.ev); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.classList && ev.target.classList.contains('evt')) showEv(+ev.target.dataset.ev); });
+
 function eventRow(e, opts = {}) {
   const same = ymd(e.start) === ymd(e.end);
   let dateTxt = same ? fmtShort(e.start) : `${fmtShort(e.start)}<small>~ ${fmtShort(e.end)}</small>`;
@@ -289,7 +316,7 @@ function eventRow(e, opts = {}) {
   const trial = isTrial(e);
   return `<div class="ev ${dl ? 'deadline' : ''}">
     <div class="date"${blank ? ' style="visibility:hidden"' : ''}>${blank ? '&nbsp;' : dateTxt}</div>
-    <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;gap:10px"><h4 style="flex:1;min-width:0"${opts.max && e.name.length > opts.max ? ` title="${esc(e.name)}"` : ''}>${esc(opts.max && e.name.length > opts.max ? e.name.slice(0, opts.max) + '...' : e.name)}</h4><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap">${trial ? '<span class="tag 시범운영">시범운영</span>' : `<span class="tag ${esc(e.type)}">${esc(e.type)}</span>${dl ? '<span class="tag 접수">마감임박</span>' : (e.type === '접수' && /접수마감/.test(e.name) ? '<span class="tag 접수">마감</span>' : '')}`}</div></div><div class="sub">${[e.region, e.place, e.note].filter(Boolean).map(esc).join(' · ')}</div>
+    <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;gap:10px"><h4 class="evt" tabindex="0" role="button" data-ev="${evReg(e)}" style="flex:1;min-width:0"${opts.max && e.name.length > opts.max ? ` title="${esc(e.name)}"` : ''}>${esc(opts.max && e.name.length > opts.max ? e.name.slice(0, opts.max) + '...' : e.name)}</h4><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap">${trial ? '<span class="tag 시범운영">시범운영</span>' : `<span class="tag ${esc(e.type)}">${esc(e.type)}</span>${dl ? '<span class="tag 접수">마감임박</span>' : (e.type === '접수' && /접수마감/.test(e.name) ? '<span class="tag 접수">마감</span>' : '')}`}</div></div><div class="sub">${[e.region, e.place, e.note].filter(Boolean).map(esc).join(' · ')}</div>
     ${e.link && e.type === '접수' && !trial ? `<div style="font-size:.85rem;font-weight:700;color:#111">접수처 : <a class="go" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(siteName(e.link))}</a></div>` : ''}</div></div>`;
 }
 
