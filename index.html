@@ -13,47 +13,50 @@
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-<section class="hero"><div class="wrap">
-  <h1>오늘의 파크골프 소식</h1>
-  <p>전국 대회 일정, 접수 마감, 협회 소식을 매일 전해드립니다.</p>
-  <div class="cta"><a class="btn solid" href="today.html">오늘일정 보기</a><a class="btn" href="schedule.html">대회일정</a><a class="btn" href="news.html">전체 뉴스</a></div>
-</div></section>
-
 <div class="wrap cols">
-  <main>
-    <section class="block"><h2 class="sec">오늘의 일정 <a class="more" href="today.html">오늘일정 더보기 &rarr;</a></h2>
-      <div class="card" id="today"><div class="loading">불러오는 중...</div></div></section>
-    <section class="block"><h2 class="sec">접수 마감 임박 <a class="more" href="schedule.html?type=접수">접수 일정 &rarr;</a></h2>
-      <div class="card" id="deadline"><div class="loading">불러오는 중...</div></div></section>
-    <section class="block"><h2 class="sec">최신 뉴스 <a class="more" href="news.html">더보기 &rarr;</a></h2>
-      <div id="news"><div class="loading">불러오는 중...</div></div></section>
+  <main style="width:100%;max-width:869px;margin:0 auto">
+    <h2 class="sec">오늘일정</h2>
+    <div class="daynav"><button id="prev">&lsaquo; 전날</button><span class="dl" id="dl"></span><button id="now" class="on">오늘</button><button id="next">다음날 &rsaquo;</button></div>
+    <div class="sumline" id="sum"></div>
+    <div class="card" id="list"><div class="loading">불러오는 중...</div></div>
+    <section class="block" style="margin-top:34px"><h2 class="sec">접수 마감 임박 <a class="more" href="schedule.html?type=접수">접수 일정 &rarr;</a></h2>
+      <div class="card" id="deadline"></div></section>
+    <section class="block"><h2 class="sec">앞으로 7일 일정 <a class="more" href="schedule.html">전체 일정 &rarr;</a></h2>
+      <div class="card" id="week"></div></section>
   </main>
   <div id="side"></div>
 </div>
-
-<script src="assets/app.js?v=20261006a"></script>
+<script src="assets/app.js?v=20261004g"></script>
 <script>
 (async () => {
-  const S = await layout('home');
+  const S = await layout('today');
   $('#side').innerHTML = sideBox(S);
-  const t = today0(), tn = ymd(t);
+  const t = today0(); let cur = new Date(t), all = [];
+  const order = { '대회': 0, '접수': 1, '연습라운딩': 2 };
+  const on = (e, d) => ymd(e.start) <= ymd(d) && ymd(e.end) >= ymd(d);
+  const draw = () => {
+    const k = ymd(cur), diff = Math.round((cur - t) / 864e5);
+    $('#dl').textContent = cur.getFullYear() + '년 ' + (cur.getMonth() + 1) + '월 ' + cur.getDate() + '일 (' + WD[cur.getDay()] + ')' + (diff === 0 ? ' · 오늘' : diff === 1 ? ' · 내일' : diff === -1 ? ' · 어제' : '');
+    $('#now').classList.toggle('on', diff === 0);
+    const td = all.filter(e => on(e, cur)).sort((a, b) => (order[a.type] ?? 9) - (order[b.type] ?? 9) || a.start - b.start);
+    const cnt = {}; td.forEach(e => cnt[e.type] = (cnt[e.type] || 0) + 1);
+    $('#sum').innerHTML = td.length ? Object.entries(cnt).map(([k, v]) => '<span class="tag ' + esc(k) + '">' + esc(k) + ' ' + v + '건</span>').join('') : '';
+    $('#list').innerHTML = td.length ? td.map(e => eventRow(e)).join('') : '<div class="empty">이 날 등록된 일정이 없습니다.</div>';
+  };
   try {
-    const sc = await getSchedule();
-    const order = { '대회': 0, '접수': 1, '연습라운딩': 2 };
-    const td = sc.filter(e => ymd(e.start) <= tn && ymd(e.end) >= tn).sort((a, b) => (order[a.type] ?? 9) - (order[b.type] ?? 9) || a.start - b.start);
-    $('#today').innerHTML = td.length ? td.map(e => eventRow(e)).join('') : '<div class="empty">오늘 등록된 일정이 없습니다.</div>';
-    const dl = sc.filter(e => e.type === '접수' && ymd(e.end) >= tn && (e.end - t) / 864e5 <= 7).sort((a, b) => a.end - b.end);
+    all = await getSchedule();
+    draw();
+    $('#prev').onclick = () => { cur.setDate(cur.getDate() - 1); draw(); };
+    $('#next').onclick = () => { cur.setDate(cur.getDate() + 1); draw(); };
+    $('#now').onclick = () => { cur = new Date(t); draw(); };
+    const tn = ymd(t);
+    const dl = all.filter(e => e.type === '접수' && ymd(e.end) >= tn && (e.end - t) / 864e5 <= 7).sort((a, b) => a.end - b.end);
     $('#deadline').innerHTML = dl.length ? dl.map(e => eventRow(e)).join('') : '<div class="empty">7일 안에 마감되는 접수가 없습니다.</div>';
-  } catch (e) { showError($('#today'), e); $('#deadline').innerHTML = ''; }
-  try {
-    const nw = await getNews();
-    if (!nw.length) { $('#news').innerHTML = '<div class="empty">등록된 뉴스가 없습니다.</div>'; return; }
-    const f = nw[0], fi = f.images[0];
-    $('#news').innerHTML = `<a class="card featured" href="article.html?id=${f.id}">
-      <div class="thumb ${fi ? '' : 'ph'}" style="${fi ? `background-image:url('${esc(fi)}');` : 'display:flex;align-items:center;justify-content:center;'}">${fi ? '' : '<img src="assets/logo.png" alt="" style="width:90px;opacity:.5">'}</div>
-      <div class="body"><span><span class="tag">${esc(f.cat)}</span></span><h3>${esc(f.title)}</h3><p>${esc(f.summary)}</p><div class="meta" style="color:var(--muted);font-size:.85rem">${fmtDate(f.date)}</div></div></a>
-      <div class="grid">${nw.slice(1, 7).map(newsCard).join('')}</div>`;
-  } catch (e) { showError($('#news'), e); }
+    const end = new Date(t); end.setDate(end.getDate() + 7);
+    const wk = all.filter(e => e.start > t && e.start <= end).sort((a, b) => a.start - b.start);
+    const groups = new Map(); wk.forEach(e => { const k = ymd(e.start); if (!groups.has(k)) groups.set(k, { d: e.start, items: [] }); groups.get(k).items.push(e); });
+    $('#week').innerHTML = wk.length ? [...groups.values()].map(g => '<div class="dayhead">' + (g.d.getMonth() + 1) + '월 ' + g.d.getDate() + '일 (' + WD[g.d.getDay()] + ')</div>' + g.items.map(e => eventRow(e)).join('')).join('') : '<div class="empty">앞으로 7일 안에 시작하는 일정이 없습니다.</div>';
+  } catch (e) { showError($('#list'), e); }
 })();
 </script>
 </body>
