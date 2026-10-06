@@ -437,3 +437,25 @@ document.addEventListener('click', async e => {
     rxPaint(id);
   } catch (err) { alert(err.message); all.forEach(x => x.disabled = false); }
 }, true);
+
+
+/* ---------- 개선요청 답변 알림 (로그인한 회원에게 새 답변이 있으면 한 번만 띄움) ---------- */
+async function rqCheck() {
+  const me = Auth.get(); if (!me || me.role === 'admin') return;
+  if (/\/(login|signup|oauth|find)(\.html)?$/.test(location.pathname)) return;
+  const K = 'pgn_rqchk', tk = String(me.token || '').slice(-16);
+  if (sessionStorage.getItem(K) === tk) return;
+  sessionStorage.setItem(K, tk);
+  let r; try { r = await api('reqnotice'); } catch (e) { return; }
+  if (!r.items || !r.items.length || document.getElementById('pgn-rq')) return;
+  document.body.insertAdjacentHTML('beforeend', '<div id="pgn-rq" role="dialog" aria-modal="true" style="position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:18px"><div style="background:#fff;border-radius:14px;max-width:480px;width:100%;max-height:85vh;overflow:auto;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.3)">' +
+    '<h3 style="margin:0 0 6px;font-size:1.2rem;color:var(--g900)">개선요청에 답변이 도착했습니다</h3>' +
+    r.items.map(x => '<div style="border-top:1px solid var(--line);padding:12px 0"><b>[' + esc(x.cat) + '] ' + esc(x.title) + '</b> <span class="tag">' + esc(x.status) + '</span><div style="margin-top:6px;white-space:pre-wrap;word-break:break-word;line-height:1.6;background:var(--g50);border-radius:10px;padding:10px 12px"><b>운영자 답변</b> <small style="color:var(--muted)">' + esc(x.replyAt) + '</small><br>' + esc(x.reply) + '</div></div>').join('') +
+    '<div style="display:flex;gap:10px;margin-top:6px"><a class="btn green" style="flex:1;text-align:center" href="mypage.html#rq">마이페이지에서 보기</a><button type="button" class="btn" style="flex:1" id="pgn-rq-x">닫기</button></div>' +
+    '<p style="margin:12px 0 0;color:var(--muted);font-size:.85rem">이 안내는 한 번만 표시됩니다. 답변은 마이페이지 > 개선요청에서 다시 볼 수 있습니다.</p></div></div>');
+  document.body.style.overflow = 'hidden';
+  const close = () => { const m = document.getElementById('pgn-rq'); if (m) m.remove(); document.body.style.overflow = ''; };
+  document.getElementById('pgn-rq-x').onclick = close;
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+}
+setTimeout(rqCheck, 1500);
