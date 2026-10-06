@@ -277,7 +277,7 @@ function eventRow(e, opts = {}) {
   const trial = /시범\s*운영/.test([e.name, e.note, e.place].join(' '));   // 제목·비고에 시범운영 문구가 있으면 태그 표시
   return `<div class="ev ${dl ? 'deadline' : ''}">
     <div class="date">${dateTxt}</div>
-    <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;gap:10px"><h4 style="flex:1;min-width:0"${opts.max && e.name.length > opts.max ? ` title="${esc(e.name)}"` : ''}>${esc(opts.max && e.name.length > opts.max ? e.name.slice(0, opts.max) + '...' : e.name)}</h4><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap"><span class="tag ${esc(e.type)}">${esc(e.type)}</span>${dl ? '<span class="tag 접수">마감임박</span>' : ''}${trial ? '<span class="tag 시범운영">시범운영</span>' : ''}</div></div><div class="sub">${[e.region, e.place, e.note].filter(Boolean).map(esc).join(' · ')}</div>
+    <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;gap:10px"><h4 style="flex:1;min-width:0"${opts.max && e.name.length > opts.max ? ` title="${esc(e.name)}"` : ''}>${esc(opts.max && e.name.length > opts.max ? e.name.slice(0, opts.max) + '...' : e.name)}</h4><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap">${trial ? '<span class="tag 시범운영">시범운영</span>' : `<span class="tag ${esc(e.type)}">${esc(e.type)}</span>${dl ? '<span class="tag 접수">마감임박</span>' : ''}`}</div></div><div class="sub">${[e.region, e.place, e.note].filter(Boolean).map(esc).join(' · ')}</div>
     ${e.link ? `<a class="go" href="${esc(e.link)}" target="_blank" rel="noopener">자세히 보기 &rarr;</a>` : ''}</div></div>`;
 }
 
