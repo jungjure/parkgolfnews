@@ -258,14 +258,7 @@ function startPing() {
 }
 
 function sideBox(S) {
-  return `<aside>
-    <div class="card"><h3>파크골프뉴스 밴드</h3>
-      <div class="info">매일 아침 오늘의 대회 일정과 뉴스를 밴드에서 가장 먼저 받아보세요.</div>
-      <a class="sidebtn band" href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 가입하기</a>
-      <a class="sidebtn kakao" href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">카카오 오픈채팅방</a></div>
-    <div class="card"><h3>연락처</h3><div class="info">
-      <b>주소</b> ${esc(S.주소)}<br><b>전화</b> <a href="tel:${esc(S.전화.replace(/[^\d]/g, ''))}">${esc(S.전화)}</a><br><b>팩스</b> ${esc(S.팩스)}<br><b>담당</b> ${esc(S.담당)}</div></div>
-  </aside>`;
+  return '';
 }
 
 /* ---------- 조각 ---------- */
