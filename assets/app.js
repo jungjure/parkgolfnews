@@ -183,13 +183,13 @@ async function layout(active, opts) {
   const S = await getSettings();
   const me = Auth.get();
   const memberMode = me && me.role !== 'admin';   // 회원: 메뉴는 '자유게시판' 하나 (중복 방지)
-  const nav = [['today.html', '오늘일정', 'today'], ['schedule.html', '대회일정', 'schedule'], ['news.html', '뉴스', 'news'], ['board.html', '자유게시판', 'board'], ['about.html', '회사소개', 'about']];
+  const nav = [['today.html', '오늘일정', 'today'], ['schedule.html', '대회일정', 'schedule'], ['news.html', '뉴스', 'news'], ['board.html', '자유게시판', 'board']];
   const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a>` : '') + `<a href="mypage.html" class="who ${active === 'mypage' ? 'on' : ''}" title="마이페이지">${esc(me.name)}님</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   document.body.insertAdjacentHTML('afterbegin', `
     <div class="topbar"><div class="wrap"><span>${esc(S.슬로건)}</span>
     <span><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a> · <a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">오픈채팅방</a> · ${esc(S.전화)}</span></div></div>
     <header class="site"><div class="wrap">
-      <a class="brand" href="index.html"><img src="assets/logo.png" alt="">${esc(S.사이트명)}</a>
+      <span class="brand"><a href="index.html" title="홈" style="display:flex;align-items:center"><img src="assets/logo.png" alt="홈"></a><a href="about.html" title="회사소개">${esc(S.사이트명)}</a></span>
       <button class="menu-btn" aria-label="메뉴" onclick="document.querySelector('nav.main').classList.toggle('open')">메뉴</button>
       <nav class="main">${nav.map(n => `<a href="${n[0]}" class="${n[2] === active ? 'on' : ''}">${n[1]}</a>`).join('')}${authNav}</nav>
     </div></header>
