@@ -35,7 +35,7 @@
     const groups = new Map();
     f.forEach(e => { const d = e.start < first ? first : e.start; const k = ymd(d); if (!groups.has(k)) groups.set(k, { d, items: [] }); groups.get(k).items.push(e); });
     $('#list').innerHTML = [...groups.values()].sort((a, b) => a.d - b.d).map(g =>
-      `<div class="dayhead ${ymd(g.d) === ymd(t) ? 'today' : ''}">${g.d.getMonth() + 1}월 ${g.d.getDate()}일 (${WD[g.d.getDay()]})${ymd(g.d) === ymd(t) ? ' · 오늘' : ''}</div>` + g.items.map(e => eventRow(e, { max: 20 })).join('')).join('');
+      `<div class="dayhead ${ymd(g.d) === ymd(t) ? 'today' : ''}">${g.d.getMonth() + 1}월 ${g.d.getDate()}일 (${WD[g.d.getDay()]})${ymd(g.d) === ymd(t) ? ' · 오늘' : ''}</div>` + g.items.map(e => eventRow(e)).join('')).join('');
   };
   try {
     all = await getSchedule();
