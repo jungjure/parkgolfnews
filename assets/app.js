@@ -271,6 +271,13 @@ function newsCard(n) {
 
 /* 제목·비고·장소에 시범운영(시범 운영) 문구가 있으면 시범운영 일정 */
 function isTrial(e) { return new RegExp('시범\\s*운영').test([e.name, e.note, e.place].join(' ')); }
+/* 접수 링크 -> 사이트명 */
+function siteName(u) {
+  let h = '';
+  try { h = new URL(u).hostname.replace(/^www\./, '').toLowerCase(); } catch (x) { return u; }
+  const M = { 'martincarat.com': '마틴캐럿', 'kpga7330.com': '대한파크골프협회', 'park-ro.com': '파크로', 'vcparkgolf.com': '보이스파크', 'xn--bb0bp9it32a1kcc8ci3c.com': '파크골프대회.com' };
+  return M[h] || h;
+}
 function eventRow(e, opts = {}) {
   const same = ymd(e.start) === ymd(e.end);
   let dateTxt = same ? fmtShort(e.start) : `${fmtShort(e.start)}<small>~ ${fmtShort(e.end)}</small>`;
@@ -283,7 +290,7 @@ function eventRow(e, opts = {}) {
   return `<div class="ev ${dl ? 'deadline' : ''}">
     <div class="date"${blank ? ' style="visibility:hidden"' : ''}>${blank ? '&nbsp;' : dateTxt}</div>
     <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;gap:10px"><h4 style="flex:1;min-width:0"${opts.max && e.name.length > opts.max ? ` title="${esc(e.name)}"` : ''}>${esc(opts.max && e.name.length > opts.max ? e.name.slice(0, opts.max) + '...' : e.name)}</h4><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap">${trial ? '<span class="tag 시범운영">시범운영</span>' : `<span class="tag ${esc(e.type)}">${esc(e.type)}</span>${dl ? '<span class="tag 접수">마감임박</span>' : (e.type === '접수' && /접수마감/.test(e.name) ? '<span class="tag 접수">마감</span>' : '')}`}</div></div><div class="sub">${[e.region, e.place, e.note].filter(Boolean).map(esc).join(' · ')}</div>
-    ${e.link && e.type === '접수' && !trial ? `<a class="go" href="${esc(e.link)}" target="_blank" rel="noopener">접수 사이트 &rarr;</a>` : ''}</div></div>`;
+    ${e.link && e.type === '접수' && !trial ? `<a class="go" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(siteName(e.link))}</a>` : ''}</div></div>`;
 }
 
 function showError(el, e) {
