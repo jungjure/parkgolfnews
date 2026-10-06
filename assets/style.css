@@ -45,7 +45,7 @@ nav.main a:hover,nav.main a.on{background:var(--g700);color:#fff}
 .btn:hover{opacity:.9}
 
 /* layout */
-.cols{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:28px;margin:28px auto}
+.cols{display:grid;grid-template-columns:minmax(0,1fr);gap:28px;margin:28px auto}
 @media(max-width:960px){.cols{grid-template-columns:1fr}}
 h2.sec{font-size:1.35rem;margin:0 0 14px;padding-left:12px;border-left:6px solid var(--g700);display:flex;align-items:center;justify-content:space-between}
 h2.sec a.more{font-size:.85rem;font-weight:700;color:var(--g700)}
