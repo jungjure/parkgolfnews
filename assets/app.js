@@ -275,7 +275,7 @@ function isTrial(e) { return new RegExp('시범\\s*운영').test([e.name, e.note
 function siteName(u) {
   let h = '';
   try { h = new URL(u).hostname.replace(/^www\./, '').toLowerCase(); } catch (x) { return u; }
-  const M = { 'martincarat.com': '마틴캐럿', 'kpga7330.com': '대한파크골프협회', 'park-ro.com': '파크로', 'vcparkgolf.com': '보이스파크', 'xn--bb0bp9it32a1kcc8ci3c.com': '파크골프대회.com' };
+  const M = { 'martincarat.com': '마틴캐럿', 'kpga7330.com': '대한파크골프협회', 'park-ro.com': '파크로', 'vcparkgolf.com': '보이스파크', 'parkmoa.kr': '파크모아', 'xn--bb0bp9it32a1kcc8ci3c.com': '파크골프대회.com' };
   return M[h] || h;
 }
 function eventRow(e, opts = {}) {
