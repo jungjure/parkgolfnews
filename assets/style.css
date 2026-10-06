@@ -230,3 +230,6 @@ nav.main .who{align-self:center;padding:0 8px;font-weight:700;color:var(--g900);
 header.site .wrap,.topbar .wrap{max-width:905px}
 @media(min-width:761px){header.site .wrap{gap:6px}.brand{font-size:1.2rem;gap:6px}.brand img{width:46px;height:46px}nav.main a{padding:8px 7px;letter-spacing:-.03em;font-size:1rem}nav.main a.auth{padding:6px 11px;margin-left:3px}nav.main .who{padding:0 4px;font-size:.92rem;letter-spacing:-.03em}}
 @media(min-width:761px) and (max-width:960px){.brand{font-size:1.05rem}.brand img{width:38px;height:38px}nav.main a{padding:8px 4px;font-size:.88rem}nav.main a.auth{padding:5px 8px}nav.main .who{font-size:.82rem;padding:0 2px}}
+
+/* 모든 메뉴 페이지 본문 너비: 오늘일정(869px)과 동일 */
+.wrap>main,.wrap>main.article{width:100%;max-width:869px!important;margin-left:auto!important;margin-right:auto!important}
