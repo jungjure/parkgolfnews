@@ -60,12 +60,14 @@
       ${admin ? '' : '<button data-t="cats">관심 카테고리</button>'}
       <button data-t="cm">내 댓글 <small id="nCm"></small></button>
       <button data-t="wr">내가 쓴 글</button>
+      <button data-t="rx">반응한 글 <small id="nRx"></small></button>
       <button data-t="rq">개선요청 <small id="nRq"></small></button>
     </div>
     <section class="panel" id="p-info"><div class="loading">불러오는 중...</div></section>
     <section class="panel" id="p-cats"><div class="loading">불러오는 중...</div></section>
     <section class="panel" id="p-cm"><div class="card box"><div class="loading">불러오는 중...</div></div></section>
     <section class="panel" id="p-wr"><div class="card box"><div class="loading">불러오는 중...</div></div></section>
+    <section class="panel" id="p-rx"><div class="card box"><div class="loading">불러오는 중...</div></div></section>
     <section class="panel" id="p-rq"><div class="card box"><div class="loading">불러오는 중...</div></div></section>
   </main></div>`);
 
@@ -79,7 +81,7 @@
   const goBack = ms => setTimeout(() => { location.href = prevUrl || 'index.html'; }, ms || 1200);
   const say = (sel, t, k) => { $(sel).innerHTML = t ? '<div class="msg ' + (k || 'err') + '">' + esc(t) + '</div>' : ''; };
   const digits = s => String(s || '').replace(/[^0-9]/g, '');
-  const TABS = admin ? ['info', 'cm', 'wr', 'rq'] : ['info', 'cats', 'cm', 'wr', 'rq'];
+  const TABS = admin ? ['info', 'cm', 'wr', 'rx', 'rq'] : ['info', 'cats', 'cm', 'wr', 'rx', 'rq'];
   const show = t => {
     if (!TABS.includes(t)) t = 'info';
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
@@ -263,6 +265,21 @@
     };
     load();
   }
+
+  /* ---------- 반응한 글 (내가 이모지를 누른 기사) ---------- */
+  async function loadReactions() {
+    const box = $('#p-rx');
+    try {
+      const [r] = await Promise.all([api('rlist'), newsP]);
+      const lab = Object.fromEntries(RX_DEF.map(x => [x[0], x[1] + ' ' + x[2]]));
+      const items = news.filter(n => r.mine && r.mine[n.id]);
+      $('#nRx').textContent = items.length ? '(' + items.length + ')' : '';
+      box.innerHTML = '<div class="card box"><h3>반응한 글</h3><p class="sub">내가 이모지로 반응한 기사입니다. 제목을 누르면 기사로 이동합니다.</p><div class="wl">' + (items.length ? items.map(n => '<a href="article.html?id=' + esc(n.id) + '"><span class="tag">' + esc(lab[r.mine[n.id]]) + '</span><span>' + esc(n.title) + '</span><small>' + fmtDate(n.date) + '</small></a>').join('') : '<div class="empty" style="padding:18px">아직 반응한 글이 없습니다. 기사에서 이모지를 눌러 보세요.</div>') + '</div></div>';
+    } catch (e) {
+      if (!Auth.get()) { location.replace('login.html?next=mypage.html%23rx'); return; }
+      box.innerHTML = '<div class="card box"><div class="msg err">' + esc(e.message) + '</div></div>';
+    }
+  }
   /* ---------- 개선요청 (본인 것만: 서버가 로그인 아이디로 걸러서 보냄) ---------- */
   async function loadRequests() {
     const box = $('#p-rq');
@@ -281,7 +298,7 @@
   }
 
   const infoP = loadInfo();
-  loadComments(); loadWrites(); loadCats(); loadRequests();
+  loadComments(); loadWrites(); loadReactions(); loadCats(); loadRequests();
 })();
 </script>
 </body>
