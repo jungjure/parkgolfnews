@@ -290,7 +290,7 @@ function showEv(i) {
   }
   const same = ymd(e.start) === ymd(e.end);
   const when = same ? fmtShort(e.start) : fmtShort(e.start) + ' ~ ' + fmtShort(e.end);
-  const rows = [['구분', e.type], ['기간', when], ['장소', [e.region, e.place].filter(Boolean).join(' · ')]].filter(r => r[1]);
+  const rows = [['구분', isTrial(e) ? '시범운영' : e.type], ['기간', when], ['장소', [e.region, e.place].filter(Boolean).join(' · ')]].filter(r => r[1]);
   const link = e.link && e.type === '접수' ? '<div class="evd-link">접수처 : <a href="' + esc(e.link) + '" target="_blank" rel="noopener">' + esc(siteName(e.link)) + '</a></div>' : '';
   const body = e.detail ? esc(e.detail).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>') : '등록된 상세 내용이 없습니다.';
   const old = document.getElementById('evd'); if (old) old.remove();
@@ -302,6 +302,7 @@ function showEv(i) {
   el.addEventListener('click', ev => { if (ev.target === el || ev.target.closest('.evd-x')) close(); });
   document.addEventListener('keydown', onKey);
 }
+(function () { if (document.getElementById('evt-css')) return; const st = document.createElement('style'); st.id = 'evt-css'; st.textContent = 'h4.evt{cursor:pointer}h4.evt:hover,h4.evt:focus-visible{text-decoration:underline}'; document.head.appendChild(st); })();
 document.addEventListener('click', ev => { const h = ev.target.closest && ev.target.closest('h4.evt'); if (h) showEv(+h.dataset.ev); });
 document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.classList && ev.target.classList.contains('evt')) showEv(+ev.target.dataset.ev); });
 
