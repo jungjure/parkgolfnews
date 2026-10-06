@@ -37,7 +37,7 @@
     const td = all.filter(e => on(e, cur)).sort((a, b) => (order[a.type] ?? 9) - (order[b.type] ?? 9) || a.start - b.start);
     const cnt = {}; td.forEach(e => cnt[e.type] = (cnt[e.type] || 0) + 1);
     $('#sum').innerHTML = td.length ? Object.entries(cnt).map(([k, v]) => '<span class="tag ' + esc(k) + '">' + esc(k) + ' ' + v + '건</span>').join('') : '';
-    $('#list').innerHTML = td.length ? td.map(e => eventRow(e, { max: 20 })).join('') : '<div class="empty">이 날 등록된 일정이 없습니다.</div>';
+    $('#list').innerHTML = td.length ? td.map(e => eventRow(e)).join('') : '<div class="empty">이 날 등록된 일정이 없습니다.</div>';
   };
   try {
     all = await getSchedule();
@@ -47,11 +47,11 @@
     $('#now').onclick = () => { cur = new Date(t); draw(); };
     const tn = ymd(t);
     const dl = all.filter(e => e.type === '접수' && ymd(e.end) >= tn && (e.end - t) / 864e5 <= 7).sort((a, b) => a.end - b.end);
-    $('#deadline').innerHTML = dl.length ? dl.map(e => eventRow(e, { max: 20 })).join('') : '<div class="empty">7일 안에 마감되는 접수가 없습니다.</div>';
+    $('#deadline').innerHTML = dl.length ? dl.map(e => eventRow(e)).join('') : '<div class="empty">7일 안에 마감되는 접수가 없습니다.</div>';
     const end = new Date(t); end.setDate(end.getDate() + 7);
     const wk = all.filter(e => e.start > t && e.start <= end).sort((a, b) => a.start - b.start);
     const groups = new Map(); wk.forEach(e => { const k = ymd(e.start); if (!groups.has(k)) groups.set(k, { d: e.start, items: [] }); groups.get(k).items.push(e); });
-    $('#week').innerHTML = wk.length ? [...groups.values()].map(g => '<div class="dayhead">' + (g.d.getMonth() + 1) + '월 ' + g.d.getDate() + '일 (' + WD[g.d.getDay()] + ')</div>' + g.items.map(e => eventRow(e, { max: 20 })).join('')).join('') : '<div class="empty">앞으로 7일 안에 시작하는 일정이 없습니다.</div>';
+    $('#week').innerHTML = wk.length ? [...groups.values()].map(g => '<div class="dayhead">' + (g.d.getMonth() + 1) + '월 ' + g.d.getDate() + '일 (' + WD[g.d.getDay()] + ')</div>' + g.items.map(e => eventRow(e)).join('')).join('') : '<div class="empty">앞으로 7일 안에 시작하는 일정이 없습니다.</div>';
   } catch (e) { showError($('#list'), e); }
 })();
 </script>
