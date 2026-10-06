@@ -19,17 +19,18 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261004g"></script>
+<script src="assets/app.js?v=20261006a"></script>
 <script>
 (async () => {
   const S = await layout('schedule');
   $('#side').innerHTML = sideBox(S);
   let all = [], type = new URLSearchParams(location.search).get('type') || '전체', q = '';
   const t = today0(); let y = t.getFullYear(), m = t.getMonth();
+  const kind = e => isTrial(e) ? '시범운영' : e.type;
   const draw = () => {
     $('#ml').textContent = `${y}년 ${m + 1}월`;
     const first = (y === t.getFullYear() && m === t.getMonth()) ? new Date(t) : new Date(y, m, 1), last = new Date(y, m + 1, 0);   /* 이번 달은 지나간 날을 빼고 오늘부터 보여줌 */
-    const f = all.filter(e => e.end >= first && e.start <= last && (type === '전체' || e.type === type) && (!q || (e.name + e.region + e.place).includes(q)));
+    const f = all.filter(e => e.end >= first && e.start <= last && (type === '전체' || kind(e) === type) && (!q || (e.name + e.region + e.place).includes(q)));
     if (!f.length) { $('#list').innerHTML = '<div class="empty">이 달에 등록된 일정이 없습니다.</div>'; return; }
     /* 시작일 기준으로 묶기 (이번 달 이전에 시작한 일정은 1일로) */
     const groups = new Map();
@@ -39,7 +40,7 @@
   };
   try {
     all = await getSchedule();
-    const types = ['전체', ...new Set(all.map(e => e.type))];
+    const types = ['전체', ...new Set(all.map(kind))].sort((a, b) => (a === '시범운영') - (b === '시범운영'));   /* 시범운영은 맨 뒤 */
     if (!types.includes(type)) type = '전체';
     $('#chips').innerHTML = types.map(c => `<button class="chip ${c === type ? 'on' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('');
     $('#chips').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; type = b.dataset.c; document.querySelectorAll('#chips .chip').forEach(x => x.classList.toggle('on', x === b)); draw(); };
