@@ -303,6 +303,14 @@ function showEv(i) {
   document.addEventListener('keydown', onKey);
 }
 (function () { if (document.getElementById('evt-css')) return; const st = document.createElement('style'); st.id = 'evt-css'; st.textContent = 'h4.evt{cursor:pointer}h4.evt:hover,h4.evt:focus-visible{text-decoration:underline}'; document.head.appendChild(st); })();
+/* 접수처·상세 팝업 링크: 새 창으로 열고 바로 앞으로 가져오기 (막히면 현재 창에서 이동) */
+document.addEventListener('click', ev => {
+  const a = ev.target.closest && ev.target.closest('.ev a.go, .evd-link a, .evd-body a');
+  if (!a || ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
+  ev.preventDefault();
+  const w = window.open(a.href, '_blank');
+  if (w) { try { w.opener = null; w.focus(); } catch (x) {} } else { location.href = a.href; }
+});
 document.addEventListener('click', ev => { const h = ev.target.closest && ev.target.closest('h4.evt'); if (h) showEv(+h.dataset.ev); });
 document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.classList && ev.target.classList.contains('evt')) showEv(+ev.target.dataset.ev); });
 
