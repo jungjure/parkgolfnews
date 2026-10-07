@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>대회일정 - 파크골프뉴스</title>
 <meta name="description" content="전국 파크골프 대회 일정과 접수 기간, 연습라운딩 일정을 한눈에 확인하세요.">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261007a">
+<link rel="stylesheet" href="assets/style.css?v=20261007p">
 </head>
 <body>
 <div class="wrap cols">
@@ -19,7 +21,7 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261007f"></script>
+<script src="assets/app.js?v=20261007p"></script>
 <script>
 (async () => {
   const S = await layout('schedule');
@@ -38,17 +40,23 @@
     $('#list').innerHTML = [...groups.values()].sort((a, b) => a.d - b.d).map(g =>
       `<div class="dayhead ${ymd(g.d) === ymd(t) ? 'today' : ''}">${g.d.getMonth() + 1}월 ${g.d.getDate()}일 (${WD[g.d.getDay()]})${ymd(g.d) === ymd(t) ? ' · 오늘' : ''}</div>` + g.items.map(e => eventRow(e)).join('')).join('');
   };
-  try {
+  const build = async first => {
     all = await getSchedule();
     const types = ['전체', ...new Set(all.map(kind))].sort((a, b) => (a === '시범운영') - (b === '시범운영'));   /* 시범운영은 맨 뒤 */
     if (!types.includes(type)) type = '전체';
     $('#chips').innerHTML = types.map(c => `<button class="chip ${c === type ? 'on' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('');
+    if (first) {
     $('#chips').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; type = b.dataset.c; document.querySelectorAll('#chips .chip').forEach(x => x.classList.toggle('on', x === b)); draw(); };
     $('#prev').onclick = () => { m--; if (m < 0) { m = 11; y--; } draw(); };
     $('#next').onclick = () => { m++; if (m > 11) { m = 0; y++; } draw(); };
     $('#now').onclick = () => { y = t.getFullYear(); m = t.getMonth(); draw(); };
     $('#q').oninput = e => { q = e.target.value.trim(); draw(); };
+    }
     draw();
+  };
+  try {
+    await build(true);
+    addEventListener('pgn-data', () => { build(false).catch(() => {}); });
   } catch (e) { showError($('#list'), e); }
 })();
 </script>

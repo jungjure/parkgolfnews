@@ -6,8 +6,10 @@
 <title>로그인 - 파크골프뉴스</title>
 <meta name="description" content="파크골프뉴스 관리자 로그인">
 <meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261003b">
+<link rel="stylesheet" href="assets/style.css?v=20261007p">
 </head>
 <body>
 <div class="wrap">
@@ -27,7 +29,7 @@
     <div class="linkrow">아직 회원이 아니신가요? <a id="tosignup" href="signup.html">회원가입</a></div>
   </div>
 </div>
-<script src="assets/app.js?v=20261004g"></script>
+<script src="assets/app.js?v=20261007p"></script>
 <script>
 (async () => {
   await layout('login');
@@ -45,6 +47,7 @@
     try {
       const r = await api('login', { id: $('#id').value.trim(), pw: $('#pw').value });
       Auth.set({ token: r.token, exp: r.exp, role: r.role, name: r.name || '' }, $('#keep').checked);
+      b.textContent = '이동 중...';
       go(r.role);
     } catch (e) { m.innerHTML = '<div class="msg err">' + esc(e.message) + '</div>'; b.disabled = false; b.textContent = '로그인'; $('#pw').value = ''; }
   };

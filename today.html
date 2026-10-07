@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>오늘일정 - 파크골프뉴스</title>
 <meta name="description" content="오늘 열리는 전국 파크골프 대회, 접수 시작·마감, 연습라운딩 일정을 날짜별로 확인하세요.">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261007a">
+<link rel="stylesheet" href="assets/style.css?v=20261007p">
 
 </head>
 <body>
@@ -19,7 +21,7 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261007f"></script>
+<script src="assets/app.js?v=20261007p"></script>
 <script>
 (async () => {
   const S = await layout('today');
@@ -42,6 +44,7 @@
     $('#prev').onclick = () => { cur.setDate(cur.getDate() - 1); draw(); };
     $('#next').onclick = () => { cur.setDate(cur.getDate() + 1); draw(); };
     $('#now').onclick = () => { cur = new Date(t); draw(); };
+    addEventListener('pgn-data', async () => { try { all = await getSchedule(); draw(); } catch (e) {} });
   } catch (e) { showError($('#list'), e); }
 })();
 </script>

@@ -9,8 +9,10 @@
 <meta property="og:description" content="전국 파크골프 대회 일정, 접수 안내, 뉴스를 매일 전합니다.">
 <meta property="og:image" content="https://parkgolfnews.org/assets/logo.png">
 <meta property="og:type" content="website">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261007a">
+<link rel="stylesheet" href="assets/style.css?v=20261007p">
 <style>.ev .date{display:none}</style>
 </head>
 <body>
@@ -23,7 +25,7 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261007f"></script>
+<script src="assets/app.js?v=20261007p"></script>
 <script>
 (async () => {
   const S = await layout('today');
@@ -46,6 +48,7 @@
     $('#prev').onclick = () => { cur.setDate(cur.getDate() - 1); draw(); };
     $('#next').onclick = () => { cur.setDate(cur.getDate() + 1); draw(); };
     $('#now').onclick = () => { cur = new Date(t); draw(); };
+    addEventListener('pgn-data', async () => { try { all = await getSchedule(); draw(); } catch (e) {} });
   } catch (e) { showError($('#list'), e); }
 })();
 </script>
