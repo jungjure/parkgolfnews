@@ -17,7 +17,7 @@ img{max-width:100%;display:block}
 header.site{background:#fff;border-bottom:3px solid var(--g700);position:sticky;top:0;z-index:20}
 header.site .wrap{display:flex;align-items:center;gap:18px;min-height:68px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.3rem;color:var(--g900)}
-.brand img{width:52px;height:52px;object-fit:contain}
+.brand img{width:104px;height:104px;object-fit:contain}
 nav.main{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
 nav.main a{padding:8px 14px;border-radius:999px;font-weight:700;color:var(--g900)}
 nav.main a:hover,nav.main a.on{background:var(--g700);color:#fff}
@@ -228,8 +228,8 @@ nav.main .who{align-self:center;padding:0 8px;font-weight:700;color:var(--g900);
 
 /* 상단 메뉴 너비: 오늘일정 페이지(869px)에 맞춤 */
 header.site .wrap,.topbar .wrap,footer.site .wrap{max-width:905px}
-@media(min-width:761px){header.site .wrap{gap:6px}.brand{font-size:1.2rem;gap:6px}.brand img{width:46px;height:46px}nav.main a{padding:8px 7px;letter-spacing:-.03em;font-size:1rem}nav.main a.auth{padding:6px 11px;margin-left:3px}nav.main .who{padding:0 4px;font-size:.92rem;letter-spacing:-.03em}}
-@media(min-width:761px) and (max-width:960px){.brand{font-size:1.05rem}.brand img{width:38px;height:38px}nav.main a{padding:8px 4px;font-size:.88rem}nav.main a.auth{padding:5px 8px}nav.main .who{font-size:.82rem;padding:0 2px}}
+@media(min-width:761px){header.site .wrap{gap:6px}.brand{font-size:1.2rem;gap:6px}.brand img{width:92px;height:92px}nav.main a{padding:8px 7px;letter-spacing:-.03em;font-size:1rem}nav.main a.auth{padding:6px 11px;margin-left:3px}nav.main .who{padding:0 4px;font-size:.92rem;letter-spacing:-.03em}}
+@media(min-width:761px) and (max-width:960px){.brand{font-size:1.05rem}.brand img{width:76px;height:76px}nav.main a{padding:8px 4px;font-size:.88rem}nav.main a.auth{padding:5px 8px}nav.main .who{font-size:.82rem;padding:0 2px}}
 
 /* 모든 메뉴 페이지 본문 너비: 오늘일정(869px)과 동일 */
 .wrap>main,.wrap>main.article{width:100%;max-width:869px!important;margin-left:auto!important;margin-right:auto!important}
