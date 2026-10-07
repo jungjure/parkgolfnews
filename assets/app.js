@@ -39,23 +39,95 @@ function parseCSV(text) {
   return rows;
 }
 
-async function loadTab(name) {
-  const key = 'pgn_' + name;
-  try {
-    const c = JSON.parse(sessionStorage.getItem(key) || 'null');
-    if (c && Date.now() - c.t < CONFIG.CACHE_MIN * 60000) return c.d;
-  } catch (e) {}
-  const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('시트를 불러오지 못했습니다 (' + res.status + ')');
-  const rows = parseCSV(await res.text());
+/* ---------- 데이터 읽기 ----------
+   서버(feed) 우선 + 구글시트 보조(6초 넘게 걸리거나 실패하면 동시에 시작).
+   기기에 저장된 사본을 먼저 보여 주고, 뒤에서 새로 받아 바뀐 게 있으면 'pgn-data' 이벤트로 화면을 다시 그립니다. */
+const TAB_NAMES = [CONFIG.TABS.news, CONFIG.TABS.calendar, CONFIG.TABS.schedule, CONFIG.TABS.settings];
+const FRESH_MS = 90 * 1000, MAX_STALE_MS = 12 * 3600 * 1000, LS = 'pgn3_';
+const ALL_KEY = TAB_NAMES.join('|');
+const _mem = {}, _fly = {};
+function lsGet(k) { try { return JSON.parse(localStorage.getItem(LS + k) || 'null'); } catch (e) { return null; } }
+function lsSet(k, v) {
+  const s = JSON.stringify(v);
+  try { localStorage.setItem(LS + k, s); }
+  catch (e) { try { Object.keys(localStorage).filter(x => x.startsWith(LS) && x !== LS + 'set').forEach(x => localStorage.removeItem(x)); localStorage.setItem(LS + k, s); } catch (e2) {} }
+}
+function csvToRows(text) {
+  const rows = parseCSV(text);
   if (!rows.length) return [];
   const head = rows[0].map(h => h.trim());
-  const data = rows.slice(1)
+  return rows.slice(1)
     .filter(r => r.some(v => v && v.trim()))
     .map(r => Object.fromEntries(head.map((h, i) => [h, (r[i] ?? '').trim()])));
-  try { sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), d: data })); } catch (e) {}
-  return data;
+}
+async function gvizTab(name) {
+  const res = await fetch('https://docs.google.com/spreadsheets/d/' + CONFIG.SHEET_ID + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(name));
+  if (!res.ok) throw new Error('시트를 불러오지 못했습니다 (' + res.status + ')');
+  return csvToRows(await res.text());
+}
+async function feedTabs(names) {
+  if (!CONFIG.API_URL) throw new Error('no api');
+  const res = await fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'feed', tabs: names }) });
+  if (!res.ok) throw new Error('feed ' + res.status);
+  const out = await res.json();
+  if (!out || !out.ok || !out.tabs) throw new Error('feed');
+  return out.tabs;
+}
+function fetchTabs(names) {
+  const key = names.join('|');
+  if (_fly[key]) return _fly[key];
+  const p = new Promise((resolve, reject) => {
+    let done = false, gvStarted = false, feedBad = false, gvBad = false;
+    const finish = t => { if (!done) { done = true; resolve(t); } };
+    const maybeFail = e => { if (!done && feedBad && gvBad) { done = true; reject(e); } };
+    const gv = () => {
+      if (done || gvStarted) return; gvStarted = true;
+      Promise.all(names.map(n => gvizTab(n).catch(() => null))).then(arr => {
+        const t = {}; names.forEach((n, i) => { t[n] = arr[i]; });
+        if (arr.some(Boolean)) finish(t); else { gvBad = true; maybeFail(new Error('시트를 불러오지 못했습니다')); }
+      });
+    };
+    feedTabs(names).then(finish).catch(e => { feedBad = true; gv(); maybeFail(e); });
+    setTimeout(gv, 6000);
+  });
+  _fly[key] = p;
+  const clr = () => { delete _fly[key]; };
+  p.then(clr, clr);
+  return p;
+}
+function storeAll(tabs) {
+  const old = (_mem.all && _mem.all.tabs) || {}, merged = {};
+  TAB_NAMES.forEach(n => { merged[n] = tabs[n] || old[n] || null; });
+  _mem.all = { t: Date.now(), tabs: merged };
+  lsSet('all', _mem.all);
+  if (merged[CONFIG.TABS.settings]) lsSet('set', { t: Date.now(), rows: merged[CONFIG.TABS.settings] });
+  return merged;
+}
+let _bg = null;
+function bgRefresh() {
+  if (_bg) return;
+  const before = JSON.stringify(_mem.all.tabs);
+  _bg = fetchTabs(TAB_NAMES).then(t => { const m = storeAll(t); if (JSON.stringify(m) !== before) window.dispatchEvent(new Event('pgn-data')); }).catch(() => {}).then(() => { _bg = null; });
+}
+function getAll() {
+  if (!_mem.all) _mem.all = lsGet('all');
+  const c = _mem.all, age = c && c.tabs ? Date.now() - c.t : Infinity;
+  if (age < FRESH_MS) return Promise.resolve(c.tabs);
+  if (age < MAX_STALE_MS) { bgRefresh(); return Promise.resolve(c.tabs); }
+  return fetchTabs(TAB_NAMES).then(storeAll).catch(e => { if (c && c.tabs) return c.tabs; throw e; });
+}
+function parseSettings(rows) {
+  const s = { ...DEFAULTS };
+  (rows || []).forEach(r => { const k = r['키'] || r['항목']; if (k && (r['값'] ?? '') !== '') s[k] = r['값']; });
+  return s;
+}
+function settingsNow() { const c = lsGet('set'); return parseSettings(c && c.rows); }
+function refreshSettings(onChange) {
+  const c = lsGet('set'); if (c && Date.now() - c.t < 10 * 60000) return;
+  setTimeout(() => {
+    const p = (_mem.all && Date.now() - _mem.all.t < FRESH_MS) ? Promise.resolve(_mem.all.tabs) : (_fly[ALL_KEY] || fetchTabs([CONFIG.TABS.settings]));
+    p.then(t => { const rows = t[CONFIG.TABS.settings]; if (!rows) return; lsSet('set', { t: Date.now(), rows }); onChange(parseSettings(rows)); }).catch(() => {});
+  }, 60);
 }
 
 /* 날짜: 2026-10-02 / 2026.10.2 / 2026/10/2 / 10/2 / 10월 2일 */
@@ -132,17 +204,12 @@ function renderBody(n) {
 }
 
 /* ---------- 데이터 모델 ---------- */
-async function getSettings() {
-  try {
-    const rows = await loadTab(CONFIG.TABS.settings);
-    const s = { ...DEFAULTS };
-    rows.forEach(r => { const k = r['키'] || r['항목']; if (k && (r['값'] ?? '') !== '') s[k] = r['값']; });
-    return s;
-  } catch (e) { return { ...DEFAULTS }; }
-}
+async function getSettings() { return settingsNow(); }
 
 async function getNews() {
-  const rows = await loadTab(CONFIG.TABS.news);
+  const tabs = await getAll();
+  const rows = tabs[CONFIG.TABS.news];
+  if (!rows) throw new Error('시트를 불러오지 못했습니다');
   return rows
     .filter(r => !/^(n|no|아니오|비공개|x)$/i.test(r['공개'] || 'Y') && (r['제목'] || '').trim() && (r['카테고리'] || '') !== '회원글')   // 회원글은 자유게시판으로 이동
     .map((r, idx) => {
@@ -160,8 +227,9 @@ async function getNews() {
 }
 
 async function getSchedule() {
-  const tabs = await Promise.all([CONFIG.TABS.calendar, CONFIG.TABS.schedule].map(n => loadTab(n).catch(() => [])));
-  tabs[0].forEach(r => { r['비고'] = ''; });   /* 캘린더 설명은 길고 계좌번호 등이 섞여 있어 화면에는 쓰지 않음 */
+  const all = await getAll();
+  const tabs = [all[CONFIG.TABS.calendar] || [], all[CONFIG.TABS.schedule] || []];
+  tabs[0] = tabs[0].map(r => ({ ...r, 비고: '' }));   /* 캘린더 설명은 길고 계좌번호 등이 섞여 있어 화면에는 쓰지 않음 */
   const rows = tabs.flat();
   if (!rows.length) throw new Error('일정을 불러오지 못했습니다');
   const seen = new Set();
@@ -180,12 +248,12 @@ async function getSchedule() {
 /* ---------- 공통 레이아웃 ---------- */
 async function layout(active, opts) {
   opts = opts || {};
-  const S = await getSettings();
+  let S = settingsNow();   // 저장된 설정(없으면 기본값)으로 바로 그리고, 바뀐 게 있으면 나중에 갱신
   const me = Auth.get();
   const memberMode = me && me.role !== 'admin';   // 회원: 메뉴는 '자유게시판' 하나 (중복 방지)
   const nav = [['today.html', '오늘일정', 'today'], ['schedule.html', '대회일정', 'schedule'], ['news.html', '뉴스', 'news'], ['board.html', '자유게시판', 'board']];
   const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a>` : '') + `<a href="mypage.html" class="who ${active === 'mypage' ? 'on' : ''}" title="마이페이지">${esc(me.name)}님</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
-  document.body.insertAdjacentHTML('afterbegin', `
+  const head = S => `
     <div class="topbar"><div class="wrap"><span>${esc(S.슬로건)}</span>
     <span><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a> · <a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">오픈채팅방</a> · ${esc(S.전화)}</span></div></div>
     <header class="site"><div class="wrap">
@@ -193,12 +261,15 @@ async function layout(active, opts) {
       <button class="menu-btn" aria-label="메뉴" onclick="document.querySelector('nav.main').classList.toggle('open')">메뉴</button>
       <nav class="main">${nav.map(n => `<a href="${n[0]}" class="${n[2] === active ? 'on' : ''}">${n[1]}</a>`).join('')}${authNav}</nav>
     </div></header>
-    ${S.공지 ? `<div class="notice"><div class="wrap">공지 | ${esc(S.공지)}</div></div>` : ''}`);
-  document.body.insertAdjacentHTML('beforeend', `
-    <footer class="site"><div class="wrap">
+    ${S.공지 ? `<div class="notice"><div class="wrap">공지 | ${esc(S.공지)}</div></div>` : ''}`;
+  const foot = S => `
+    <div class="wrap">
       <div><b>${esc(S.사이트명)}</b><br>주소 : ${esc(S.주소)}<br>전화 : ${esc(S.전화)} · 팩스 : ${esc(S.팩스)}<br>담당 : ${esc(S.담당)}</div>
       <div><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 ${esc(S.밴드.replace(/^https?:\/\//, ''))}</a><br><a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">카카오 오픈채팅방</a><br>개선요청사항 접수 : <a href="request.html">개선요청 남기기</a><br><br>&copy; ${new Date().getFullYear()} ${esc(S.사이트명)}. All rights reserved.</div>
-    </div></footer>`);
+    </div>`;
+  document.body.insertAdjacentHTML('afterbegin', '<div id="pgn-head" style="display:contents">' + head(S) + '</div>');
+  document.body.insertAdjacentHTML('beforeend', '<footer class="site" id="pgn-foot">' + foot(S) + '</footer>');
+  refreshSettings(S2 => { if (JSON.stringify(S2) === JSON.stringify(S)) return; S = S2; $('#pgn-head').innerHTML = head(S); $('#pgn-foot').innerHTML = foot(S); });
   if (me) startPing();
   else if (opts.openList) {   // 뉴스 목록: 로그인 없이 기사 목록을 보여 주고, 기사를 누르면 로그인 안내창
     document.addEventListener('click', e => {
@@ -249,10 +320,12 @@ function watchScrollGate() {
 /* 접속 표시: 로그인한 회원이 페이지를 보고 있으면 1분마다 알립니다 (실패해도 조용히 무시) */
 function pingOnce() {
   const a = Auth.get(); if (!a || !CONFIG.API_URL || a.role === 'admin') return;
+  const last = +localStorage.getItem('pgn_lastping') || 0; if (Date.now() - last < 100000) return;   // 페이지를 옮길 때마다 서버를 부르지 않음
+  localStorage.setItem('pgn_lastping', String(Date.now()));
   fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'ping', token: a.token }) }).catch(() => {});
 }
 function startPing() {
-  pingOnce();
+  setTimeout(pingOnce, 4000);   // 화면 데이터가 먼저 오도록 늦춤
   setInterval(() => { if (!document.hidden) pingOnce(); }, 60000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) pingOnce(); });
 }
@@ -262,10 +335,11 @@ function sideBox(S) {
 }
 
 /* ---------- 조각 ---------- */
+function thumbUrl(u) { return String(u).replace(/(drive\.google\.com\/thumbnail\?[^\s]*?)sz=w\d+/, '$1sz=w640'); }
 function newsCard(n) {
   const img = n.images[0];
   return `<a class="card news-card" href="article.html?id=${n.id}">
-    <div class="thumb ${img ? '' : 'ph'}" ${img ? `style="background-image:url('${esc(img)}')"` : ''}>${img ? '' : '<img src="assets/logo.png" alt="">'}</div>
+    <div class="thumb ${img ? '' : 'ph'}" ${img ? 'style="position:relative;overflow:hidden"' : ''}>${img ? `<img src="${esc(thumbUrl(img))}" alt="" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">` : '<img src="assets/logo.png" alt="">'}</div>
     <div class="body"><span><span class="tag">${esc(n.cat)}</span></span><h3>${esc(n.title)}</h3><p>${esc(n.summary)}</p><div class="meta">${fmtDate(n.date)}</div><div class="rx" data-id="${esc(n.id)}"></div></div></a>`;
 }
 
@@ -361,7 +435,7 @@ async function api(action, data = {}) {
   if (!out.ok) { if (out.auth) Auth.clear(); throw new Error(out.error || '요청에 실패했습니다.'); }
   return out;
 }
-function clearSheetCache() { Object.keys(sessionStorage).filter(k => k.startsWith('pgn_') && k !== 'pgn_auth').forEach(k => sessionStorage.removeItem(k)); }
+function clearSheetCache() { Object.keys(sessionStorage).filter(k => k.startsWith('pgn_') && k !== 'pgn_auth').forEach(k => sessionStorage.removeItem(k)); localStorage.removeItem(LS + 'all'); _mem.all = null; }
 
 
 const fmtPhone = v => v.replace(/[^0-9]/g, '').slice(0, 11).replace(/^(\d{3})(\d{3,4})(\d{0,4}).*/, (m, x, y, z) => z ? x + '-' + y + '-' + z : x + '-' + y);
@@ -371,7 +445,13 @@ const OAUTH_REDIRECT = location.origin + '/oauth.html';
 let _cfg = null;
 async function getConfig() {
   if (_cfg) return _cfg;
-  try { _cfg = await api('config'); } catch (e) { _cfg = { sms: false, google: '', kakao: '', naver: '' }; }
+  const c = lsGet('cfg'), age = c ? Date.now() - c.t : Infinity;
+  if (c && c.d && age < 3600 * 1000) {   // 1시간 안의 사본은 바로 쓰고, 뒤에서 한 번 불러 서버도 미리 깨워 둠(로그인이 빨라짐)
+    _cfg = c.d;
+    if (age > 20000) api('config').then(d => lsSet('cfg', { t: Date.now(), d })).catch(() => {});
+    return _cfg;
+  }
+  try { _cfg = await api('config'); lsSet('cfg', { t: Date.now(), d: _cfg }); } catch (e) { _cfg = { sms: false, google: '', kakao: '', naver: '' }; }
   return _cfg;
 }
 function loginDone(r, next) {
