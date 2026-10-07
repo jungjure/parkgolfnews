@@ -9,48 +9,12 @@
 <meta property="og:description" content="전국 파크골프 대회 일정, 접수 안내, 뉴스를 매일 전합니다.">
 <meta property="og:image" content="https://parkgolfnews.org/assets/logo.png">
 <meta property="og:type" content="website">
-<link rel="preconnect" href="https://script.google.com">
-<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261007p">
-<style>.ev .date{display:none}</style>
+<!-- 첫 화면은 항상 오늘일정 페이지로 (PC·모바일 공통) -->
+<script>location.replace('today.html' + location.search + location.hash);</script>
+<meta http-equiv="refresh" content="0; url=today.html">
 </head>
 <body>
-<div class="wrap cols">
-  <main style="width:100%;max-width:869px;margin:0 auto">
-    <h2 class="sec">오늘일정</h2>
-    <div class="daynav"><button id="prev">&lsaquo; 전날</button><span class="dl" id="dl"></span><button id="now" class="on">오늘</button><button id="next">다음날 &rsaquo;</button></div>
-    <div class="sumline" id="sum"></div>
-    <div class="card" id="list"><div class="loading">불러오는 중...</div></div>
-  </main>
-  <div id="side"></div>
-</div>
-<script src="assets/app.js?v=20261007p"></script>
-<script>
-(async () => {
-  const S = await layout('today');
-  $('#side').innerHTML = sideBox(S);
-  const t = today0(); let cur = new Date(t), all = [];
-  const order = { '대회': 0, '접수': 1, '연습라운딩': 2 };
-  const on = (e, d) => ymd(e.start) <= ymd(d) && ymd(e.end) >= ymd(d);
-  const draw = () => {
-    const k = ymd(cur), diff = Math.round((cur - t) / 864e5);
-    $('#dl').textContent = cur.getFullYear() + '년 ' + (cur.getMonth() + 1) + '월 ' + cur.getDate() + '일 (' + WD[cur.getDay()] + ')' + (diff === 0 ? ' · 오늘' : diff === 1 ? ' · 내일' : diff === -1 ? ' · 어제' : '');
-    $('#now').classList.toggle('on', diff === 0);
-    const td = all.filter(e => on(e, cur)).sort((a, b) => (order[a.type] ?? 9) - (order[b.type] ?? 9) || a.start - b.start);
-    const cnt = {}; td.forEach(e => { const k = isTrial(e) ? '시범운영' : e.type; cnt[k] = (cnt[k] || 0) + 1; }); if (cnt['시범운영']) { const tv = cnt['시범운영']; delete cnt['시범운영']; cnt['시범운영'] = tv; }   // 시범운영은 맨 마지막
-    $('#sum').innerHTML = td.length ? Object.entries(cnt).map(([k, v]) => '<span class="tag ' + esc(k) + '">' + esc(k) + ' ' + v + '건</span>').join('') : '';
-    $('#list').innerHTML = td.length ? td.map(e => eventRow(e)).join('') : '<div class="empty">이 날 등록된 일정이 없습니다.</div>';
-  };
-  try {
-    all = await getSchedule();
-    draw();
-    $('#prev').onclick = () => { cur.setDate(cur.getDate() - 1); draw(); };
-    $('#next').onclick = () => { cur.setDate(cur.getDate() + 1); draw(); };
-    $('#now').onclick = () => { cur = new Date(t); draw(); };
-    addEventListener('pgn-data', async () => { try { all = await getSchedule(); draw(); } catch (e) {} });
-  } catch (e) { showError($('#list'), e); }
-})();
-</script>
+<p style="font-family:sans-serif;text-align:center;margin-top:40px"><a href="today.html">오늘일정으로 이동</a></p>
 </body>
 </html>
