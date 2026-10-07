@@ -17,7 +17,7 @@ img{max-width:100%;display:block}
 header.site{background:#fff;border-bottom:3px solid var(--g700);position:sticky;top:0;z-index:20}
 header.site .wrap{display:flex;align-items:center;gap:18px;min-height:68px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.3rem;color:var(--g900)}
-.brand img{width:104px;height:104px;object-fit:contain}
+.brand img{width:76px;height:76px;object-fit:contain}
 nav.main{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
 nav.main a{padding:8px 14px;border-radius:999px;font-weight:700;color:var(--g900)}
 nav.main a:hover,nav.main a.on{background:var(--g700);color:#fff}
