@@ -8,20 +8,21 @@
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261009g">
+<link rel="stylesheet" href="assets/style.css?v=20261009h">
+<style>#chips button.tag{border:2px solid transparent;cursor:pointer;font-family:inherit;line-height:inherit}#chips button.tag.on{border-color:currentColor}#chips.f button.tag:not(.on){opacity:.4}</style>
 </head>
 <body>
 <div class="wrap cols">
   <main style="width:100%;max-width:869px;margin:0 auto">
     <h2 class="sec">대회일정</h2>
     <div class="monthnav"><button id="prev">&lsaquo;</button><span id="ml"></span><button id="next">&rsaquo;</button><button id="now" style="font-size:.9rem;font-weight:700">이번 달</button></div>
-    <div class="toolbar" id="chips"></div>
+    <div class="sumline" id="chips"></div>
     <div class="toolbar"><input type="search" id="q" placeholder="대회명·지역 검색"></div>
     <div class="card" id="list"><div class="loading">불러오는 중...</div></div>
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261009g"></script>
+<script src="assets/app.js?v=20261009h"></script>
 <script>
 (async () => {
   const S = await layout('schedule');
@@ -32,7 +33,14 @@
   const draw = () => {
     $('#ml').textContent = `${y}년 ${m + 1}월`;
     const first = (y === t.getFullYear() && m === t.getMonth()) ? new Date(t) : new Date(y, m, 1), last = new Date(y, m + 1, 0);   /* 이번 달은 지나간 날을 빼고 오늘부터 보여줌 */
-    const f = all.filter(e => e.end >= first && e.start <= last && (type === '전체' || kind(e) === type) && (!q || (e.name + e.region + e.place).includes(q)));
+    const mon = all.filter(e => e.end >= first && e.start <= last && (!q || (e.name + e.region + e.place).includes(q)));
+    /* 오늘일정처럼 "대회 N건 · 접수 N건 · 연습일 N건 · 시범운영 N건" (누르면 그 구분만 보기, 다시 누르면 전체) */
+    const cnt = {}; mon.forEach(e => { const k = kind(e); cnt[k] = (cnt[k] || 0) + 1; });
+    const ord = ['대회', '접수', '연습일'], keys = Object.keys(cnt).sort((a, b) => (a === '시범운영') - (b === '시범운영') || ((ord.indexOf(a) + 1 || 9) - (ord.indexOf(b) + 1 || 9)));
+    if (type !== '전체' && !cnt[type]) type = '전체';
+    $('#chips').classList.toggle('f', type !== '전체');
+    $('#chips').innerHTML = keys.map(k => '<button type="button" class="tag ' + esc(k) + (k === type ? ' on' : '') + '" data-c="' + esc(k) + '" title="' + esc(k) + '만 보기">' + esc(k) + ' ' + cnt[k] + '건</button>').join('');
+    const f = mon.filter(e => type === '전체' || kind(e) === type);
     if (!f.length) { $('#list').innerHTML = '<div class="empty">이 달에 등록된 일정이 없습니다.</div>'; return; }
     /* 시작일 기준으로 묶기 (이번 달 이전에 시작한 일정은 1일로) */
     const groups = new Map();
@@ -42,11 +50,8 @@
   };
   const build = async first => {
     all = await getSchedule();
-    const types = ['전체', ...new Set(all.map(kind))].sort((a, b) => (a === '시범운영') - (b === '시범운영'));   /* 시범운영은 맨 뒤 */
-    if (!types.includes(type)) type = '전체';
-    $('#chips').innerHTML = types.map(c => `<button class="chip ${c === type ? 'on' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('');
     if (first) {
-    $('#chips').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; type = b.dataset.c; document.querySelectorAll('#chips .chip').forEach(x => x.classList.toggle('on', x === b)); draw(); };
+    $('#chips').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; type = type === b.dataset.c ? '전체' : b.dataset.c; draw(); };
     $('#prev').onclick = () => { m--; if (m < 0) { m = 11; y--; } draw(); };
     $('#next').onclick = () => { m++; if (m > 11) { m = 0; y++; } draw(); };
     $('#now').onclick = () => { y = t.getFullYear(); m = t.getMonth(); draw(); };
