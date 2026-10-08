@@ -238,7 +238,7 @@ async function getSchedule() {
     .map(r => {
       const s = parseDate(r['시작일']); if (!s) return null;
       const e = parseDate(r['종료일']) || s;
-      return { start: s, end: e < s ? s : e, type: r['구분'] || '대회', name: r['대회명'].replace(/^[\s\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]+/u, ''), region: r['지역'] || '', place: r['장소'] || '', link: (r['링크'] || '').replace(/[)\]\.,;]+$/, ''), note: r['비고'] || '', detail: r['상세'] || '' };
+      return { start: s, end: e < s ? s : e, type: /연습\s*라운딩/.test(r['대회명']) ? '연습라운딩' : (r['구분'] || '대회'), name: r['대회명'].replace(/^[\s\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]+/u, ''), region: r['지역'] || '', place: r['장소'] || '', link: (r['링크'] || '').replace(/[)\]\.,;]+$/, ''), note: r['비고'] || '', detail: r['상세'] || '' };
     })
     .filter(Boolean)
     .filter(e => { const k = ymd(e.start) + '|' + ymd(e.end) + '|' + e.type + '|' + e.name; if (seen.has(k)) return false; seen.add(k); return true; })
