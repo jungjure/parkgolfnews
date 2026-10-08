@@ -251,7 +251,7 @@ async function layout(active, opts) {
   let S = settingsNow();   // 저장된 설정(없으면 기본값)으로 바로 그리고, 바뀐 게 있으면 나중에 갱신
   const me = Auth.get();
   const memberMode = me && me.role !== 'admin';   // 회원: 메뉴는 '자유게시판' 하나 (중복 방지)
-  const nav = [['today.html', '오늘일정', 'today'], ['schedule.html', '대회일정', 'schedule'], ['news.html', '뉴스', 'news'], ['board.html', '자유게시판', 'board']];
+  const nav = [['today.html', '오늘일정', 'today'], ['schedule.html', '월간일정', 'schedule'], ['news.html', '뉴스', 'news'], ['board.html', '자유게시판', 'board']];
   const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a>` : '') + `<a href="mypage.html" class="who ${active === 'mypage' ? 'on' : ''}" title="마이페이지">${esc(me.name)}님</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   const head = S => `
     <div class="topbar"><div class="wrap"><span>${esc(S.슬로건)}</span>
