@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>오늘일정 - 파크골프뉴스</title>
-<meta name="description" content="오늘 열리는 전국 파크골프 대회, 접수 시작·마감, 연습라운딩 일정을 날짜별로 확인하세요.">
+<meta name="description" content="오늘 열리는 전국 파크골프 대회, 접수 시작·마감, 연습일 일정을 날짜별로 확인하세요.">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="icon" href="assets/logo.png">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="파크골프뉴스">
-<link rel="stylesheet" href="assets/style.css?v=20261009d">
+<link rel="stylesheet" href="assets/style.css?v=20261009e">
 
 </head>
 <body>
@@ -80,14 +80,14 @@
   window.pgnInstallBtn = add;
 })();
 </script>
-<script src="assets/app.js?v=20261009d"></script>
+<script src="assets/app.js?v=20261009e"></script>
 <script>
 (async () => {
   const S = await layout('today');
   $('#side').innerHTML = sideBox(S);
   pgnInstallBtn(); setTimeout(pgnInstallBtn, 800);
   const t = today0(); let cur = new Date(t), all = [];
-  const order = { '대회': 0, '접수': 1, '연습라운딩': 2 };
+  const order = { '대회': 0, '접수': 1, '연습일': 2 };
   const on = (e, d) => ymd(e.start) <= ymd(d) && ymd(e.end) >= ymd(d);
   const draw = () => {
     const k = ymd(cur), diff = Math.round((cur - t) / 864e5);
@@ -95,7 +95,7 @@
     $('#now').classList.toggle('on', diff === 0);
     const td = all.filter(e => on(e, cur)).sort((a, b) => (order[a.type] ?? 9) - (order[b.type] ?? 9) || a.start - b.start);
     const cnt = {}; td.forEach(e => { const k = isTrial(e) ? '시범운영' : e.type; cnt[k] = (cnt[k] || 0) + 1; }); if (cnt['시범운영']) { const tv = cnt['시범운영']; delete cnt['시범운영']; cnt['시범운영'] = tv; }   // 시범운영은 맨 마지막
-    $('#sum').innerHTML = td.length ? Object.entries(cnt).map(([k, v]) => '<span class="tag ' + esc(k) + '">' + esc(k === '연습라운딩' ? '연습일' : k) + ' ' + v + '건</span>').join('') : '';
+    $('#sum').innerHTML = td.length ? Object.entries(cnt).map(([k, v]) => '<span class="tag ' + esc(k) + '">' + esc(k) + ' ' + v + '건</span>').join('') : '';
     $('#list').innerHTML = td.length ? td.map(e => eventRow(e)).join('') : '<div class="empty">이 날 등록된 일정이 없습니다.</div>';
   };
   try {
