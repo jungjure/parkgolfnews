@@ -238,7 +238,7 @@ async function getSchedule() {
     .map(r => {
       const s = parseDate(r['시작일']); if (!s) return null;
       const e = parseDate(r['종료일']) || s;
-      return { start: s, end: e < s ? s : e, type: /연습\s*(라운딩|일)/.test(r['대회명']) ? '연습라운딩' : (r['구분'] || '대회'), name: r['대회명'].replace(/^[\s\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]+/u, ''), region: r['지역'] || '', place: r['장소'] || '', link: (r['링크'] || '').replace(/[)\]\.,;]+$/, ''), note: r['비고'] || '', detail: r['상세'] || '' };
+      return { start: s, end: e < s ? s : e, type: (/연습\s*(라운딩|일)/.test(r['대회명']) || r['구분'] === '연습라운딩') ? '연습일' : (r['구분'] || '대회'), name: r['대회명'].replace(/^[\s\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]+/u, ''), region: r['지역'] || '', place: r['장소'] || '', link: (r['링크'] || '').replace(/[)\]\.,;]+$/, ''), note: r['비고'] || '', detail: r['상세'] || '' };
     })
     .filter(Boolean)
     .filter(e => { const k = ymd(e.start) + '|' + ymd(e.end) + '|' + e.type + '|' + e.name; if (seen.has(k)) return false; seen.add(k); return true; })
@@ -392,9 +392,9 @@ function eventRow(e, opts = {}) {
   const same = ymd(e.start) === ymd(e.end);
   let dateTxt = same ? fmtShort(e.start) : `~ ${fmtShort(e.end)}`;
   const t = today0();
-  /* 접수는 마감일만(~ 10/8(목)), 대회·연습라운딩은 날짜 칸을 비워 둠 (시범운영은 그대로) */
+  /* 접수는 마감일만(~ 10/8(목)), 대회·연습일은 날짜 칸을 비워 둠 (시범운영은 그대로) */
   let blank = false;
-  if (!isTrial(e)) { if (e.type === '접수' && !same) dateTxt = `~ ${fmtShort(e.end)}`; else if (e.type === '대회' || e.type === '연습라운딩') blank = true; }
+  if (!isTrial(e)) { if (e.type === '접수' && !same) dateTxt = `~ ${fmtShort(e.end)}`; else if (e.type === '대회' || e.type === '연습일') blank = true; }
   const dl = e.type === '접수' && ymd(e.end) >= ymd(t) && (e.end - t) / 864e5 <= 3;
   const trial = isTrial(e);
   const hasLink = !!(e.link && e.type === '접수' && !trial);
