@@ -303,8 +303,8 @@ const TRK = (() => {
     const t = document.title.replace(/\s*-\s*파크골프뉴스$/, '');
     q.forEach(h => { if (h.k === 'pv' && !h.ti) h.ti = t; });
     const a = Auth.get(), body = JSON.stringify({ action: 'hit', token: a ? a.token : '', hits: q.splice(0, 30) });
-    try { if (navigator.sendBeacon && navigator.sendBeacon(CONFIG.API_URL, new Blob([body], { type: 'text/plain;charset=utf-8' }))) return; } catch (e) {}
-    fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body, keepalive: true }).catch(() => {});
+    /* sendBeacon은 구글 로그인 쿠키가 붙어 여러 계정 사용자에게서 실패하므로 쿠키 없이 fetch(keepalive) */
+    fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body, keepalive: true, credentials: 'omit' }).catch(() => {});
   }
   const later = ms => { if (!tm) tm = setTimeout(flush, ms); };
   let pvDone = false;
