@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>통계 - 파크골프뉴스</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css?v=20261009f">
+<style>
+.st-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px}
+.st-tabs button,.st-per button,.st-gran button{border:1px solid var(--line);background:#fff;color:var(--g900);border-radius:999px;padding:7px 14px;font-weight:700;font-size:.92rem;cursor:pointer;font-family:inherit}
+.st-tabs button.on,.st-per button.on,.st-gran button.on{background:var(--g700);border-color:var(--g700);color:#fff}
+.st-per{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:var(--g50);border:1px solid var(--line);border-radius:12px;margin-bottom:12px}
+.st-per input[type=date]{padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:.9rem}
+.st-per .lbl{font-weight:700;margin-right:4px}
+.st-per .rng{margin-left:auto;color:var(--muted);font-size:.88rem}
+.st-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:14px}
+.st-card{padding:14px 16px}
+.st-card h4{margin:0 0 6px;font-size:.92rem;color:var(--muted);font-weight:700}
+.st-card .n{font-size:1.6rem;font-weight:800;color:var(--g900);line-height:1.25}
+.st-card .n small{font-size:.9rem;font-weight:700;color:var(--muted)}
+.st-card .s{font-size:.85rem;color:var(--muted);margin-top:4px}
+.up{color:#c62828;font-weight:700}.down{color:#1565c0;font-weight:700}.flat{color:var(--muted)}
+.st-box{padding:14px 16px;margin-bottom:14px}
+.st-box h3{margin:0 0 10px;font-size:1.05rem;color:var(--g900)}
+.st-tw{overflow-x:auto}
+.st-tbl{width:100%;border-collapse:collapse;font-size:.92rem}
+.st-tbl th,.st-tbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.st-tbl th{background:var(--g100);color:var(--g900);white-space:nowrap}
+.st-tbl .r{text-align:right;white-space:nowrap}
+.st-tbl a{color:var(--g700);word-break:break-all}
+.bw{background:var(--g50);border-radius:5px;width:100%;min-width:60px}
+.bar{height:10px;background:var(--g600);border-radius:5px;min-width:2px}
+.st-note{color:var(--muted);font-size:.85rem;margin:8px 0 0;line-height:1.6}
+.st-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.vbars{display:flex;align-items:flex-end;gap:3px;height:160px}
+.vbars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:.7rem;color:var(--muted);min-width:0}
+.vbars i{display:block;width:100%;background:var(--g600);border-radius:3px 3px 0 0;min-height:1px}
+.vbars i.hi{background:#e67e22}
+.vbars b{font-size:.68rem;color:var(--g900);font-weight:700}
+.empty-s{color:var(--muted);padding:12px 0}
+.kind{display:inline-block;font-size:.75rem;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--g100);color:var(--g900);margin-right:6px}
+.kind.ev{background:#fff3e0;color:var(--amber)}
+.st-gran{display:flex;gap:6px;margin-bottom:10px}
+.st-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.st-form select,.st-form input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:.95rem}
+.st-out{margin-top:10px;padding:10px 12px;background:var(--g50);border:1px dashed var(--g600);border-radius:8px;word-break:break-all;font-weight:700}
+.st-btn{border:1px solid var(--g700);background:var(--g700);color:#fff;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;font-family:inherit;font-size:.92rem}
+.st-btn.w{background:#fff;color:var(--g900)}
+.svgc text{font-size:11px;fill:#777}
+.lg{display:inline-flex;align-items:center;gap:5px;margin-right:12px;font-size:.85rem;color:var(--muted)}
+.lg i{display:inline-block;width:14px;height:4px;border-radius:2px}
+</style>
+</head>
+<body>
+<script src="assets/app.js?v=20261009f"></script>
+<script>
+(async () => {
+  const me = Auth.get();
+  if (!me) { location.replace('login.html?next=stats.html'); return; }
+  if (me.role !== 'admin') { location.replace('index.html'); return; }
+  await layout('stats');
+  const TABS = [['sum', '요약'], ['visit', '방문 현황'], ['content', '콘텐츠'], ['source', '유입 경로'], ['env', '이용자 환경'], ['set', '설정/관리']];
+  document.querySelector('footer.site').insertAdjacentHTML('beforebegin', '<div class="wrap"><main class="article" style="max-width:none"><h2 class="sec">통계 <small style="font-size:.6em;color:#777">관리자 전용</small></h2>'
+    + '<div class="st-tabs" id="tabs">' + TABS.map(t => '<button data-t="' + t[0] + '">' + t[1] + '</button>').join('') + '<button id="rf" class="w" style="margin-left:auto">새로고침</button></div>'
+    + '<div class="st-per" id="per"><span class="lbl">기간</span><button data-p="today">오늘</button><button data-p="yday">어제</button><button data-p="7">최근 7일</button><button data-p="30">최근 30일</button><button data-p="custom">직접 지정</button>'
+    + '<span id="cus" hidden><input type="date" id="cf"> ~ <input type="date" id="ct"> <button id="cgo">적용</button></span><span class="rng" id="rng"></span></div>'
+    + '<div id="msg"></div><div id="body"><div class="empty-s">불러오는 중...</div></div></main></div>');
+
+  /* ---------- 날짜 도우미 ---------- */
+  const p2 = n => String(n).padStart(2, '0');
+  const dk = d => d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
+  const d0 = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+  const add = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  const parseK = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const T = d0(new Date());
+  const WDN = ['일', '월', '화', '수', '목', '금', '토'];
+  const nf = n => Number(n || 0).toLocaleString('ko-KR');
+  const md = s => { const d = parseK(s); return (d.getMonth() + 1) + '/' + d.getDate(); };
+
+  let tab = (location.hash.slice(1) || 'sum'), per = { p: '7', from: add(T, -6), to: T }, gran = 'day';
+  let all = [], loadedFrom = null, info = { total: 0, first: '', url: '' };
+  if (!TABS.some(t => t[0] === tab)) tab = 'sum';
+
+  /* ---------- 데이터 ---------- */
+  const COLS = { t: '시각', k: '종류', v: '방문자', s: '세션', n: '신규', p: '페이지', tg: '대상', ti: '제목', rg: '지역', ch: '유입', cd: '상세', q: '검색어', dv: '기기', br: '브라우저', w: '화면폭', mr: '회원지역' };
+  async function load(force) {
+    const len = Math.round((per.to - per.from) / 864e5) + 1;
+    const need = new Date(Math.min(add(T, -59), add(per.from, -len)));
+    if (!force && loadedFrom && loadedFrom <= need) return;
+    $('#msg').innerHTML = '<div class="empty-s">통계를 불러오는 중입니다...</div>';
+    const r = await api('stats', { from: dk(need), to: dk(T) });
+    const ix = {}; Object.entries(COLS).forEach(([k, name]) => ix[k] = r.cols.indexOf(name));
+    all = r.rows.map(a => { const o = {}; for (const k in ix) o[k] = ix[k] >= 0 ? a[ix[k]] : ''; o.d = o.t.slice(0, 10); o.h = +o.t.slice(11, 13); o.n = o.n === 'Y'; o.w = +o.w || 0; return o; })
+      .filter(o => ['pv', 'ev', 'click', 'search'].includes(o.k));
+    loadedFrom = need; info = { total: r.total, first: r.first, url: r.url };
+    $('#msg').innerHTML = '';
+  }
+  const inR = (rs, f, t) => { const a = dk(f), b = dk(t); return rs.filter(o => o.d >= a && o.d <= b); };
+  const PV = rs => rs.filter(o => o.k === 'pv');
+  const uniq = (rs, key) => new Set(rs.map(o => o[key]).filter(Boolean)).size;
+  const agg = rs => { const p = PV(rs); return { vis: uniq(p, 'v'), pv: p.length, ses: uniq(p, 's') }; };
+  function chg(a, b) {
+    if (!b) return a ? '<span class="up">새로 생김</span>' : '<span class="flat">-</span>';
+    const x = Math.round((a - b) / b * 100);
+    return x > 0 ? '<span class="up">▲ ' + x + '%</span>' : x < 0 ? '<span class="down">▼ ' + (-x) + '%</span>' : '<span class="flat">변동 없음</span>';
+  }
+  function group(rs, keyFn, valFn) {
+    const m = new Map();
+    rs.forEach(o => { const k = keyFn(o); if (k == null || k === '') return; if (!m.has(k)) m.set(k, []); m.get(k).push(o); });
+    return [...m.entries()].map(([k, list]) => Object.assign({ key: k, list, c: list.length }, valFn ? valFn(list) : {})).sort((a, b) => b.c - a.c);
+  }
+  const barCell = (v, max) => '<td style="width:30%"><div class="bw"><div class="bar" style="width:' + (max ? Math.max(1, v / max * 100) : 0) + '%"></div></div></td>';
+  const box = (title, inner, note) => '<div class="card st-box"><h3>' + title + '</h3>' + inner + (note ? '<p class="st-note">' + note + '</p>' : '') + '</div>';
+  const table = (head, rows, empty) => rows.length ? '<div class="st-tw"><table class="st-tbl"><thead><tr>' + head.map(h => '<th' + (h[1] ? ' class="r"' : '') + '>' + h[0] + '</th>').join('') + '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>' : '<div class="empty-s">' + (empty || '이 기간에 기록이 없습니다.') + '</div>';
+  const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '-';
+  const pageLabel = o => o.ti || o.p;
+  const PAGE_NAMES = { '/today.html': '오늘일정', '/index.html': '첫 화면', '/schedule.html': '월간일정', '/news.html': '뉴스 목록', '/board.html': '자유게시판', '/about.html': '회사소개', '/mypage.html': '마이페이지', '/login.html': '로그인', '/signup.html': '회원가입' };
+  const pname = p => { const b = p.split('?')[0]; return PAGE_NAMES[b] || ''; };
+
+  /* ---------- 그래프 ---------- */
+  function lineChart(days, series) {
+    const W = 760, H = 220, L = 36, R = 10, Tp = 12, B = 26, n = days.length;
+    const max = Math.max(1, ...series.flatMap(s => s.vals));
+    const nice = max <= 5 ? 5 : Math.ceil(max / 5) * 5;
+    const x = i => L + (n === 1 ? (W - L - R) / 2 : i * (W - L - R) / (n - 1)), y = v => Tp + (H - Tp - B) * (1 - v / nice);
+    let g = '';
+    for (let i = 0; i <= 5; i++) { const v = nice * i / 5, yy = y(v); g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="#eee"/><text x="' + (L - 6) + '" y="' + (yy + 4) + '" text-anchor="end">' + Math.round(v) + '</text>'; }
+    days.forEach((d, i) => { if (i % Math.ceil(n / 8) === 0 || i === n - 1) g += '<text x="' + x(i) + '" y="' + (H - 8) + '" text-anchor="middle">' + md(d) + '</text>'; });
+    series.forEach(s => {
+      g += '<polyline fill="none" stroke="' + s.color + '" stroke-width="2.5" points="' + s.vals.map((v, i) => x(i) + ',' + y(v)).join(' ') + '"/>';
+      s.vals.forEach((v, i) => g += '<circle cx="' + x(i) + '" cy="' + y(v) + '" r="3" fill="' + s.color + '"><title>' + md(days[i]) + ' ' + s.name + ' ' + v + '</title></circle>');
+    });
+    return '<div>' + series.map(s => '<span class="lg"><i style="background:' + s.color + '"></i>' + s.name + '</span>').join('') + '</div><svg class="svgc" viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto">' + g + '</svg>';
+  }
+  function vbars(labels, vals, hiN) {
+    const max = Math.max(1, ...vals), top = [...vals].map((v, i) => [v, i]).sort((a, b) => b[0] - a[0]).slice(0, hiN || 0).filter(a => a[0] > 0).map(a => a[1]);
+    return '<div class="vbars">' + vals.map((v, i) => '<div title="' + labels[i] + ': ' + v + '"><b>' + (v || '') + '</b><i class="' + (top.includes(i) ? 'hi' : '') + '" style="height:' + (v / max * 120) + 'px"></i>' + labels[i] + '</div>').join('') + '</div>';
+  }
+  function hbars(items, unit) {
+    const max = Math.max(1, ...items.map(i => i.v)), tot = items.reduce((s, i) => s + i.v, 0);
+    return table([['구분'], ['', 0], [unit, 1], ['비율', 1]], items.map(i => '<tr><td>' + esc(i.k) + '</td>' + barCell(i.v, max) + '<td class="r">' + nf(i.v) + '</td><td class="r">' + pct(i.v, tot) + '</td></tr>'));
+  }
+
+  /* ---------- 1. 요약 ---------- */
+  function vSum() {
+    const card = (title, f, t, pf, pt, cmpName) => {
+      const a = agg(inR(all, f, t)), b = agg(inR(all, pf, pt));
+      return '<div class="card st-card"><h4>' + title + '</h4><div class="n">' + nf(a.vis) + ' <small>명 방문</small></div><div class="s">페이지뷰 ' + nf(a.pv) + '회</div><div class="s">' + cmpName + ' 방문자 ' + chg(a.vis, b.vis) + ' · 페이지뷰 ' + chg(a.pv, b.pv) + '</div></div>';
+    };
+    let h = '<div class="st-cards">'
+      + card('오늘', T, T, add(T, -1), add(T, -1), '어제 대비')
+      + card('어제', add(T, -1), add(T, -1), add(T, -2), add(T, -2), '그제 대비')
+      + card('최근 7일', add(T, -6), T, add(T, -13), add(T, -7), '이전 7일 대비')
+      + card('최근 30일', add(T, -29), T, add(T, -59), add(T, -30), '이전 30일 대비')
+      + '</div>';
+    const days = []; for (let i = 29; i >= 0; i--) days.push(dk(add(T, -i)));
+    const pv = PV(inR(all, add(T, -29), T)), byD = {}; pv.forEach(o => { (byD[o.d] = byD[o.d] || []).push(o); });
+    h += box('최근 30일 일별 방문 추이', lineChart(days, [{ name: '방문자', color: '#148a4a', vals: days.map(d => uniq(byD[d] || [], 'v')) }, { name: '페이지뷰', color: '#f0a04b', vals: days.map(d => (byD[d] || []).length) }]));
+    const td = inR(all, T, T);
+    const items = group(PV(td), o => o.p, l => ({ label: l[l.length - 1].ti || l[0].p, kind: '페이지', href: l[0].p })).concat(group(td.filter(o => o.k === 'ev'), o => o.tg, l => ({ label: l[0].tg, kind: '대회 상세' }))).sort((a, b) => b.c - a.c).slice(0, 5);
+    h += box('오늘 많이 본 콘텐츠 TOP 5', table([['순위'], ['콘텐츠'], ['조회', 1]], items.map((it, i) => '<tr><td>' + (i + 1) + '</td><td><span class="kind ' + (it.kind === '대회 상세' ? 'ev' : '') + '">' + it.kind + '</span>' + (it.href ? '<a href="' + esc(it.href) + '">' + esc(it.label) + '</a>' : esc(it.label)) + '</td><td class="r">' + nf(it.c) + '</td></tr>'), '오늘은 아직 기록이 없습니다.'), '대회 상세 = 일정 제목을 눌러 상세 창을 연 횟수');
+    return h;
+  }
+
+  /* ---------- 2. 방문 현황 ---------- */
+  function vVisit(rs) {
+    const pv = PV(rs), a = agg(rs);
+    const newV = new Set(pv.filter(o => o.n).map(o => o.v)).size;
+    let h = '<div class="st-cards"><div class="card st-card"><h4>방문자</h4><div class="n">' + nf(a.vis) + ' <small>명</small></div></div><div class="card st-card"><h4>페이지뷰</h4><div class="n">' + nf(a.pv) + ' <small>회</small></div><div class="s">1인당 ' + (a.vis ? (a.pv / a.vis).toFixed(1) : 0) + '회</div></div><div class="card st-card"><h4>방문 횟수(세션)</h4><div class="n">' + nf(a.ses) + ' <small>회</small></div></div><div class="card st-card"><h4>신규 / 재방문</h4><div class="n">' + pct(newV, a.vis) + ' <small>신규</small></div><div class="s">신규 ' + nf(newV) + '명 · 재방문 ' + nf(a.vis - newV) + '명</div></div></div>';
+    const keyOf = o => { if (gran === 'day') return o.d; const d = parseK(o.d); if (gran === 'month') return o.d.slice(0, 7); const m = add(d, -((d.getDay() + 6) % 7)); return dk(m); };
+    const lab = k => gran === 'day' ? md(k) + ' (' + WDN[parseK(k).getDay()] + ')' : gran === 'month' ? k.replace('-', '년 ') + '월' : md(k) + ' 주 (월요일 시작)';
+    const g = group(pv, keyOf, l => ({ vis: uniq(l, 'v'), nw: new Set(l.filter(o => o.n).map(o => o.v)).size })).sort((x, y) => y.key.localeCompare(x.key));
+    const mx = Math.max(1, ...g.map(x => x.vis));
+    h += box('기간별 방문', '<div class="st-gran" id="gran"><button data-g="day">일별</button><button data-g="week">주별</button><button data-g="month">월별</button></div>' + table([['기간'], ['방문자', 1], [''], ['페이지뷰', 1], ['신규', 1], ['재방문', 1], ['신규 비율', 1]], g.map(x => '<tr><td>' + lab(x.key) + '</td><td class="r">' + nf(x.vis) + '</td>' + barCell(x.vis, mx) + '<td class="r">' + nf(x.c) + '</td><td class="r">' + nf(x.nw) + '</td><td class="r">' + nf(x.vis - x.nw) + '</td><td class="r">' + pct(x.nw, x.vis) + '</td></tr>')), '신규 = 이 기기(브라우저)에서 처음 들어온 방문자. 같은 사람이 폰과 PC로 보면 2명으로 셉니다.');
+    const hrs = Array(24).fill(0); pv.forEach(o => hrs[o.h]++);
+    const top3 = hrs.map((v, i) => [v, i]).sort((x, y) => y[0] - x[0]).slice(0, 3).filter(x => x[0] > 0).map(x => x[1] + '시');
+    const wd = Array(7).fill(0); pv.forEach(o => wd[parseK(o.d).getDay()]++);
+    h += '<div class="st-grid2">' + box('시간대별 접속 (페이지뷰)', vbars(hrs.map((v, i) => String(i)), hrs, 3), top3.length ? '가장 많이 보는 시간: <b>' + top3.join(', ') + '</b> (주황색). 소식 올리는 시간을 정할 때 참고하세요.' : '')
+      + box('요일별 접속 (페이지뷰)', vbars(WDN, wd, 1)) + '</div>';
+    return h;
+  }
+
+  /* ---------- 3. 콘텐츠 ---------- */
+  function vContent(rs) {
+    const pv = PV(rs);
+    const pg = group(pv, o => o.p, l => ({ vis: uniq(l, 'v'), label: l[l.length - 1].ti || l[0].p })).slice(0, 30);
+    let h = box('페이지별 조회수 순위', table([['순위'], ['페이지'], ['조회수', 1], ['방문자', 1]], pg.map((x, i) => '<tr><td>' + (i + 1) + '</td><td><a href="' + esc(x.key) + '">' + esc(pname(x.key) || x.label) + '</a>' + (pname(x.key) ? '' : '') + '<div class="st-note" style="margin:0">' + esc(x.key) + '</div></td><td class="r">' + nf(x.c) + '</td><td class="r">' + nf(x.vis) + '</td></tr>')));
+    const ev = rs.filter(o => o.k === 'ev');
+    const eg = group(ev, o => o.tg, l => ({ vis: uniq(l, 'v'), type: l[0].ti, rg: l[0].rg })).slice(0, 30);
+    h += box('대회별 조회수', table([['순위'], ['대회명'], ['구분'], ['지역'], ['조회', 1], ['조회자', 1]], eg.map((x, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(x.key) + '</td><td>' + esc(x.type || '') + '</td><td>' + esc(x.rg || '-') + '</td><td class="r">' + nf(x.c) + '</td><td class="r">' + nf(x.vis) + '</td></tr>'), '아직 대회 상세 조회 기록이 없습니다.'), '오늘일정·월간일정에서 대회 제목을 눌러 상세 창을 연 횟수입니다.');
+    const rg = group(ev, o => (o.rg || '지역 미상').split(/[\s·]/)[0]).map(x => ({ k: x.key, v: x.c }));
+    const sq = group(rs.filter(o => o.k === 'search'), o => o.tg.toLowerCase(), l => ({ vis: uniq(l, 'v') })).slice(0, 30);
+    h += '<div class="st-grid2">' + box('지역별 대회 조회', hbars(rg, '조회')) + box('검색어 (월간일정 검색창)', table([['검색어'], ['횟수', 1], ['검색한 사람', 1]], sq.map(x => '<tr><td>' + esc(x.key) + '</td><td class="r">' + nf(x.c) + '</td><td class="r">' + nf(x.vis) + '</td></tr>'), '아직 검색 기록이 없습니다.')) + '</div>';
+    const ck = rs.filter(o => o.k === 'click');
+    const bySite = group(ck, o => siteName(o.tg) || o.tg).map(x => ({ k: x.key, v: x.c }));
+    const byLink = group(ck, o => o.tg + '|' + (o.ti || ''), l => ({ url: l[0].tg, ev: l[0].ti, txt: l[0].cd, vis: uniq(l, 'v') })).slice(0, 40);
+    h += box('외부 링크 클릭 (사이트별)', hbars(bySite, '클릭'), '접수처(마틴캐럿·보이스파크 등), 밴드, 오픈채팅, 협회 원문 링크 등 다른 사이트로 나가는 클릭입니다.');
+    h += box('외부 링크 클릭 (링크별)', table([['링크'], ['관련 대회'], ['클릭', 1], ['사람', 1]], byLink.map(x => '<tr><td><a href="' + esc(x.url) + '">' + esc(x.txt || siteName(x.url)) + '</a><div class="st-note" style="margin:0">' + esc(x.url.slice(0, 80)) + '</div></td><td>' + esc(x.ev || '-') + '</td><td class="r">' + nf(x.c) + '</td><td class="r">' + nf(x.vis) + '</td></tr>'), '아직 외부 링크 클릭 기록이 없습니다.'));
+    return h;
+  }
+
+  /* ---------- 4. 유입 경로 ---------- */
+  function vSource(rs) {
+    const pv = PV(rs);
+    const ses = group(pv, o => o.s).map(x => { const f = x.list.slice().sort((a, b) => a.t.localeCompare(b.t))[0]; return { s: x.key, v: f.v, ch: f.ch || '직접 접속', cd: f.cd || '', q: f.q || '', p: f.p }; });
+    const ch = group(ses, o => o.ch, l => ({ vis: uniq(l, 'v') }));
+    const tot = ses.length, mx = Math.max(1, ...ch.map(x => x.c));
+    let h = box('유입 채널', table([['채널'], [''], ['방문 횟수', 1], ['방문자', 1], ['비율', 1]], ch.map(x => '<tr><td>' + esc(x.key) + '</td>' + barCell(x.c, mx) + '<td class="r">' + nf(x.c) + '</td><td class="r">' + nf(x.vis) + '</td><td class="r">' + pct(x.c, tot) + '</td></tr>')), '방문 횟수 = 한 번 들어와서 30분 안에 둘러본 것을 1회로 셉니다. 카카오톡·밴드 앱 안에서 연 경우도 각각 카카오톡·네이버 밴드로 잡힙니다.');
+    const bp = group(ses.filter(o => /post=/.test(o.cd)), o => (o.cd.match(/post=(\S+)/) || [])[1], l => ({ vis: uniq(l, 'v'), ch: l[0].ch, p: l[0].p }));
+    h += box('밴드 게시글별 유입', table([['게시글 번호'], ['채널'], ['처음 본 페이지'], ['방문 횟수', 1], ['방문자', 1]], bp.map(x => '<tr><td><b>' + esc(x.key) + '</b></td><td>' + esc(x.ch) + '</td><td>' + esc(pname(x.p) || x.p) + '</td><td class="r">' + nf(x.c) + '</td><td class="r">' + nf(x.vis) + '</td></tr>'), '아직 게시글 번호가 붙은 링크로 들어온 기록이 없습니다. 아래 링크 만들기로 주소를 만들어 밴드 글에 넣어 주세요.')
+      + '<div style="margin-top:14px"><b>링크 만들기</b><div class="st-form" style="margin-top:8px"><select id="lkP"><option value="today.html">오늘일정</option><option value="schedule.html">월간일정</option><option value="news.html">뉴스</option><option value="">첫 화면</option></select><select id="lkR"><option value="band">네이버 밴드</option><option value="kakao">카카오톡</option></select><input id="lkN" placeholder="게시글 번호 (예: 516)" style="width:180px"><button class="st-btn" id="lkGo">만들기</button></div><div class="st-out" id="lkOut" hidden></div></div>',
+      '밴드 글에 이 주소를 넣으면 그 글을 보고 몇 명이 들어왔는지 위 표에 나옵니다. 홈페이지의 공유 버튼으로 보낸 주소에는 자동으로 ref=band / ref=kakao 가 붙습니다.');
+    const kw = group(ses.filter(o => o.q), o => o.q.toLowerCase(), l => ({ vis: uniq(l, 'v'), ch: l[0].ch }));
+    const hosts = group(ses, o => (o.cd.split(' ').filter(t => !/=/.test(t))[0] || ''), l => ({ vis: uniq(l, 'v') })).slice(0, 20);
+    h += '<div class="st-grid2">' + box('검색 유입 키워드', table([['키워드'], ['검색엔진'], ['방문 횟수', 1]], kw.map(x => '<tr><td>' + esc(x.key) + '</td><td>' + esc(x.ch) + '</td><td class="r">' + nf(x.c) + '</td></tr>'), '아직 키워드가 확인된 검색 유입이 없습니다.'), '네이버·구글은 대부분 검색어를 숨겨서 보내므로 일부만 보입니다. 전체 검색어는 네이버 서치어드바이저·구글 서치콘솔에서 확인하세요.')
+      + box('들어온 사이트 (주소)', table([['사이트'], ['방문 횟수', 1], ['방문자', 1]], hosts.map(x => '<tr><td>' + esc(x.key) + '</td><td class="r">' + nf(x.c) + '</td><td class="r">' + nf(x.vis) + '</td></tr>'), '다른 사이트에서 링크로 들어온 기록이 없습니다.')) + '</div>';
+    return h;
+  }
+
+  /* ---------- 5. 이용자 환경 ---------- */
+  function vEnv(rs) {
+    const pv = PV(rs);
+    const byVis = key => group(pv, o => o[key] || '알 수 없음', l => ({ vis: uniq(l, 'v') })).map(x => ({ k: x.key, v: x.vis })).sort((a, b) => b.v - a.v);
+    const wb = o => !o.w ? '알 수 없음' : o.w < 360 ? '360 미만 (작은 폰)' : o.w < 400 ? '360~399 (보통 폰)' : o.w < 480 ? '400~479 (큰 폰)' : o.w < 768 ? '480~767 (폴드·작은 태블릿)' : o.w < 1024 ? '768~1023 (태블릿)' : '1024 이상 (PC)';
+    const wg = group(pv, wb, l => ({ vis: uniq(l, 'v') })).map(x => ({ k: x.key, v: x.vis })).sort((a, b) => b.v - a.v);
+    const rgV = group(pv, o => o.mr ? o.mr.split(' ')[0] : '비회원·미입력', l => ({ vis: uniq(l, 'v') })).map(x => ({ k: x.key, v: x.vis })).sort((a, b) => b.v - a.v);
+    return '<div class="st-grid2">' + box('기기', hbars(byVis('dv'), '방문자')) + box('브라우저·앱', hbars(byVis('br'), '방문자')) + '</div>'
+      + '<div class="st-grid2">' + box('화면 폭', hbars(wg, '방문자'), '대부분이 폰(400 미만)이면 글자·버튼을 더 크게, 한 줄을 짧게 하는 게 좋습니다.') + box('접속 지역 (시·도)', hbars(rgV, '방문자'), '로그인한 회원의 가입 지역 기준입니다. 비회원의 지역은 알 수 없습니다(IP 위치 조회는 하지 않음).') + '</div>';
+  }
+
+  /* ---------- 6. 설정 / 관리 ---------- */
+  function vSet(rs) {
+    const ex = localStorage.getItem('pgn_notrack') === '1';
+    return box('관리자 본인 접속 제외', '<p>관리자로 로그인한 상태의 접속은 <b>자동으로 기록하지 않습니다</b>.</p><p>로그아웃 상태로 볼 때도 빼려면, 평소 쓰는 기기(폰·PC)마다 이 화면에서 아래 버튼을 한 번 눌러 두세요.</p><p>이 브라우저: <b id="exS">' + (ex ? '기록 제외 중' : '기록 중') + '</b> <button class="st-btn ' + (ex ? 'w' : '') + '" id="exB">' + (ex ? '제외 해제' : '이 브라우저 접속 제외') + '</button></p>')
+      + box('봇·크롤러 제외', '<p>검색 로봇·미리보기 봇(네이버 Yeti, 구글봇, 카카오톡 링크 미리보기 등)과 자동화 브라우저는 기록하지 않습니다. 대부분의 로봇은 화면 스크립트를 실행하지 않아 처음부터 집계에 들어오지 않습니다.</p>')
+      + box('데이터 내보내기', '<p>선택한 기간(' + dk(per.from) + ' ~ ' + dk(per.to) + ')의 기록 ' + nf(rs.length) + '건</p><div class="st-form"><button class="st-btn" id="csv">CSV 내려받기</button>' + (info.url ? '<a class="st-btn w" href="' + esc(info.url) + '" style="text-decoration:none">구글시트에서 열기</a>' : '') + '</div>',
+        '전체 기록 ' + nf(info.total) + '건' + (info.first ? ' · 첫 기록 ' + esc(info.first) : '') + '. 구글시트 "파크골프뉴스 방문통계 (비공개)"의 [방문로그] 탭에 쌓입니다. 이 시트는 공유하지 마세요.');
+  }
+
+  /* ---------- 화면 그리기 ---------- */
+  function setPer(p) {
+    per.p = p;
+    if (p === 'today') { per.from = T; per.to = T; }
+    else if (p === 'yday') { per.from = add(T, -1); per.to = add(T, -1); }
+    else if (p === '7') { per.from = add(T, -6); per.to = T; }
+    else if (p === '30') { per.from = add(T, -29); per.to = T; }
+  }
+  async function draw(force) {
+    document.querySelectorAll('#tabs [data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
+    document.querySelectorAll('#per [data-p]').forEach(b => b.classList.toggle('on', b.dataset.p === per.p));
+    $('#cus').hidden = per.p !== 'custom';
+    $('#per').style.display = tab === 'sum' ? 'none' : '';
+    $('#rng').textContent = dk(per.from) + ' ~ ' + dk(per.to);
+    try { await load(force); } catch (e) { if (!Auth.get()) { location.replace('login.html?next=stats.html'); return; } $('#msg').innerHTML = '<div class="msg err">' + esc(e.message) + '</div>'; return; }
+    const rs = inR(all, per.from, per.to);
+    $('#body').innerHTML = tab === 'sum' ? vSum() + '<p class="st-note">요약은 기간 선택과 관계없이 오늘·어제·7일·30일을 한꺼번에 보여 줍니다. 자세한 내용은 위의 다른 메뉴에서 기간을 골라 보세요.</p>' : tab === 'visit' ? vVisit(rs) : tab === 'content' ? vContent(rs) : tab === 'source' ? vSource(rs) : tab === 'env' ? vEnv(rs) : vSet(rs);
+    document.querySelectorAll('#gran [data-g]').forEach(b => b.classList.toggle('on', b.dataset.g === gran));
+  }
+  $('#tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b) { tab = b.dataset.t; history.replaceState(null, '', '#' + tab); draw(); } };
+  $('#rf').onclick = () => draw(true);
+  $('#per').onclick = e => {
+    const b = e.target.closest('[data-p]'); if (b) { if (b.dataset.p === 'custom') { per.p = 'custom'; $('#cf').value = dk(per.from); $('#ct').value = dk(per.to); $('#cus').hidden = false; document.querySelectorAll('#per [data-p]').forEach(x => x.classList.toggle('on', x === b)); return; } setPer(b.dataset.p); draw(); }
+    if (e.target.id === 'cgo') { const f = $('#cf').value, t = $('#ct').value; if (!f || !t) return; let a = parseK(f), z = parseK(t); if (a > z) [a, z] = [z, a]; if (z > T) z = T; per.from = a; per.to = z; draw(); }
+  };
+  $('#body').addEventListener('click', e => {
+    const g = e.target.closest('[data-g]'); if (g) { gran = g.dataset.g; draw(); return; }
+    if (e.target.id === 'lkGo') { const n = $('#lkN').value.trim().replace(/[^0-9A-Za-z_-]/g, ''); const u = location.origin + '/' + $('#lkP').value + '?ref=' + $('#lkR').value + (n ? '&post=' + n : ''); const o = $('#lkOut'); o.hidden = false; o.innerHTML = esc(u) + ' <button class="st-btn w" id="lkCp">복사</button>'; o.dataset.u = u; return; }
+    if (e.target.id === 'lkCp') { const u = $('#lkOut').dataset.u; (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => { e.target.textContent = '복사됨'; }, () => prompt('아래 주소를 복사하세요', u)); return; }
+    if (e.target.id === 'exB') { if (localStorage.getItem('pgn_notrack') === '1') localStorage.removeItem('pgn_notrack'); else localStorage.setItem('pgn_notrack', '1'); draw(); return; }
+    if (e.target.id === 'csv') {
+      const rs = inR(all, per.from, per.to), keys = Object.keys(COLS);
+      const q = v => '"' + String(v == null ? '' : v === true ? 'Y' : v === false ? '' : v).replace(/"/g, '""') + '"';
+      const csv = '\ufeff' + keys.map(k => q(COLS[k])).join(',') + '\n' + rs.map(o => keys.map(k => q(o[k])).join(',')).join('\n');
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = '방문통계_' + dk(per.from) + '_' + dk(per.to) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    }
+  });
+  draw();
+})();
+</script>
+</body>
+</html>
