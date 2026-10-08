@@ -95,7 +95,7 @@
     $('#now').classList.toggle('on', diff === 0);
     const td = all.filter(e => on(e, cur)).sort((a, b) => (order[a.type] ?? 9) - (order[b.type] ?? 9) || a.start - b.start);
     const cnt = {}; td.forEach(e => { const k = isTrial(e) ? '시범운영' : e.type; cnt[k] = (cnt[k] || 0) + 1; }); if (cnt['시범운영']) { const tv = cnt['시범운영']; delete cnt['시범운영']; cnt['시범운영'] = tv; }   // 시범운영은 맨 마지막
-    $('#sum').innerHTML = td.length ? Object.entries(cnt).map(([k, v]) => '<span class="tag ' + esc(k) + '">' + esc(k) + ' ' + v + '건</span>').join('') : '';
+    $('#sum').innerHTML = td.length ? Object.entries(cnt).map(([k, v]) => '<span class="tag ' + esc(k) + '">' + esc(k === '연습라운딩' ? '연습일' : k) + ' ' + v + '건</span>').join('') : '';
     $('#list').innerHTML = td.length ? td.map(e => eventRow(e)).join('') : '<div class="empty">이 날 등록된 일정이 없습니다.</div>';
   };
   try {
