@@ -8,6 +8,12 @@
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="icon" href="assets/logo.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<meta name="theme-color" content="#148a4a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="파크골프뉴스">
 <link rel="stylesheet" href="assets/style.css?v=20261007p">
 
 </head>
@@ -21,11 +27,65 @@
   </main>
   <div id="side"></div>
 </div>
+<script>
+/* ---------- 폰에 설치 (홈 화면 아이콘) 버튼: 제목의 공유 버튼 오른쪽 ---------- */
+(() => {
+  let dp = null;
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); dp = e; });
+  addEventListener('appinstalled', () => { dp = null; document.querySelectorAll('.ins').forEach(b => b.remove()); });
+  const ua = navigator.userAgent, isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAnd = /Android/.test(ua), isMob = isIOS || isAnd;
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const inApp = /KAKAOTALK/i.test(ua) ? 'kakao' : /NAVER|BAND\/|Instagram|FBAN|FBAV|Line\//i.test(ua) ? 'app' : '';
+  const URL0 = location.origin + '/today.html';
+  function guide() {
+    let h = '';
+    if (inApp === 'kakao') {
+      h = '<p>카카오톡 안에서는 바로 설치가 안 됩니다.</p><p>아래 버튼을 눌러 ' + (isIOS ? '사파리' : '크롬') + '에서 연 다음, <b>폰에 설치</b> 버튼을 다시 눌러 주세요.</p><p style="text-align:center;margin-top:14px"><a class="ins-go" href="kakaotalk://web/openExternal?url=' + encodeURIComponent(URL0) + '">다른 브라우저로 열기</a></p>';
+    } else if (inApp) {
+      h = '<p>이 앱 안에서는 바로 설치가 안 됩니다.</p><p>오른쪽 위(또는 아래) <b>⋮ / ⋯ 메뉴</b>에서 <b>다른 브라우저로 열기</b>를 누른 다음, <b>폰에 설치</b> 버튼을 다시 눌러 주세요.</p>' + (isAnd ? '<p style="text-align:center;margin-top:14px"><a class="ins-go" href="intent://' + location.host + '/today.html#Intent;scheme=https;package=com.android.chrome;end">크롬으로 열기</a></p>' : '');
+    } else if (isIOS) {
+      h = '<ol><li>화면 아래(또는 위)의 <b>공유 버튼</b> <span class="ins-ic">⬆︎</span> 을 누릅니다.</li><li>목록을 올려서 <b>홈 화면에 추가</b>를 누릅니다.</li><li>오른쪽 위 <b>추가</b>를 누르면 끝!</li></ol>';
+    } else if (isAnd && /SamsungBrowser/.test(ua)) {
+      h = '<ol><li>화면 아래 <b>≡ 메뉴</b>를 누릅니다.</li><li><b>현재 페이지 추가</b> → <b>홈 화면</b>을 누릅니다.</li><li><b>추가</b>를 누르면 끝!</li></ol>';
+    } else if (isAnd) {
+      h = '<ol><li>오른쪽 위 <b>⋮ 메뉴</b>를 누릅니다.</li><li><b>홈 화면에 추가</b> (또는 <b>앱 설치</b>)를 누릅니다.</li><li><b>설치 / 추가</b>를 누르면 끝!</li></ol>';
+    } else {
+      h = '<p>휴대폰으로 이 화면(parkgolfnews.org)을 연 다음 <b>폰에 설치</b> 버튼을 누르세요.</p><p>컴퓨터에서는 주소창 오른쪽 <b>설치 아이콘</b>이나 <b>⋮ 메뉴 → 전송, 저장, 공유 → 바로가기 만들기</b>로 바탕화면에 둘 수 있습니다.</p>';
+    }
+    const m = document.createElement('div'); m.className = 'ins-ov';
+    m.innerHTML = '<div class="ins-box" role="dialog" aria-label="폰에 설치"><button type="button" class="ins-x" aria-label="닫기">×</button><div class="ins-top"><img src="assets/icon-192.png" alt=""><b>파크골프뉴스 아이콘을<br>휴대폰 홈 화면에 만들기</b></div>' + h + '<p class="ins-note">한 번 만들어 두면, 홈 화면의 아이콘만 누르면 오늘일정이 바로 열립니다.</p></div>';
+    m.addEventListener('click', e => { if (e.target === m || e.target.closest('.ins-x')) m.remove(); });
+    document.body.appendChild(m);
+  }
+  async function onClick() {
+    if (dp) { dp.prompt(); try { await dp.userChoice; } catch (e) {} dp = null; return; }
+    guide();
+  }
+  function add() {
+    if (standalone) return;
+    const h = document.querySelector('main h2.sec');
+    if (!h || h.querySelector('.ins')) return;
+    if (!document.getElementById('ins-css')) {
+      const st = document.createElement('style'); st.id = 'ins-css';
+      st.textContent = '.ins{flex-shrink:0;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--g700);background:var(--g700);color:#fff;border-radius:999px;padding:5px 12px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;line-height:1.4}.ins:hover{background:var(--g800)}.ins-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}.ins-box{position:relative;background:#fff;border-radius:16px;max-width:380px;width:100%;padding:22px 20px 16px;font-size:1rem;font-weight:400;line-height:1.7;box-shadow:0 8px 30px rgba(0,0,0,.25)}.ins-box ol{padding-left:22px;margin:10px 0}.ins-box li{margin:4px 0}.ins-box p{margin:8px 0}.ins-x{position:absolute;top:6px;right:8px;border:0;background:none;font-size:1.7rem;line-height:1;cursor:pointer;color:#555;padding:4px 8px}.ins-top{display:flex;align-items:center;gap:12px;margin-bottom:6px;font-size:1.05rem;color:var(--g900)}.ins-top img{width:56px;height:56px;border-radius:12px;border:1px solid var(--line)}.ins-note{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padding-top:10px;margin-top:12px!important}.ins-go{display:inline-block;background:var(--g700);color:#fff!important;border-radius:999px;padding:9px 18px;font-weight:700}.ins-ic{font-weight:700;color:var(--blue)}';
+      document.head.appendChild(st);
+    }
+    if (getComputedStyle(h).display !== 'flex') { h.style.display = 'flex'; h.style.alignItems = 'center'; h.style.gap = '10px'; }
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'ins'; b.setAttribute('aria-label', '휴대폰 홈 화면에 설치');
+    b.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 7v7M9 11.5l3 3 3-3"/><path d="M10.5 18.5h3"/></svg>폰에 설치';
+    b.onclick = onClick;
+    const s = h.querySelector('.shr'); if (s) s.after(b); else { b.style.marginLeft = 'auto'; h.appendChild(b); }
+  }
+  window.pgnInstallBtn = add;
+})();
+</script>
 <script src="assets/app.js?v=20261007p"></script>
 <script>
 (async () => {
   const S = await layout('today');
   $('#side').innerHTML = sideBox(S);
+  pgnInstallBtn(); setTimeout(pgnInstallBtn, 800);
   const t = today0(); let cur = new Date(t), all = [];
   const order = { '대회': 0, '접수': 1, '연습라운딩': 2 };
   const on = (e, d) => ymd(e.start) <= ymd(d) && ymd(e.end) >= ymd(d);
