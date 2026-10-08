@@ -245,6 +245,94 @@ async function getSchedule() {
     .sort((a, b) => a.start - b.start || a.name.localeCompare(b.name));
 }
 
+/* ---------- 방문 통계 기록 (관리자 > 통계). 관리자·봇·제외 설정한 브라우저는 기록 안 함 ---------- */
+const TRK = (() => {
+  const ua = navigator.userAgent;
+  const bot = !!navigator.webdriver || /bot|crawl|spider|slurp|Yeti|Daumoa|facebookexternalhit|kakaotalk-scrap|HeadlessChrome|Lighthouse|PageSpeed|Prerender/i.test(ua);
+  const off = () => { try { return bot || !CONFIG.API_URL || localStorage.getItem('pgn_notrack') === '1' || (Auth.get() || {}).role === 'admin'; } catch (e) { return true; } };
+  let q = [], tm = 0;
+  const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const dev = () => (/iPad|Tablet|SM-T|SM-X|Tab/i.test(ua) || (/Android/.test(ua) && !/Mobile/.test(ua)) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) ? '태블릿' : /Mobi|iPhone|iPod|Android/i.test(ua) ? '모바일' : 'PC';
+  const brw = () => /KAKAOTALK/i.test(ua) ? '카카오톡' : /BAND\//.test(ua) ? '밴드앱' : /NAVER/.test(ua) ? '네이버앱' : /Whale/.test(ua) ? '웨일' : /SamsungBrowser/.test(ua) ? '삼성인터넷' : /Edg/.test(ua) ? '엣지' : /CriOS|Chrome\//.test(ua) ? '크롬' : /Firefox|FxiOS/.test(ua) ? '파이어폭스' : /Safari/.test(ua) ? '사파리' : '기타';
+  const page = () => { const sp = new URLSearchParams(location.search); ['ref', 'post', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content'].forEach(k => sp.delete(k)); const s = sp.toString(); return (location.pathname === '/' ? '/index.html' : location.pathname) + (s ? '?' + s : ''); };
+  function source() {
+    const sp = new URLSearchParams(location.search);
+    const ref = (sp.get('ref') || sp.get('utm_source') || '').toLowerCase().slice(0, 30), post = (sp.get('post') || sp.get('utm_content') || '').slice(0, 40);
+    let r0 = ''; try { r0 = sessionStorage.getItem('pgn_ref0'); sessionStorage.removeItem('pgn_ref0'); } catch (e) {}
+    const rf = r0 || document.referrer || '';
+    let host = '', kw = '';
+    try { if (rf) { const u = new URL(rf); host = u.hostname.replace(/^(www|m)\./, ''); kw = u.searchParams.get('query') || u.searchParams.get('q') || ''; } } catch (e) {}
+    const own = host && location.hostname.replace(/^www\./, '') === host;
+    let ch;
+    if (/band/.test(ref)) ch = '네이버 밴드';
+    else if (/kakao/.test(ref)) ch = '카카오톡';
+    else if (ref) ch = ref;
+    else if (own) ch = '내부 이동';
+    else if (/band\.us/.test(host) || /BAND\//.test(ua)) ch = '네이버 밴드';
+    else if (/kakao/.test(host) || /KAKAOTALK/i.test(ua)) ch = '카카오톡';
+    else if (/naver\.com/.test(host)) ch = '네이버 검색';
+    else if (/google\./.test(host)) ch = '구글 검색';
+    else if (/daum\.net/.test(host)) ch = '다음 검색';
+    else if (/bing\.com/.test(host)) ch = '빙 검색';
+    else if (host) ch = '기타 사이트';
+    else ch = '직접 접속';
+    return { ch, det: [ref ? 'ref=' + ref : '', post ? 'post=' + post : '', own ? '' : host].filter(Boolean).join(' '), kw: /검색/.test(ch) ? kw.slice(0, 100) : '' };
+  }
+  function session() {
+    const now = Date.now(), last = +sessionStorage.getItem('pgn_slast') || 0, s0 = source();
+    let sid = sessionStorage.getItem('pgn_sid'), src = null;
+    try { src = JSON.parse(sessionStorage.getItem('pgn_src') || 'null'); } catch (e) {}
+    const fresh = s0.ch !== '내부 이동' && s0.ch !== '직접 접속' && (!src || s0.ch !== src.ch || s0.det !== src.det);
+    if (!sid || !src || now - last > 30 * 60e3 || fresh) {
+      sid = rid(); src = s0.ch === '내부 이동' ? { ch: '직접 접속', det: '', kw: '' } : s0;
+      sessionStorage.setItem('pgn_sid', sid); sessionStorage.setItem('pgn_src', JSON.stringify(src));
+    }
+    sessionStorage.setItem('pgn_slast', String(now));
+    return { sid, src };
+  }
+  let vid = '', sid = '';
+  function push(h) {
+    if (off()) return;
+    if (!vid) { vid = localStorage.getItem('pgn_vid') || ''; if (!vid) { vid = rid(); localStorage.setItem('pgn_vid', vid); } }
+    if (!sid) sid = sessionStorage.getItem('pgn_sid') || session().sid;
+    q.push(Object.assign({ v: vid, s: sid, p: page(), dv: dev(), br: brw(), w: innerWidth, at: Date.now() }, h));
+  }
+  function flush() {
+    clearTimeout(tm); tm = 0;
+    if (!q.length || off()) { q = []; return; }
+    const t = document.title.replace(/\s*-\s*파크골프뉴스$/, '');
+    q.forEach(h => { if (h.k === 'pv' && !h.ti) h.ti = t; });
+    const a = Auth.get(), body = JSON.stringify({ action: 'hit', token: a ? a.token : '', hits: q.splice(0, 30) });
+    try { if (navigator.sendBeacon && navigator.sendBeacon(CONFIG.API_URL, new Blob([body], { type: 'text/plain;charset=utf-8' }))) return; } catch (e) {}
+    fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body, keepalive: true }).catch(() => {});
+  }
+  const later = ms => { if (!tm) tm = setTimeout(flush, ms); };
+  let pvDone = false;
+  function pv() {
+    if (pvDone || off()) return; pvDone = true;
+    const isNew = !localStorage.getItem('pgn_vid');
+    const ss = session(); sid = ss.sid;
+    push({ k: 'pv', n: isNew ? 1 : 0, ch: ss.src.ch, cd: ss.src.det, q: ss.src.kw });
+    later(2500);   // 제목이 다 그려진 뒤 보냄 (페이지 속도에 영향 없음)
+  }
+  function ev(e) { push({ k: 'ev', tg: e.name, ti: isTrial(e) ? '시범운영' : e.type, rg: e.region || '' }); later(3000); }
+  document.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
+    let u; try { u = new URL(a.href, location.href); } catch (x) { return; }
+    if (!/^https?:$/.test(u.protocol) || u.hostname === location.hostname) return;
+    const evEl = a.closest('.ev, #evd'), name = evEl ? ((evEl.querySelector('h4, h3') || {}).textContent || '').trim() : '';
+    push({ k: 'click', tg: u.href, ti: name, cd: (a.textContent || '').trim().slice(0, 60) }); flush();
+  }, true);
+  document.addEventListener('change', e => {
+    const t = e.target; if (!t || !t.matches || !t.matches('input[type=search], input#q')) return;
+    const v = (t.value || '').trim(); if (v.length >= 2) { push({ k: 'search', tg: v.slice(0, 60) }); later(2000); }
+  }, true);
+  addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+  function tag(url, ref) { try { const u = new URL(url); ['ref', 'post'].forEach(k => u.searchParams.delete(k)); u.searchParams.set('ref', ref); return u.toString(); } catch (e) { return url; } }
+  return { pv, ev, flush, tag, off };
+})();
+
 /* ---------- 공통 레이아웃 ---------- */
 async function layout(active, opts) {
   opts = opts || {};
@@ -252,7 +340,7 @@ async function layout(active, opts) {
   const me = Auth.get();
   const memberMode = me && me.role !== 'admin';   // 회원: 메뉴는 '자유게시판' 하나 (중복 방지)
   const nav = [['today.html', '오늘일정', 'today'], ['schedule.html', '월간일정', 'schedule'], ['news.html', '뉴스', 'news'], ['board.html', '자유게시판', 'board']];
-  const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a>` : '') + `<a href="mypage.html" class="who ${active === 'mypage' ? 'on' : ''}" title="마이페이지">${esc(me.name)}님</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
+  const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a><a href="stats.html" class="${active === 'stats' ? 'on' : ''}">통계</a>` : '') + `<a href="mypage.html" class="who ${active === 'mypage' ? 'on' : ''}" title="마이페이지">${esc(me.name)}님</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   const head = S => `
     <div class="topbar"><div class="wrap"><span>${esc(S.슬로건)}</span>
     <span><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a> · <a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener">오픈채팅방</a> · ${esc(S.전화)}</span></div></div>
@@ -271,6 +359,7 @@ async function layout(active, opts) {
   document.body.insertAdjacentHTML('beforeend', '<footer class="site" id="pgn-foot">' + foot(S) + '</footer>');
   refreshSettings(S2 => { if (JSON.stringify(S2) === JSON.stringify(S)) return; S = S2; $('#pgn-head').innerHTML = head(S); $('#pgn-foot').innerHTML = foot(S); });
   startShare(active);   // 제목 오른쪽 공유 버튼
+  TRK.pv();             // 방문 통계
   if (me) startPing();
   else if (opts.openList) {   // 뉴스 목록: 로그인 없이 기사 목록을 보여 주고, 기사를 누르면 로그인 안내창
     document.addEventListener('click', e => {
@@ -358,6 +447,7 @@ const EV_REG = [];
 function evReg(e) { EV_REG.push(e); return EV_REG.length - 1; }
 function showEv(i) {
   const e = EV_REG[i]; if (!e) return;
+  TRK.ev(e);
   if (!document.getElementById('evd-css')) {
     const st = document.createElement('style'); st.id = 'evd-css';
     st.textContent = '#evd{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}.evd-box{background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:85vh;overflow:auto;padding:24px 26px;position:relative;font-size:1.05rem}.evd-box h3{font-size:1.25rem;line-height:1.4;margin:0 36px 14px 0}.evd-x{position:sticky;top:0;float:right;margin:-12px -12px 0 8px;width:40px;height:40px;border-radius:50%;border:0;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.3);font-size:1.8rem;cursor:pointer;line-height:1;z-index:2}.evd-box dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0 0 12px}.evd-box dt{font-weight:700;color:#555}.evd-box dd{margin:0}.evd-link{font-weight:700;margin-bottom:12px}.evd-link a{color:var(--g700)}.evd-body{white-space:pre-wrap;line-height:1.6;border-top:1px solid #e5e5e5;padding-top:12px}.evd-body a{color:var(--g700);word-break:break-all}h4.evt{cursor:pointer}h4.evt:hover{text-decoration:underline}';
@@ -406,7 +496,7 @@ function eventRow(e, opts = {}) {
 
 
 /* ---------- 공유 버튼 (각 페이지 제목 오른쪽 끝): 카카오톡 / 밴드 ---------- */
-const SHARE_SKIP = ['write', 'members', 'requests', 'request', 'mypage', 'login', 'signup', 'find'];
+const SHARE_SKIP = ['write', 'members', 'requests', 'stats', 'request', 'mypage', 'login', 'signup', 'find'];
 function shareInfo() {
   const url = location.href.split('#')[0];
   const h = document.querySelector('h1') || document.querySelector('h2.sec');
@@ -414,14 +504,14 @@ function shareInfo() {
   return { url, title: t === '파크골프뉴스' ? t : t + ' - 파크골프뉴스' };
 }
 function shareKakao() {
-  const s = shareInfo();
+  const s = shareInfo(); s.url = TRK.tag(s.url, 'kakao');
   if (navigator.share) { navigator.share({ title: s.title, text: s.title, url: s.url }).catch(() => {}); return; }   // 휴대폰: 공유창에서 카카오톡 선택
   const done = () => alert('주소를 복사했습니다.\n카카오톡 대화창에 붙여넣기(Ctrl+V) 해 주세요.');
   if (navigator.clipboard) navigator.clipboard.writeText(s.url).then(done, () => prompt('아래 주소를 복사해 카카오톡에 붙여넣으세요.', s.url));
   else prompt('아래 주소를 복사해 카카오톡에 붙여넣으세요.', s.url);
 }
 function shareBand() {
-  const s = shareInfo();
+  const s = shareInfo(); s.url = TRK.tag(s.url, 'band');
   location.href = 'https://band.us/plugin/share?body=' + encodeURIComponent(s.title + '\n' + s.url) + '&route=' + encodeURIComponent(location.host);
 }
 function addShareButtons() {
