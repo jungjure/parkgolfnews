@@ -11,7 +11,7 @@
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/logo.png">
 <!-- 첫 화면은 항상 오늘일정 페이지로 (PC·모바일 공통) -->
-<script>location.replace('today.html' + location.search + location.hash);</script>
+<script>try { if (document.referrer) sessionStorage.setItem('pgn_ref0', document.referrer); } catch (e) {} location.replace('today.html' + location.search + location.hash);</script>
 <meta http-equiv="refresh" content="0; url=today.html">
 </head>
 <body>
