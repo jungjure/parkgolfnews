@@ -270,6 +270,7 @@ async function layout(active, opts) {
   document.body.insertAdjacentHTML('afterbegin', '<div id="pgn-head" style="display:contents">' + head(S) + '</div>');
   document.body.insertAdjacentHTML('beforeend', '<footer class="site" id="pgn-foot">' + foot(S) + '</footer>');
   refreshSettings(S2 => { if (JSON.stringify(S2) === JSON.stringify(S)) return; S = S2; $('#pgn-head').innerHTML = head(S); $('#pgn-foot').innerHTML = foot(S); });
+  startShare(active);   // 제목 오른쪽 공유 버튼
   if (me) startPing();
   else if (opts.openList) {   // 뉴스 목록: 로그인 없이 기사 목록을 보여 주고, 기사를 누르면 로그인 안내창
     document.addEventListener('click', e => {
@@ -401,6 +402,56 @@ function eventRow(e, opts = {}) {
   return `<div class="ev ${dl ? 'deadline' : ''}">
     <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;gap:10px"><h4 class="evt" tabindex="0" role="button" data-ev="${evReg(e)}" style="flex:1;min-width:0"${opts.max && e.name.length > opts.max ? ` title="${esc(e.name)}"` : ''}>${esc(opts.max && e.name.length > opts.max ? e.name.slice(0, opts.max) + '...' : e.name)}</h4><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap">${trial ? '<span class="tag 시범운영">시범운영</span>' : `<span class="tag ${esc(e.type)}">${esc(e.type)}</span>${dl ? '<span class="tag 접수">마감임박</span>' : (e.type === '접수' && /접수마감/.test(e.name) ? '<span class="tag 접수">마감</span>' : '')}`}</div></div><div class="sub" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span>${[e.region, e.place, e.note].filter(Boolean).map(esc).join(' · ')}</span>${dateHtml}</div>
     ${hasLink ? `<div style="font-size:.85rem;font-weight:700;color:#111;margin-top:4px">접수처 : <a class="go" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(siteName(e.link))}</a></div>` : ''}</div></div>`;
+}
+
+
+/* ---------- 공유 버튼 (각 페이지 제목 오른쪽 끝): 카카오톡 / 밴드 ---------- */
+const SHARE_SKIP = ['write', 'members', 'requests', 'request', 'mypage', 'login', 'signup', 'find'];
+function shareInfo() {
+  const url = location.href.split('#')[0];
+  const h = document.querySelector('h1') || document.querySelector('h2.sec');
+  const t = (h && h.firstChild && h.firstChild.textContent || document.title).trim();
+  return { url, title: t === '파크골프뉴스' ? t : t + ' - 파크골프뉴스' };
+}
+function shareKakao() {
+  const s = shareInfo();
+  if (navigator.share) { navigator.share({ title: s.title, text: s.title, url: s.url }).catch(() => {}); return; }   // 휴대폰: 공유창에서 카카오톡 선택
+  const done = () => alert('주소를 복사했습니다.\n카카오톡 대화창에 붙여넣기(Ctrl+V) 해 주세요.');
+  if (navigator.clipboard) navigator.clipboard.writeText(s.url).then(done, () => prompt('아래 주소를 복사해 카카오톡에 붙여넣으세요.', s.url));
+  else prompt('아래 주소를 복사해 카카오톡에 붙여넣으세요.', s.url);
+}
+function shareBand() {
+  const s = shareInfo();
+  location.href = 'https://band.us/plugin/share?body=' + encodeURIComponent(s.title + '\n' + s.url) + '&route=' + encodeURIComponent(location.host);
+}
+function addShareButtons() {
+  if (!document.getElementById('shr-css')) {
+    const st = document.createElement('style'); st.id = 'shr-css';
+    st.textContent = '.shr{position:relative;margin-left:auto;flex-shrink:0;border-left:0;padding:0}.shr-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;color:var(--g900);border-radius:999px;padding:5px 12px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;line-height:1.4}.shr-btn:hover{border-color:var(--g700);color:var(--g700)}.shr-menu{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px;z-index:30;display:flex;flex-direction:column;gap:4px;min-width:150px}.shr-menu[hidden]{display:none!important}.shr-menu button{display:flex;align-items:center;gap:8px;border:0;border-radius:8px;padding:9px 12px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;text-align:left}.shr-k{background:#FEE500;color:#191919}.shr-b{background:#00C73C;color:#fff}';
+    document.head.appendChild(st);
+  }
+  document.querySelectorAll('h2.sec, h1').forEach(h => {
+    if (h.querySelector('.shr') || h.closest('header.site, #pgn-gate, #evd, .modal') || /^(글쓰기|글 수정)/.test(h.textContent.trim())) return;
+    if (getComputedStyle(h).display !== 'flex') { h.style.display = 'flex'; h.style.alignItems = 'center'; h.style.gap = '10px'; }
+    const w = document.createElement('span'); w.className = 'shr';
+    w.innerHTML = '<button type="button" class="shr-btn" aria-haspopup="true" aria-label="공유하기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>공유</button><div class="shr-menu" hidden><button type="button" class="shr-k">카카오톡 공유</button><button type="button" class="shr-b">밴드 공유</button></div>';
+    h.appendChild(w);
+  });
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest && ev.target.closest('.shr-btn, .shr-k, .shr-b');
+  document.querySelectorAll('.shr-menu').forEach(m => { if (!b || !m.parentNode.contains(b)) m.hidden = true; });
+  if (!b) return;
+  ev.preventDefault(); ev.stopPropagation();
+  if (b.classList.contains('shr-btn')) { const m = b.nextElementSibling; m.hidden = !m.hidden; return; }
+  b.closest('.shr-menu').hidden = true;
+  if (b.classList.contains('shr-k')) shareKakao(); else shareBand();
+}, true);
+function startShare(active) {
+  if (SHARE_SKIP.includes(active)) return;
+  let q = 0; const run = () => { q = 0; addShareButtons(); };
+  run();
+  new MutationObserver(() => { if (!q) q = requestAnimationFrame(run); }).observe(document.body, { childList: true, subtree: true });
 }
 
 function showError(el, e) {
