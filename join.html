@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>조인게시판 - 파크골프뉴스</title>
+<meta name="description" content="같은 지역에서 함께 파크골프 칠 사람을 찾는 조인게시판. 멤버 구함, 조인 희망, 정기 라운딩, 원정·투어 동행.">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css?v=20261009i">
+<style>
+.jn{max-width:869px;margin:0 auto;padding:4px 0 10px;font-size:1.05rem}
+.jn .intro{background:var(--g50);border:1px solid var(--g100);border-radius:12px;padding:12px 16px;font-size:.95rem;line-height:1.7;margin-bottom:14px}
+.jcats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.jcats button{border:2px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;font-weight:800;font-size:1rem;cursor:pointer;font-family:inherit;color:var(--ink)}
+.jcats button.on{background:var(--g700);border-color:var(--g700);color:#fff}
+.jfil{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.jfil select,.jfil input[type=search]{padding:11px 12px;border:2px solid var(--line);border-radius:10px;font-size:1rem;font-family:inherit;background:#fff}
+.jfil input[type=search]{flex:1;min-width:160px}
+.jfil label{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.95rem}
+.jfil label input{width:20px;height:20px}
+.jbig{display:inline-block;background:var(--g700);color:#fff;border:0;border-radius:12px;padding:13px 22px;font-size:1.1rem;font-weight:800;cursor:pointer;font-family:inherit;text-decoration:none}
+.jbig.w{background:#fff;color:var(--g900);border:2px solid var(--g700)}
+.jbig.red{background:#fff;color:var(--red);border:2px solid var(--red)}
+.jbig.sm{padding:9px 16px;font-size:.98rem}
+.jcard{display:block;padding:16px 18px;border-top:1px solid var(--line);color:inherit;text-decoration:none;cursor:pointer}
+.jcard:first-child{border-top:0}
+.jcard:hover{background:var(--g50)}
+.jcard.done{opacity:.55}
+.jcard .top{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.jcard .main{font-size:1.25rem;font-weight:800;line-height:1.45;color:var(--g900)}
+.jcard .main .left{color:var(--red)}
+.jcard .sub{font-size:.95rem;color:var(--muted);margin-top:4px}
+.jt{display:inline-block;font-size:.85rem;font-weight:800;border-radius:999px;padding:3px 11px;background:var(--g100);color:var(--g800)}
+.jt.s0{background:#e6f4ea;color:#137333}.jt.s1{background:#fdecea;color:var(--red)}.jt.s2{background:#eee;color:#666}
+.jt.c1{background:#e3f0ff;color:var(--blue)}.jt.c2{background:#fff3e0;color:var(--amber)}.jt.c3{background:#f3e8ff;color:#7b2cbf}.jt.c4{background:#ccfbf1;color:#0f766e}
+.jt.hid{background:#333;color:#fff}
+.jd{padding:20px 22px}
+.jd h1{font-size:1.45rem;line-height:1.45;margin:6px 0 4px;color:var(--g900)}
+.jd .meta{color:var(--muted);font-size:.92rem;margin-bottom:14px}
+.jd table{width:100%;border-collapse:collapse;font-size:1.02rem;margin-bottom:14px}
+.jd th,.jd td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.jd th{width:120px;color:var(--g900);background:var(--g50);white-space:nowrap}
+.jd .txt{white-space:pre-wrap;word-break:break-word;line-height:1.8;padding:12px 4px;min-height:40px}
+.jbox{border:2px solid var(--g100);border-radius:12px;padding:14px 16px;margin:14px 0;background:#fff}
+.jbox h3{margin:0 0 10px;font-size:1.1rem;color:var(--g900)}
+.jbox .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
+.jbox select,.jbox input{padding:10px 12px;border:2px solid var(--line);border-radius:10px;font-size:1rem;font-family:inherit}
+.japp{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)}
+.japp:first-of-type{border-top:0}
+.japp b{font-size:1.05rem}
+.ph{font-size:1.25rem;font-weight:800;color:var(--g700);text-decoration:none}
+.jform{padding:20px 22px}
+.jform .f{margin-bottom:16px}
+.jform .f>label,.jform .f>.lb{display:block;font-weight:800;margin-bottom:7px;font-size:1.05rem;color:var(--g900)}
+.jform .f small{color:var(--muted);font-weight:400;font-size:.88rem}
+.jform select,.jform input[type=text],.jform input[type=date],.jform input[type=time],.jform textarea{padding:12px 13px;border:2px solid var(--line);border-radius:10px;font-size:1.05rem;font-family:inherit;width:100%;background:#fff}
+.jform textarea{min-height:120px}
+.jform .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opts{display:flex;gap:8px;flex-wrap:wrap}
+.opts label{position:relative}
+.opts input{position:absolute;opacity:0}
+.opts span{display:inline-block;border:2px solid var(--line);border-radius:10px;padding:10px 15px;font-weight:700;cursor:pointer;background:#fff}
+.opts input:checked+span{border-color:var(--g700);background:var(--g700);color:#fff}
+.opts input:focus-visible+span{outline:3px solid #9fd3b0}
+.jmsg{margin:10px 0}
+.jadm{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:#fff8e1;border:1px solid #ffe08a;border-radius:10px;margin-bottom:10px;font-size:.95rem}
+.jcard .ck{width:22px;height:22px;margin-right:6px;vertical-align:middle}
+@media(max-width:600px){.jform .two{grid-template-columns:1fr}.jd th{width:88px}.jcard .main{font-size:1.15rem}}
+</style>
+</head>
+<body>
+<script src="assets/app.js?v=20261009i"></script>
+<script>
+(async () => {
+  await layout('join');
+  document.querySelector('footer.site').insertAdjacentHTML('beforebegin', '<div class="wrap"><main class="jn" id="jn"><div class="loading">불러오는 중...</div></main></div>');
+  const REG = {"서울특별시":["강남구","강동구","강북구","강서구","관악구","광진구","구로구","금천구","노원구","도봉구","동대문구","동작구","마포구","서대문구","서초구","성동구","성북구","송파구","양천구","영등포구","용산구","은평구","종로구","중구","중랑구"],"부산광역시":["강서구","금정구","기장군","남구","동구","동래구","부산진구","북구","사상구","사하구","서구","수영구","연제구","영도구","중구","해운대구"],"대구광역시":["군위군","남구","달서구","달성군","동구","북구","서구","수성구","중구"],"인천광역시":["강화군","계양구","남동구","동구","미추홀구","부평구","서구","연수구","옹진군","중구"],"광주광역시":["광산구","남구","동구","북구","서구"],"대전광역시":["대덕구","동구","서구","유성구","중구"],"울산광역시":["남구","동구","북구","울주군","중구"],"세종특별자치시":[],"경기도":["가평군","고양시","과천시","광명시","광주시","구리시","군포시","김포시","남양주시","동두천시","부천시","성남시","수원시","시흥시","안산시","안성시","안양시","양주시","양평군","여주시","연천군","오산시","용인시","의왕시","의정부시","이천시","파주시","평택시","포천시","하남시","화성시"],"강원특별자치도":["강릉시","고성군","동해시","삼척시","속초시","양구군","양양군","영월군","원주시","인제군","정선군","철원군","춘천시","태백시","평창군","홍천군","화천군","횡성군"],"충청북도":["괴산군","단양군","보은군","영동군","옥천군","음성군","제천시","증평군","진천군","청주시","충주시"],"충청남도":["계룡시","공주시","금산군","논산시","당진시","보령시","부여군","서산시","서천군","아산시","예산군","천안시","청양군","태안군","홍성군"],"전북특별자치도":["고창군","군산시","김제시","남원시","무주군","부안군","순창군","완주군","익산시","임실군","장수군","전주시","정읍시","진안군"],"전라남도":["강진군","고흥군","곡성군","광양시","구례군","나주시","담양군","목포시","무안군","보성군","순천시","신안군","여수시","영광군","영암군","완도군","장성군","장흥군","진도군","함평군","해남군","화순군"],"경상북도":["경산시","경주시","고령군","구미시","김천시","문경시","봉화군","상주시","성주군","안동시","영덕군","영양군","영주시","영천시","예천군","울릉군","울진군","의성군","청도군","청송군","칠곡군","포항시"],"경상남도":["거제시","거창군","고성군","김해시","남해군","밀양시","사천시","산청군","양산시","의령군","진주시","창녕군","창원시","통영시","하동군","함안군","함양군","합천군"],"제주특별자치도":["서귀포시","제주시"]};
+  const CATS = ['멤버 구함', '조인 희망', '정기 라운딩 모집', '원정·투어 동행'];
+  const CAT_HELP = { '멤버 구함': '조를 짰는데 자리가 남았을 때', '조인 희망': '혼자라 끼워 줄 팀을 찾을 때', '정기 라운딩 모집': '매주 같은 요일·구장 고정 멤버', '원정·투어 동행': '다른 지역 구장 방문, 카풀 동행' };
+  const WDN = ['일', '월', '화', '수', '목', '금', '토'];
+  const jn = $('#jn'), qs = new URLSearchParams(location.search);
+  const me = () => Auth.get();
+  const p2 = n => String(n).padStart(2, '0');
+  const dk = d => d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
+  const T = new Date(); T.setHours(0, 0, 0, 0); const TODAY = dk(T);
+  const pd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const fmtDay = s => { if (!s) return ''; const d = pd(s); return (d.getMonth() + 1) + '/' + d.getDate() + '(' + WDN[d.getDay()] + ')'; };
+  const fmtTime = t => { if (!t) return ''; const [h, m] = t.split(':').map(Number); return (h < 12 ? '오전 ' : '오후 ') + (h % 12 || 12) + '시' + (m ? ' ' + m + '분' : ''); };
+  const catCls = c => 'c' + (CATS.indexOf(c) + 1);
+  const stCls = s => s === '모집중' ? 's0' : s === '마감임박' ? 's1' : 's2';
+  const leftTxt = it => it.cat === '조인 희망' ? (it.cur > 1 ? it.cur + '명 조인 희망' : '혼자 조인 희망') : (it.state === '마감' ? '마감' : Math.max(0, it.need - it.acc) + '자리 남음');
+  const whenTxt = it => (it.rep ? '매주 ' + it.rep + '요일' + (it.date > TODAY ? ' (' + fmtDay(it.date) + '부터)' : '') : fmtDay(it.date)) + (it.time ? ' ' + fmtTime(it.time) : '');
+  const say = (el, t, k) => { el.innerHTML = t ? '<div class="msg ' + (k || 'err') + '">' + esc(t) + '</div>' : ''; };
+  const needLogin = () => '<div class="jbox"><h3>로그인이 필요합니다</h3><p>글을 자세히 보거나 신청하려면 로그인해 주세요.</p><div class="row"><a class="jbig" href="login.html?next=' + encodeURIComponent(location.pathname.slice(1) + location.search) + '">로그인</a><a class="jbig w" href="signup.html">회원가입</a></div></div>';
+  const go = p => { location.href = 'join.html' + (p ? '?' + p : ''); };
+
+  /* ---------- 목록 ---------- */
+  async function showList() {
+    document.title = '조인게시판 - 파크골프뉴스';
+    const st = { cat: qs.get('cat') || '전체', sido: localStorage.getItem('pgn_jsido') || '', when: '전체', q: '', hideDone: true, rep: false };
+    jn.innerHTML = '<h2 class="sec">조인게시판</h2><div class="intro"><b>함께 칠 사람을 찾는 곳입니다.</b> 같은 지역에서 같이 칠 분, 빈자리 채울 분, 정기 멤버, 원정 동행을 구해 보세요. 연락처는 공개되지 않고, 신청을 수락하면 서로 번호가 보입니다. 레슨·용품 판매 등 영업 글은 올릴 수 없습니다.</div>'
+      + '<div style="margin-bottom:12px"><button class="jbig" id="wr">+ 조인 글쓰기</button></div>'
+      + '<div class="jcats" id="cats"></div>'
+      + '<div class="jfil"><select id="fSido"><option value="">전국 (모든 지역)</option>' + Object.keys(REG).map(k => '<option>' + k + '</option>').join('') + '</select><select id="fWhen"><option>전체</option><option>오늘</option><option>이번 주</option><option>이번 주말</option></select><input type="search" id="fQ" placeholder="구장·지역 검색"><label><input type="checkbox" id="fDone" checked>마감 글 숨기기</label></div>'
+      + '<div id="adm"></div><div id="msg"></div><div class="card" id="list"><div class="loading">불러오는 중...</div></div>';
+    $('#fSido').value = st.sido;
+    $('#wr').onclick = () => { if (!me()) { location.href = 'login.html?next=' + encodeURIComponent('join.html?write=1'); return; } go('write=1'); };
+    let data = { items: [] };
+    const inWhen = it => {
+      if (st.when === '전체') return true;
+      if (it.rep) return true;
+      const d = it.date; if (!d) return false;
+      if (st.when === '오늘') return d === TODAY;
+      const dow = T.getDay(), mon = new Date(T); mon.setDate(T.getDate() - ((dow + 6) % 7)); const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+      if (st.when === '이번 주') return d >= TODAY && d <= dk(sun);
+      const sat = new Date(mon); sat.setDate(mon.getDate() + 5); return d >= dk(sat) && d <= dk(sun) && d >= TODAY;
+    };
+    const draw = () => {
+      const base = data.items.filter(it => (!st.sido || it.sido === st.sido) && inWhen(it) && (!st.q || (it.place + it.sido + it.sgg + it.nick).includes(st.q)) && (!st.hideDone || it.state !== '마감' || it.mine) && (!st.rep || it.reports > 0));
+      const cnt = { '전체': base.length }; base.forEach(it => cnt[it.cat] = (cnt[it.cat] || 0) + 1);
+      $('#cats').innerHTML = ['전체'].concat(CATS).map(c => '<button data-c="' + esc(c) + '" class="' + (c === st.cat ? 'on' : '') + '" title="' + esc(CAT_HELP[c] || '') + '">' + esc(c) + ' ' + (cnt[c] || 0) + '</button>').join('');
+      const rows = base.filter(it => st.cat === '전체' || it.cat === st.cat).sort((a, b) => (a.state === '마감') - (b.state === '마감') || (a.rep ? '0' : a.date + a.time).localeCompare(b.rep ? '0' : b.date + b.time));
+      $('#list').innerHTML = rows.length ? rows.map(it => '<a class="jcard ' + (it.state === '마감' ? 'done' : '') + '" href="join.html?id=' + esc(it.id) + '">'
+        + '<div class="top">' + (data.admin ? '<input type="checkbox" class="ck" data-id="' + esc(it.id) + '" onclick="event.stopPropagation()">' : '') + '<span class="jt ' + catCls(it.cat) + '">' + esc(it.cat) + '</span><span class="jt ' + stCls(it.state) + '">' + esc(it.state) + '</span>' + (it.st === '숨김' ? '<span class="jt hid">숨김</span>' : '') + (it.reports ? '<span class="jt s1">신고 ' + it.reports + '</span>' : '') + (it.mine ? '<span class="jt">내 글</span>' : '') + (it.apps && it.mine ? '<span class="jt s1">신청 ' + it.apps + '</span>' : '') + '</div>'
+        + '<div class="main">' + esc(whenTxt(it)) + ' · ' + esc(it.place) + ' · <span class="left">' + esc(leftTxt(it)) + '</span></div>'
+        + '<div class="sub">' + esc([it.sido + (it.sgg ? ' ' + it.sgg : ''), it.holes, it.level && it.level !== '무관' ? '실력 ' + it.level : '', it.cat !== '조인 희망' && it.need ? '모집 ' + it.need + '명' : '', it.nick].filter(Boolean).join(' · ')) + '</div></a>').join('')
+        : '<div class="empty" style="padding:30px 16px;text-align:center">' + (data.items.length ? '조건에 맞는 글이 없습니다. 지역이나 날짜를 바꿔 보세요.' : '아직 글이 없습니다. 첫 조인 글을 올려 보세요!') + '</div>';
+    };
+    $('#cats').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { st.cat = b.dataset.c; draw(); } };
+    $('#fSido').onchange = e => { st.sido = e.target.value; localStorage.setItem('pgn_jsido', st.sido); draw(); };
+    $('#fWhen').onchange = e => { st.when = e.target.value; draw(); };
+    $('#fQ').oninput = e => { st.q = e.target.value.trim(); draw(); };
+    $('#fDone').onchange = e => { st.hideDone = e.target.checked; draw(); };
+    try {
+      data = await api('jlist');
+      if (data.admin) {
+        $('#adm').innerHTML = '<div class="jadm"><b>관리자</b><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="fRep">신고된 글만</label><span>선택한 글:</span><button class="jbig sm w" data-b="숨김">숨김</button><button class="jbig sm w" data-b="정상">정상으로</button><button class="jbig sm red" data-b="삭제">삭제</button><span id="admMsg"></span></div>';
+        $('#fRep').onchange = e => { st.rep = e.target.checked; draw(); };
+        $('#adm').onclick = async e => {
+          const b = e.target.closest('[data-b]'); if (!b) return;
+          const ids = [...document.querySelectorAll('.ck:checked')].map(x => x.dataset.id);
+          if (!ids.length) { $('#admMsg').textContent = '먼저 글을 골라 주세요.'; return; }
+          if (b.dataset.b === '삭제' && !confirm(ids.length + '개 글을 삭제할까요?')) return;
+          try { await api('jbulk', { ids, status: b.dataset.b }); data = await api('jlist'); draw(); $('#admMsg').textContent = ids.length + '개 처리했습니다.'; } catch (x) { $('#admMsg').textContent = x.message; }
+        };
+      }
+      draw();
+    } catch (e) { say($('#msg'), e.message); $('#list').innerHTML = ''; }
+  }
+
+  /* ---------- 상세 ---------- */
+  async function showOne(id) {
+    if (!me()) { jn.innerHTML = '<h2 class="sec">조인게시판</h2>' + needLogin() + '<p><a href="join.html">← 목록으로</a></p>'; return; }
+    jn.innerHTML = '<div class="loading">불러오는 중...</div>';
+    let it;
+    try { it = (await api('jget', { id })).item; } catch (e) { if (!Auth.get()) { location.replace('login.html?next=' + encodeURIComponent('join.html?id=' + id)); return; } jn.innerHTML = '<div class="msg err">' + esc(e.message) + '</div><p><a href="join.html">← 목록으로</a></p>'; return; }
+    const admin = me().role === 'admin';
+    document.title = whenTxt(it) + ' ' + it.place + ' - 조인게시판';
+    const row = (k, v) => v ? '<tr><th>' + k + '</th><td>' + v + '</td></tr>' : '';
+    let h = '<p style="margin:0 0 8px"><a href="join.html">← 조인게시판 목록</a></p><div class="card jd">'
+      + '<div class="top"><span class="jt ' + catCls(it.cat) + '">' + esc(it.cat) + '</span> <span class="jt ' + stCls(it.state) + '">' + esc(it.state) + '</span>' + (it.st === '숨김' ? ' <span class="jt hid">숨김(신고 접수)</span>' : '') + '</div>'
+      + '<h1>' + esc(whenTxt(it)) + ' · ' + esc(it.place) + ' · <span style="color:var(--red)">' + esc(leftTxt(it)) + '</span></h1>'
+      + '<div class="meta">' + esc(it.nick) + ' · ' + esc(it.at) + (it.edited ? ' (수정 ' + esc(it.edited) + ')' : '') + '</div><table>'
+      + row('지역', esc(it.sido + (it.sgg ? ' ' + it.sgg : ''))) + row('구장', esc(it.place)) + row('날짜·시간', esc(whenTxt(it))) + row('홀 수', esc(it.holes))
+      + row('인원', it.cat === '조인 희망' ? esc(it.cur + '명이 조인 희망') : esc('현재 ' + it.cur + '명 · ' + it.need + '명 모집 · 수락 ' + it.acc + '명')) + row('실력', esc(it.level)) + row('성별', esc(it.gender)) + row('연령대', esc(it.age))
+      + row('비용', esc(it.cost)) + row('카풀', esc(it.carpool)) + row('구장 예약', esc(it.resv)) + row('연락 방법', esc(it.contact)) + '</table>'
+      + (it.text ? '<div class="txt">' + esc(it.text) + '</div>' : '') + '</div><div id="act"></div>';
+    jn.innerHTML = h;
+    const act = $('#act'); let a = '';
+    if (it.authorPhone) a += '<div class="jbox"><h3>작성자 연락처</h3><a class="ph" href="tel:' + esc(it.authorPhone.replace(/-/g, '')) + '">' + esc(it.authorPhone) + '</a> <a class="jbig sm w" href="tel:' + esc(it.authorPhone.replace(/-/g, '')) + '">전화</a> <a class="jbig sm w" href="sms:' + esc(it.authorPhone.replace(/-/g, '')) + '">문자</a>' + (it.together ? '<p style="margin:10px 0 0">함께하는 분: ' + esc(it.together.join(', ')) + '</p>' : '') + '<p style="margin:8px 0 0;color:var(--muted);font-size:.9rem">이 번호는 약속 목적 외에 쓰지 마세요.</p></div>';
+    if (it.mine) {
+      a += '<div class="jbox"><h3>신청한 분 (' + (it.applicants || []).length + ')</h3>' + ((it.applicants || []).length ? it.applicants.map(x => '<div class="japp"><b>' + esc(x.k) + '</b>' + (x.n > 1 ? ' 외 ' + (x.n - 1) + '명' : '') + ' <span class="jt ' + (x.s === '수락' ? 's0' : x.s === '거절' ? 's2' : 's1') + '">' + esc(x.s) + '</span> <small style="color:var(--muted)">' + esc(x.t) + '</small>' + (x.m ? '<div style="width:100%;color:#444">“' + esc(x.m) + '”</div>' : '') + (x.phone ? '<a class="ph" href="tel:' + esc(x.phone.replace(/-/g, '')) + '">' + esc(x.phone) + '</a>' : '') + '<span style="margin-left:auto;display:flex;gap:6px">' + (x.s !== '수락' ? '<button class="jbig sm" data-dec="1" data-w="' + esc(x.i) + '">수락</button>' : '') + (x.s !== '거절' ? '<button class="jbig sm w" data-dec="0" data-w="' + esc(x.i) + '">거절</button>' : '') + '</span></div>').join('') : '<p style="color:var(--muted)">아직 신청이 없습니다.</p>') + '<p style="color:var(--muted);font-size:.9rem;margin:8px 0 0">수락하면 서로의 휴대폰 번호가 보입니다. 모집 인원이 다 차면 자동으로 마감됩니다.</p></div>'
+        + '<div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0"><a class="jbig w" href="join.html?edit=' + esc(it.id) + '">수정</a>' + (it.st === '마감' ? '<button class="jbig w" data-st="정상">다시 모집</button>' : '<button class="jbig w" data-st="마감">모집 마감</button>') + '<button class="jbig red" data-st="삭제">삭제</button></div>';
+    } else if (!admin) {
+      if (it.myApp && it.myApp.s !== '취소') a += '<div class="jbox"><h3>내 신청: <span class="jt ' + (it.myApp.s === '수락' ? 's0' : it.myApp.s === '거절' ? 's2' : 's1') + '">' + esc(it.myApp.s) + '</span></h3><p>' + (it.myApp.s === '대기' ? '작성자가 수락하면 서로 연락처가 보입니다.' : it.myApp.s === '수락' ? '수락되었습니다. 위 연락처로 약속을 잡으세요.' : '이번에는 함께하지 못하게 되었습니다.') + '</p><button class="jbig sm w" id="cancel">신청 취소</button></div>';
+      else if (it.state !== '마감') a += '<div class="jbox"><h3>참여 신청</h3><div class="row"><select id="an">' + [1, 2, 3, 4].map(n => '<option value="' + n + '">' + (n === 1 ? '나 혼자 (1명)' : '나 포함 ' + n + '명') + '</option>').join('') + '</select></div><div class="row"><input id="am" maxlength="200" placeholder="한마디 (예: 평균 60타, 8시 전에 도착합니다)" style="flex:1;min-width:220px"></div><div class="row"><button class="jbig" id="apply">참여 신청하기</button></div><p style="color:var(--muted);font-size:.9rem;margin:6px 0 0">전화번호는 쓰지 마세요. 수락되면 서로 번호가 보입니다.</p></div>';
+      else a += '<div class="jbox"><h3>마감된 글입니다</h3></div>';
+      a += '<div style="margin:16px 0;text-align:right"><select id="rw" style="padding:8px;border:1px solid var(--line);border-radius:8px"><option value="">신고 사유</option><option>노쇼(약속 불이행)</option><option>불쾌한 행동·언행</option><option>영업·광고 글</option><option>거짓 내용</option><option>기타</option></select> <button class="jbig sm red" id="rep">신고</button></div>';
+    }
+    if (admin) a += '<div class="jadm"><b>관리자</b><button class="jbig sm w" data-st="숨김">숨김</button><button class="jbig sm w" data-st="정상">정상으로</button><button class="jbig sm red" data-st="삭제">삭제</button></div>';
+    act.innerHTML = a + '<div class="jmsg" id="msg"></div>';
+    const run = async (fn, okText) => { try { await fn(); if (okText) alert(okText); showOne(id); } catch (e) { say($('#msg'), e.message); } };
+    act.onclick = e => {
+      const d = e.target.closest('[data-dec]'); if (d) return run(() => api('jdecide', { id, who: d.dataset.w, ok: d.dataset.dec === '1' }));
+      const s = e.target.closest('[data-st]');
+      if (s) { const v = s.dataset.st; if (v === '삭제' && !confirm('이 글을 삭제할까요?')) return; return run(() => api('jstate', { id, status: v }).then(() => { if (v === '삭제') go(''); })); }
+      if (e.target.id === 'apply') return run(() => api('japply', { id, n: $('#an').value, msg: $('#am').value }), '신청했습니다. 작성자가 수락하면 연락처가 보입니다.');
+      if (e.target.id === 'cancel') { if (confirm('신청을 취소할까요?')) return run(() => api('jcancel', { id })); }
+      if (e.target.id === 'rep') { const w = $('#rw').value; if (!w) { say($('#msg'), '신고 사유를 골라 주세요.'); return; } if (confirm('이 글을 신고할까요? (' + w + ')')) return run(() => api('jreport', { id, why: w }), '신고가 접수되었습니다. 3명 이상 신고하면 글이 숨겨지고 운영자가 확인합니다.'); }
+    };
+  }
+
+  /* ---------- 글쓰기 / 수정 ---------- */
+  async function showForm(editId) {
+    if (!me()) { location.replace('login.html?next=' + encodeURIComponent('join.html?write=1')); return; }
+    let it = null;
+    if (editId) { try { it = (await api('jget', { id: editId })).item; if (!it.mine) throw new Error('본인이 쓴 글만 고칠 수 있습니다.'); } catch (e) { jn.innerHTML = '<div class="msg err">' + esc(e.message) + '</div>'; return; } }
+    document.title = (editId ? '조인 글 수정' : '조인 글쓰기') + ' - 파크골프뉴스';
+    const radios = (name, list, val) => '<div class="opts">' + list.map(v => '<label><input type="radio" name="' + name + '" value="' + esc(v) + '"' + (v === val ? ' checked' : '') + '><span>' + esc(v) + '</span></label>').join('') + '</div>';
+    const sel = (id, list, val) => '<select id="' + id + '">' + list.map(v => '<option' + (String(v) === String(val) ? ' selected' : '') + '>' + v + '</option>').join('') + '</select>';
+    const v = it || { cat: qs.get('cat') || '멤버 구함', sido: localStorage.getItem('pgn_jsido') || '', sgg: '', place: '', date: TODAY, time: '08:00', holes: '18홀', cur: 3, need: 1, level: '무관', gender: '무관', age: '무관', cost: '', carpool: '없음', resv: '예약 필요 없음', contact: '사이트에서 신청만', text: '', rep: '' };
+    jn.innerHTML = '<h2 class="sec">' + (editId ? '조인 글 수정' : '조인 글쓰기') + '</h2><div class="card jform">'
+      + '<div class="f"><span class="lb">어떤 글인가요?</span>' + radios('cat', CATS, v.cat) + '<small id="catHelp"></small></div>'
+      + '<div class="f"><span class="lb">지역</span><div class="two"><select id="sido"><option value="">시·도 선택</option>' + Object.keys(REG).map(k => '<option' + (k === v.sido ? ' selected' : '') + '>' + k + '</option>').join('') + '</select><select id="sgg"></select></div></div>'
+      + '<div class="f"><label for="place">구장 <small>목록에서 고르거나 직접 입력</small></label><input type="text" id="place" list="places" maxlength="40" value="' + esc(v.place) + '" placeholder="예: 갑천파크골프장"><datalist id="places"></datalist></div>'
+      + '<div class="f"><span class="lb">날짜·시간</span><div class="two"><input type="date" id="date" value="' + esc(v.date) + '" min="' + TODAY + '"><input type="time" id="time" value="' + esc(v.time) + '" step="600"></div><div id="repBox" style="margin-top:8px"><span class="lb" style="font-size:.95rem">매주 반복 <small>(정기 라운딩)</small></span>' + radios('rep', ['없음', '월', '화', '수', '목', '금', '토', '일'], v.rep || '없음') + '</div></div>'
+      + '<div class="f"><span class="lb">홀 수</span>' + radios('holes', ['9홀', '18홀', '27홀', '36홀'], v.holes) + '</div>'
+      + '<div class="f" id="pplBox"><span class="lb" id="pplLb">인원</span><div class="two"><label>현재 인원 (나 포함)' + sel('cur', [1, 2, 3, 4, 5, 6, 7, 8], v.cur) + '</label><label id="needWrap">더 구하는 인원' + sel('need', [1, 2, 3, 4, 5, 6, 7, 8, 10, 12], v.need) + '</label></div><small>보통 4명이 1조입니다.</small></div>'
+      + '<div class="f"><span class="lb">실력</span>' + radios('level', ['무관', '입문', '중급', '상급'], v.level) + '</div>'
+      + '<div class="f"><span class="lb">함께할 분 조건</span><div class="two"><label>성별' + sel('gender', ['무관', '남성', '여성', '혼성 원해요'], v.gender) + '</label><label>연령대' + sel('age', ['무관', '50대', '60대', '70대 이상', '비슷한 연령'], v.age) + '</label></div></div>'
+      + '<div class="f"><label for="cost">비용 <small>입장료 등</small></label><input type="text" id="cost" maxlength="60" value="' + esc(v.cost) + '" placeholder="예: 입장료 각자 3,000원 / 무료"></div>'
+      + '<div class="f"><span class="lb">카풀</span>' + radios('carpool', ['없음', '카풀 가능 (유류비 분담)', '카풀 가능 (무료)', '카풀 구해요'], v.carpool) + '</div>'
+      + '<div class="f"><span class="lb">구장 예약</span>' + radios('resv', ['예약 완료', '현장 대기', '예약 필요 없음'], v.resv) + '</div>'
+      + '<div class="f"><span class="lb">연락 방법</span>' + radios('contact', ['사이트에서 신청만', '신청 + 전화 가능', '신청 + 문자 가능'], v.contact) + '<small>전화·문자를 고르면 로그인한 회원에게만 내 번호가 보입니다. 기본은 비공개입니다.</small></div>'
+      + '<div class="f"><label for="text">하고 싶은 말 <small>(선택, 1000자까지)</small></label><textarea id="text" maxlength="1000" placeholder="예: 즐겁게 치실 분 환영합니다. 주차장 입구에서 만나요.">' + esc(v.text) + '</textarea></div>'
+      + '<div id="msg"></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="jbig" id="save">' + (editId ? '수정 완료' : '올리기') + '</button><a class="jbig w" href="' + (editId ? 'join.html?id=' + esc(editId) : 'join.html') + '">취소</a></div>'
+      + '<p style="color:var(--muted);font-size:.9rem;margin-top:12px">휴대폰 번호를 등록한 회원만 글을 쓸 수 있습니다. 레슨·용품 판매 등 영업 글, 내용에 전화번호 쓰기는 금지입니다. 지난 날짜의 글은 자동으로 마감됩니다.</p></div>';
+    const fillSgg = (s, val) => { const l = REG[s] || []; $('#sgg').innerHTML = '<option value="">' + (l.length ? '시·군·구 선택' : '(전체)') + '</option>' + l.map(x => '<option' + (x === val ? ' selected' : '') + '>' + x + '</option>').join(''); };
+    fillSgg(v.sido, v.sgg); $('#sido').onchange = e => fillSgg(e.target.value, '');
+    const rv = n => (document.querySelector('input[name="' + n + '"]:checked') || {}).value || '';
+    const sync = () => { const c = rv('cat'); $('#catHelp').textContent = CAT_HELP[c] || ''; $('#repBox').style.display = c === '정기 라운딩 모집' ? '' : 'none'; $('#needWrap').style.display = c === '조인 희망' ? 'none' : ''; $('#pplLb').textContent = c === '조인 희망' ? '함께 가는 인원 (나 포함)' : '인원'; };
+    jn.querySelectorAll('input[name="cat"]').forEach(x => x.onchange = sync); sync();
+    getSchedule().then(all => { const s = new Set(); all.forEach(e => (e.place || '').split(/[,·]| 등 /).forEach(p => { p = p.replace(/\(.*$/, '').replace(/^(서울|경기|강원|충북|충남|충청|전북|전남|전라|경북|경남|경상|제주|대전|대구|부산|광주|울산|인천|세종)\s+/, '').trim(); if (/파크골프|구장/.test(p) && p.length <= 30) s.add(p); })); $('#places').innerHTML = [...s].sort().map(p => '<option value="' + esc(p) + '">').join(''); }).catch(() => {});
+    $('#save').onclick = async () => {
+      const cat = rv('cat'), rep = cat === '정기 라운딩 모집' && rv('rep') !== '없음' ? rv('rep') : '';
+      const body = { cat, sido: $('#sido').value, sgg: $('#sgg').value, place: $('#place').value, date: $('#date').value, time: $('#time').value, holes: rv('holes'), cur: $('#cur').value, need: cat === '조인 희망' ? 0 : $('#need').value, level: rv('level'), gender: $('#gender').value, age: $('#age').value, cost: $('#cost').value, carpool: rv('carpool'), resv: rv('resv'), contact: rv('contact'), text: $('#text').value, rep };
+      const b = $('#save'); b.disabled = true;
+      try { if (editId) { await api('jupdate', Object.assign({ id: editId }, body)); go('id=' + editId); } else { const r = await api('jpost', body); localStorage.setItem('pgn_jsido', body.sido); go('id=' + r.id); } }
+      catch (e) { if (!Auth.get()) { location.replace('login.html?next=' + encodeURIComponent('join.html?write=1')); return; } say($('#msg'), e.message); b.disabled = false; }
+    };
+  }
+
+  if (qs.get('id')) showOne(qs.get('id'));
+  else if (qs.get('write')) showForm('');
+  else if (qs.get('edit')) showForm(qs.get('edit'));
+  else showList();
+})();
+</script>
+</body>
+</html>
