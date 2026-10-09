@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261010b">
+<link rel="stylesheet" href="assets/style.css?v=20261010c">
 <style>
 .mp{max-width:780px;margin:0 auto;padding:22px 0 10px}
 .mp [hidden]{display:none!important}
@@ -49,7 +49,7 @@
 </style>
 </head>
 <body>
-<script src="assets/app.js?v=20261010b"></script>
+<script src="assets/app.js?v=20261010c"></script>
 <script>
 (async () => {
   if (!Auth.get()) { location.replace('login.html?next=mypage.html'); return; }
@@ -231,9 +231,9 @@
       const byId = Object.fromEntries(news.map(n => [n.id, n]));
       const draw = items => {
         $('#nCm').textContent = items.length ? '(' + items.length + ')' : '';
-        box.innerHTML = '<div class="card box"><h3>내 댓글</h3><p class="sub">내가 쓴 댓글을 최신순으로 보여 줍니다. 제목을 누르면 기사로 이동합니다.</p>' + (items.length ? items.map(c => {
-          const n = byId[c.aid];
-          return '<div class="mc">' + (n ? '<a class="t" href="article.html?id=' + esc(c.aid) + '">' + esc(n.title) + '</a>' : '<span class="t gone">(삭제되었거나 비공개된 기사)</span>') + '<div class="x">' + esc(c.text) + '</div><div class="d"><span>' + esc(c.at) + '</span>' + (n ? '<a href="article.html?id=' + esc(c.aid) + '">기사 보기</a>' : '') + '<button data-id="' + esc(c.id) + '">삭제</button></div></div>';
+        box.innerHTML = '<div class="card box"><h3>내 댓글</h3><p class="sub">내가 쓴 댓글을 최신순으로 보여 줍니다. 제목을 누르면 댓글을 단 기사·페이지로 이동합니다.</p>' + (items.length ? items.map(c => {
+          const w = cmWhere(c.aid, byId);
+          return '<div class="mc">' + (w.href ? '<a class="t" href="' + esc(w.href) + '">' + esc(w.label) + '</a>' : '<span class="t gone">' + esc(w.label) + '</span>') + '<div class="x">' + esc(c.text) + '</div><div class="d"><span>' + esc(c.at) + '</span>' + (w.href ? '<a href="' + esc(w.href) + '">' + (w.kind === '뉴스' ? '기사 보기' : '바로 가기') + '</a>' : '') + '<button data-id="' + esc(c.id) + '">삭제</button></div></div>';
         }).join('') : '<div class="empty" style="padding:18px">아직 쓴 댓글이 없습니다.<br><br><a class="btn green" href="news.html">뉴스 보러 가기</a></div>') + '</div>';
         box.onclick = async e => {
           const b = e.target.closest('button[data-id]'); if (!b || !confirm('이 댓글을 삭제할까요?')) return;

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261010b">
+<link rel="stylesheet" href="assets/style.css?v=20261010c">
 <style>
 .st-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px}
 .st-tabs button,.st-per button,.st-gran button{border:1px solid var(--line);background:#fff;color:var(--g900);border-radius:999px;padding:7px 14px;font-weight:700;font-size:.92rem;cursor:pointer;font-family:inherit}
@@ -53,17 +53,35 @@
 .svgc text{font-size:11px;fill:#777}
 .lg{display:inline-flex;align-items:center;gap:5px;margin-right:12px;font-size:.85rem;color:var(--muted)}
 .lg i{display:inline-block;width:14px;height:4px;border-radius:2px}
+.cm-sum{padding:10px 14px;background:var(--g50);border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
+.cm-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.cm-k{display:flex;gap:6px;flex-wrap:wrap}
+.cm-k button,.cm-tb button{border:1px solid var(--line);background:#fff;color:var(--g900);border-radius:999px;padding:6px 13px;font-weight:700;font-size:.9rem;cursor:pointer;font-family:inherit}
+.cm-k button.on{background:var(--g700);border-color:var(--g700);color:#fff}
+.cm-tools input[type=search]{flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:.95rem}
+.cm-tools label{font-size:.9rem;color:var(--muted);white-space:nowrap}
+.cm-wrap{overflow-x:auto}
+.cm-tb{width:100%;border-collapse:collapse;font-size:.92rem}
+.cm-tb th{background:var(--g50);text-align:left;padding:8px;border-bottom:2px solid var(--line);white-space:nowrap}
+.cm-tb td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.cm-tb td.d{white-space:nowrap;color:var(--muted);font-size:.85rem}
+.cm-tb td.w{min-width:140px;max-width:240px}.cm-tb td.w a{color:var(--g700);font-weight:700}
+.cm-tb td.w .k{display:inline-block;font-size:.75rem;background:var(--g100);color:var(--g900);border-radius:6px;padding:0 6px;margin-right:5px}
+.cm-tb td.n{white-space:nowrap}.cm-tb td.n small{display:block;color:var(--muted);font-size:.78rem}
+.cm-tb td.t{white-space:pre-wrap;word-break:break-word;min-width:200px}
+.cm-tb td.a{white-space:nowrap}.cm-tb button.rm{color:var(--red,#c0392b)}
+.cm-tb tr.del td{opacity:.5}
 </style>
 </head>
 <body>
-<script src="assets/app.js?v=20261010b"></script>
+<script src="assets/app.js?v=20261010c"></script>
 <script>
 (async () => {
   const me = Auth.get();
   if (!me) { location.replace('login.html?next=stats.html'); return; }
   if (me.role !== 'admin') { location.replace('index.html'); return; }
   await layout('stats');
-  const TABS = [['sum', '요약'], ['visit', '방문 현황'], ['content', '콘텐츠'], ['source', '유입 경로'], ['env', '이용자 환경'], ['set', '설정/관리']];
+  const TABS = [['sum', '요약'], ['visit', '방문 현황'], ['content', '콘텐츠'], ['source', '유입 경로'], ['env', '이용자 환경'], ['cmt', '댓글'], ['set', '설정/관리']];
   document.querySelector('footer.site').insertAdjacentHTML('beforebegin', '<div class="wrap"><main class="article" style="max-width:none"><h2 class="sec">통계 <small style="font-size:.6em;color:#777">관리자 전용</small></h2>'
     + '<div class="st-tabs" id="tabs">' + TABS.map(t => '<button data-t="' + t[0] + '">' + t[1] + '</button>').join('') + '<button id="rf" class="w" style="margin-left:auto">새로고침</button></div>'
     + '<div class="st-per" id="per"><span class="lbl">기간</span><button data-p="today">오늘</button><button data-p="yday">어제</button><button data-p="7">최근 7일</button><button data-p="30">최근 30일</button><button data-p="custom">직접 지정</button>'
@@ -252,12 +270,50 @@
     else if (p === '7') { per.from = add(T, -6); per.to = T; }
     else if (p === '30') { per.from = add(T, -29); per.to = T; }
   }
+
+  /* ---------- 댓글 목록 (페이지·뉴스·자유게시판 전체) ---------- */
+  let cm = null, cmF = { w: '전체', q: '', del: false }, cmN = 100;
+  async function drawCmt(force) {
+    $('#msg').innerHTML = '';
+    if (!cm || force) {
+      $('#body').innerHTML = '<div class="empty-s">댓글을 불러오는 중입니다...</div>';
+      try {
+        const [r, news] = await Promise.all([api('callist'), getNews().catch(() => [])]);
+        const byId = Object.fromEntries(news.map(n => [n.id, n]));
+        cm = r.items.map(c => Object.assign(c, { w: cmWhere(c.aid, byId, r.boards) }));
+      } catch (e) { if (!Auth.get()) { location.replace('login.html?next=stats.html%23cmt'); return; } $('#body').innerHTML = '<div class="msg err">' + esc(e.message) + '</div>'; return; }
+    }
+    const kinds = ['전체', '뉴스', '페이지', '자유게시판'];
+    const today = dk(T), live = cm.filter(c => c.state !== '삭제');
+    const f = cm.filter(c => (cmF.del || c.state !== '삭제') && (cmF.w === '전체' || c.w.kind === cmF.w) && (!cmF.q || (c.text + ' ' + c.nick + ' ' + c.uid + ' ' + c.w.label).includes(cmF.q)));
+    const byKind = k => live.filter(c => c.w.kind === k).length;
+    $('#body').innerHTML =
+      '<div class="cm-sum">전체 <b>' + nf(live.length) + '</b>건 · 오늘 <b>' + nf(live.filter(c => c.at.slice(0, 10) === today).length) + '</b>건 · 뉴스 ' + nf(byKind('뉴스')) + ' · 페이지 ' + nf(byKind('페이지')) + ' · 자유게시판 ' + nf(byKind('자유게시판')) + (cm.length > live.length ? ' · 삭제됨 ' + nf(cm.length - live.length) : '') + '</div>' +
+      '<div class="cm-tools"><span class="cm-k">' + kinds.map(k => '<button data-k="' + k + '" class="' + (k === cmF.w ? 'on' : '') + '">' + k + '</button>').join('') + '</span><input id="cmq" type="search" placeholder="내용·작성자·위치 검색" value="' + esc(cmF.q) + '"><label><input type="checkbox" id="cmdel"' + (cmF.del ? ' checked' : '') + '> 삭제된 댓글 포함</label></div>' +
+      (f.length ? '<div class="cm-wrap"><table class="cm-tb"><thead><tr><th>일시</th><th>위치</th><th>작성자</th><th>내용</th><th>관리</th></tr></thead><tbody>' + f.slice(0, cmN).map(c =>
+        '<tr class="' + (c.state === '삭제' ? 'del' : '') + '"><td class="d">' + esc(c.at) + '</td><td class="w"><span class="k">' + esc(c.w.kind) + '</span>' + (c.w.href ? '<a href="' + esc(c.w.href) + '">' + esc(c.w.label) + '</a>' : esc(c.w.label)) + '</td><td class="n">' + esc(c.nick) + '<small>' + esc(c.uid) + '</small></td><td class="t">' + esc(c.text) + '</td><td class="a">' + (c.state === '삭제' ? '<button data-s="정상" data-id="' + esc(c.id) + '">복구</button>' : '<button class="rm" data-s="삭제" data-id="' + esc(c.id) + '">삭제</button>') + '</td></tr>').join('') + '</tbody></table></div>' + (f.length > cmN ? '<div style="text-align:center;margin:12px 0"><button id="cmmore" class="w">더 보기 (' + nf(f.length - cmN) + '건 남음)</button></div>' : '')
+        : '<div class="empty-s">' + (cm.length ? '조건에 맞는 댓글이 없습니다.' : '아직 댓글이 없습니다.') + '</div>') +
+      '<p class="st-note">최신 댓글이 위에 있습니다. 위치를 누르면 댓글이 달린 기사·페이지로 이동합니다. 삭제는 화면에서만 숨기며 [복구]로 되돌릴 수 있습니다.</p>';
+    const qi = $('#cmq'); qi.oninput = () => { cmF.q = qi.value.trim(); cmN = 100; const p = qi.selectionStart; drawCmt().then(() => { const n = $('#cmq'); if (n) { n.focus(); n.setSelectionRange(p, p); } }); };
+    $('#cmdel').onchange = e => { cmF.del = e.target.checked; drawCmt(); };
+    $('#body').onclick = async e => {
+      if (tab !== 'cmt') return;
+      const k = e.target.closest('.cm-k [data-k]'); if (k) { cmF.w = k.dataset.k; cmN = 100; drawCmt(); return; }
+      if (e.target.id === 'cmmore') { cmN += 200; drawCmt(); return; }
+      const b = e.target.closest('button[data-s]'); if (!b) return;
+      if (b.dataset.s === '삭제' && !confirm('이 댓글을 삭제할까요? (나중에 복구할 수 있습니다)')) return;
+      b.disabled = true;
+      try { await api('cset', { cid: b.dataset.id, state: b.dataset.s }); const c = cm.find(x => x.id === b.dataset.id); if (c) c.state = b.dataset.s; drawCmt(); }
+      catch (err) { alert(err.message); b.disabled = false; }
+    };
+  }
   async function draw(force) {
     document.querySelectorAll('#tabs [data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
     document.querySelectorAll('#per [data-p]').forEach(b => b.classList.toggle('on', b.dataset.p === per.p));
     $('#cus').hidden = per.p !== 'custom';
     $('#per').style.display = tab === 'sum' ? 'none' : '';
     $('#rng').textContent = dk(per.from) + ' ~ ' + dk(per.to);
+    if (tab === 'cmt') { $('#per').style.display = 'none'; return drawCmt(force); }
     try { await load(force); } catch (e) { if (!Auth.get()) { location.replace('login.html?next=stats.html'); return; } $('#msg').innerHTML = '<div class="msg err">' + esc(e.message) + '</div>'; return; }
     const rs = inR(all, per.from, per.to);
     $('#body').innerHTML = tab === 'sum' ? vSum() + '<p class="st-note">요약은 기간 선택과 관계없이 오늘·어제·7일·30일을 한꺼번에 보여 줍니다. 자세한 내용은 위의 다른 메뉴에서 기간을 골라 보세요.</p>' : tab === 'visit' ? vVisit(rs) : tab === 'content' ? vContent(rs) : tab === 'source' ? vSource(rs) : tab === 'env' ? vEnv(rs) : vSet(rs);
