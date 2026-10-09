@@ -827,6 +827,7 @@ function cmWhere(aid, newsById, boards) {
     return { kind: '페이지', label: (PAGE_CMT[pg] || pg) + ' 페이지', href: pg + '.html' };
   }
   if (aid.indexOf('board:') === 0) { const id = aid.slice(6), t = boards && boards[id]; return { kind: '자유게시판', label: t ? '자유게시판 · ' + t : '자유게시판 글', href: 'board.html?id=' + encodeURIComponent(id) }; }
+  if (aid.indexOf('join:') === 0) { const id = aid.slice(5), t = boards && boards['join:' + id]; return { kind: '조인게시판', label: t ? '조인게시판 · ' + t : '조인게시판 글', href: 'join.html?id=' + encodeURIComponent(id) }; }
   const n = newsById && newsById[aid];
   return n ? { kind: '뉴스', label: n.title, href: 'article.html?id=' + encodeURIComponent(aid) } : { kind: '뉴스', label: '(삭제되었거나 비공개된 기사)', href: '', gone: true };
 }
@@ -866,7 +867,7 @@ function cmBox(el, aid, opt) {
 /* 뉴스 항목의 [댓글] 버튼 -> 그 기사 댓글 창 (기사 화면의 댓글과 같은 댓글) */
 function cmOpen(aid, title, href) {
   const old = document.getElementById('cmm'); if (old) old.remove();
-  document.body.insertAdjacentHTML('beforeend', '<div id="cmm" role="dialog" aria-modal="true"><div class="box"><button type="button" class="x" aria-label="닫기" title="닫기">&times;</button><div class="cm-t">' + esc(title || '댓글') + '</div>' + (href ? '<a class="go" href="' + esc(href) + '">기사 보기 &rsaquo;</a>' : '') + '<section class="card comments"></section></div></div>');
+  document.body.insertAdjacentHTML('beforeend', '<div id="cmm" role="dialog" aria-modal="true"><div class="box"><button type="button" class="x" aria-label="닫기" title="닫기">&times;</button><div class="cm-t">' + esc(title || '댓글') + '</div>' + (href ? '<a class="go" href="' + esc(href) + '">' + (String(aid).indexOf('join:') === 0 ? '글 보기' : '기사 보기') + ' &rsaquo;</a>' : '') + '<section class="card comments"></section></div></div>');
   const md = document.getElementById('cmm');
   const close = () => { md.remove(); document.removeEventListener('keydown', esc1); };
   const esc1 = e => { if (e.key === 'Escape') close(); };
