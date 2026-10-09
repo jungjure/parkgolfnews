@@ -507,7 +507,7 @@ const SHARE_SKIP = ['write', 'members', 'requests', 'stats', 'request', 'mypage'
 function shareInfo() {
   const url = location.href.split('#')[0];
   const h = document.querySelector('h1') || document.querySelector('h2.sec');
-  const t = (h && h.firstChild && h.firstChild.textContent || document.title).trim();
+  const t = (h && h.firstChild && h.firstChild.textContent || document.title).trim().replace(/\s*-\s*파크골프뉴스$/, '') || '파크골프뉴스';
   /* 공유 문구: 페이지가 PGN_SHARE()로 정해 주면 그것(예: 파크골프뉴스 오늘일정 총 14건입니다.), 없으면 제목으로 */
   let text = '';
   try { if (typeof window.PGN_SHARE === 'function') text = window.PGN_SHARE() || ''; } catch (e) {}
