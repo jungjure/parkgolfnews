@@ -18,7 +18,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261010d">
+<link rel="stylesheet" href="assets/style.css?v=20261010e">
 <style>#chips button.tag{border:2px solid transparent;cursor:pointer;font-family:inherit;line-height:inherit}#chips button.tag.on{border-color:currentColor}#chips.f button.tag:not(.on){opacity:.4}#list{transition:border-color .2s,box-shadow .2s}#list[data-f]{border-width:3px}#list[data-f="대회"]{border-color:var(--blue);box-shadow:0 0 0 4px #e3f0ff}#list[data-f="접수"]{border-color:var(--red);box-shadow:0 0 0 4px #fdecea}#list[data-f="연습일"],#list[data-f="연습라운딩"]{border-color:var(--amber);box-shadow:0 0 0 4px #fff3e0}#list[data-f="시범운영"]{border-color:#0f766e;box-shadow:0 0 0 4px #ccfbf1}</style>
 </head>
 <body>
@@ -32,16 +32,18 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261010d"></script>
+<script src="assets/app.js?v=20261010e"></script>
 <script>
 (async () => {
   const S = await layout('schedule');
   $('#side').innerHTML = sideBox(S);
   let all = [], type = new URLSearchParams(location.search).get('type') || '전체', q = '';
   const t = today0(); let y = t.getFullYear(), m = t.getMonth();
+  { const q = /^(\d{4})-(\d{2})$/.exec(new URLSearchParams(location.search).get('m') || ''); if (q) { y = +q[1]; m = q[2] - 1; } }
   const kind = e => isTrial(e) ? '시범운영' : e.type;
   const draw = () => {
     $('#ml').textContent = `${y}년 ${m + 1}월`;
+    if (window.pgnCm) { const c = cmMonKey(y, m); pgnCm(c.key, c.label); }   /* 댓글은 보고 있는 달에 달림 */
     const first = (y === t.getFullYear() && m === t.getMonth()) ? new Date(t) : new Date(y, m, 1), last = new Date(y, m + 1, 0);   /* 이번 달은 지나간 날을 빼고 오늘부터 보여줌 */
     const mon = all.filter(e => e.end >= first && e.start <= last && (!q || (e.name + e.region + e.place).includes(q)));
     /* 오늘일정처럼 "대회 N건 · 접수 N건 · 연습일 N건 · 시범운영 N건" (누르면 그 구분만 보기, 다시 누르면 전체) */

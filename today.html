@@ -24,7 +24,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="파크골프뉴스">
-<link rel="stylesheet" href="assets/style.css?v=20261010d">
+<link rel="stylesheet" href="assets/style.css?v=20261010e">
 <style>#sum button.tag{border:2px solid transparent;cursor:pointer;font-family:inherit;line-height:inherit}#sum button.tag.on{border-color:currentColor}#sum.f button.tag:not(.on){opacity:.4}#list{transition:border-color .2s,box-shadow .2s}#list[data-f]{border-width:3px}#list[data-f="대회"]{border-color:var(--blue);box-shadow:0 0 0 4px #e3f0ff}#list[data-f="접수"]{border-color:var(--red);box-shadow:0 0 0 4px #fdecea}#list[data-f="연습일"],#list[data-f="연습라운딩"]{border-color:var(--amber);box-shadow:0 0 0 4px #fff3e0}#list[data-f="시범운영"]{border-color:#0f766e;box-shadow:0 0 0 4px #ccfbf1}</style>
 
 </head>
@@ -91,13 +91,13 @@
   window.pgnInstallBtn = add;
 })();
 </script>
-<script src="assets/app.js?v=20261010d"></script>
+<script src="assets/app.js?v=20261010e"></script>
 <script>
 (async () => {
   const S = await layout('today');
   $('#side').innerHTML = sideBox(S);
   pgnInstallBtn(); setTimeout(pgnInstallBtn, 800);
-  const t = today0(); let cur = new Date(t), all = [], type = new URLSearchParams(location.search).get('type') || '전체';
+  const t = today0(); let cur = (() => { const q = /^(\d{4})-(\d{2})-(\d{2})$/.exec(new URLSearchParams(location.search).get('d') || ''); return q ? new Date(+q[1], q[2] - 1, +q[3]) : new Date(t); })(), all = [], type = new URLSearchParams(location.search).get('type') || '전체';
   const order = { '대회': 0, '접수': 1, '연습일': 2 };
   const on = (e, d) => ymd(e.start) <= ymd(d) && ymd(e.end) >= ymd(d);
   const draw = () => {
@@ -115,6 +115,7 @@
     { const lb = diff === 0 ? '오늘일정' : (cur.getMonth() + 1) + '월 ' + cur.getDate() + '일(' + WD[cur.getDay()] + ') 일정', ty = type, n1 = td.length, n2 = f.length;   /* 공유 문구 */
       window.PGN_SHARE = () => '파크골프뉴스 ' + lb + (ty === '전체' ? ' 총 ' + n1 : ' ' + ty + ' ' + n2) + '건입니다.'; }
     $('#list').innerHTML = f.length ? f.map(e => eventRow(e)).join('') : '<div class="empty">이 날 등록된 일정이 없습니다.</div>';
+    if (window.pgnCm) { const c = cmDayKey(cur); pgnCm(c.key, diff === 0 ? '오늘(' + (cur.getMonth() + 1) + '월 ' + cur.getDate() + '일) 일정' : c.label); }   /* 댓글은 보고 있는 날짜에 달림 */
   };
   try {
     all = await getSchedule();
