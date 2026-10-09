@@ -867,7 +867,7 @@ function cmBox(el, aid, opt) {
 /* 뉴스 항목의 [댓글] 버튼 -> 그 기사 댓글 창 (기사 화면의 댓글과 같은 댓글) */
 function cmOpen(aid, title, href) {
   const old = document.getElementById('cmm'); if (old) old.remove();
-  document.body.insertAdjacentHTML('beforeend', '<div id="cmm" role="dialog" aria-modal="true"><div class="box"><button type="button" class="x" aria-label="닫기" title="닫기">&times;</button><div class="cm-t">' + esc(title || '댓글') + '</div>' + (href ? '<a class="go" href="' + esc(href) + '">' + (String(aid).indexOf('join:') === 0 ? '글 보기' : '기사 보기') + ' &rsaquo;</a>' : '') + '<section class="card comments"></section></div></div>');
+  document.body.insertAdjacentHTML('beforeend', '<div id="cmm" role="dialog" aria-modal="true"><div class="box"><button type="button" class="x" aria-label="닫기" title="닫기">&times;</button><div class="cm-t">' + esc(title || '댓글') + '</div>' + (href ? '<a class="go" href="' + esc(href) + '">' + (/^(join|board):/.test(String(aid)) ? '글 보기' : '기사 보기') + ' &rsaquo;</a>' : '') + '<section class="card comments"></section></div></div>');
   const md = document.getElementById('cmm');
   const close = () => { md.remove(); document.removeEventListener('keydown', esc1); };
   const esc1 = e => { if (e.key === 'Escape') close(); };
