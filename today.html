@@ -15,6 +15,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="파크골프뉴스">
 <link rel="stylesheet" href="assets/style.css?v=20261009j">
+<style>#sum button.tag{border:2px solid transparent;cursor:pointer;font-family:inherit;line-height:inherit}#sum button.tag.on{border-color:currentColor}#sum.f button.tag:not(.on){opacity:.4}</style>
 
 </head>
 <body>
@@ -86,7 +87,7 @@
   const S = await layout('today');
   $('#side').innerHTML = sideBox(S);
   pgnInstallBtn(); setTimeout(pgnInstallBtn, 800);
-  const t = today0(); let cur = new Date(t), all = [];
+  const t = today0(); let cur = new Date(t), all = [], type = new URLSearchParams(location.search).get('type') || '전체';
   const order = { '대회': 0, '접수': 1, '연습일': 2 };
   const on = (e, d) => ymd(e.start) <= ymd(d) && ymd(e.end) >= ymd(d);
   const draw = () => {
@@ -95,8 +96,12 @@
     $('#now').classList.toggle('on', diff === 0);
     const td = all.filter(e => on(e, cur)).sort((a, b) => (order[a.type] ?? 9) - (order[b.type] ?? 9) || a.start - b.start);
     const cnt = {}; td.forEach(e => { const k = isTrial(e) ? '시범운영' : e.type; cnt[k] = (cnt[k] || 0) + 1; }); if (cnt['시범운영']) { const tv = cnt['시범운영']; delete cnt['시범운영']; cnt['시범운영'] = tv; }   // 시범운영은 맨 마지막
-    $('#sum').innerHTML = td.length ? Object.entries(cnt).map(([k, v]) => '<span class="tag ' + esc(k) + '">' + esc(k) + ' ' + v + '건</span>').join('') : '';
-    $('#list').innerHTML = td.length ? td.map(e => eventRow(e)).join('') : '<div class="empty">이 날 등록된 일정이 없습니다.</div>';
+    /* 월간일정처럼 구분 버튼을 누르면 그 구분만 보기, 다시 누르면 전체 */
+    if (type !== '전체' && !cnt[type]) type = '전체';
+    $('#sum').classList.toggle('f', type !== '전체');
+    $('#sum').innerHTML = td.length ? Object.entries(cnt).map(([k, v]) => '<button type="button" class="tag ' + esc(k) + (k === type ? ' on' : '') + '" data-c="' + esc(k) + '" title="' + esc(k) + '만 보기">' + esc(k) + ' ' + v + '건</button>').join('') : '';
+    const f = td.filter(e => type === '전체' || (isTrial(e) ? '시범운영' : e.type) === type);
+    $('#list').innerHTML = f.length ? f.map(e => eventRow(e)).join('') : '<div class="empty">이 날 등록된 일정이 없습니다.</div>';
   };
   try {
     all = await getSchedule();
@@ -104,6 +109,7 @@
     $('#prev').onclick = () => { cur.setDate(cur.getDate() - 1); draw(); };
     $('#next').onclick = () => { cur.setDate(cur.getDate() + 1); draw(); };
     $('#now').onclick = () => { cur = new Date(t); draw(); };
+    $('#sum').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; type = type === b.dataset.c ? '전체' : b.dataset.c; draw(); };
     addEventListener('pgn-data', async () => { try { all = await getSchedule(); draw(); } catch (e) {} });
   } catch (e) { showError($('#list'), e); }
 })();
