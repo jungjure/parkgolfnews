@@ -819,7 +819,13 @@ new MutationObserver(() => { clearTimeout(_cmT); _cmT = setTimeout(() => { if (d
 /* 댓글이 어디에 달렸는지 (관리자 목록·내 댓글에서 사용) */
 function cmWhere(aid, newsById, boards) {
   aid = String(aid || '');
-  if (aid.indexOf('page:') === 0) { const k = aid.slice(5); return { kind: '페이지', label: (PAGE_CMT[k] || k) + ' 페이지', href: k + '.html' }; }
+  if (aid.indexOf('page:') === 0) {
+    let k = aid.slice(5); if (CM_NEW[k]) k = CM_NEW[k];   // 날짜 구분 전에 달린 댓글
+    const p = k.split(':'), pg = p[0], sub = p[1] || ''; let mm;
+    if (pg === 'today' && (mm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(sub))) return { kind: '페이지', label: '오늘일정 · ' + (+mm[2]) + '월 ' + (+mm[3]) + '일', href: 'today.html?d=' + sub };
+    if (pg === 'schedule' && (mm = /^(\d{4})-(\d{2})$/.exec(sub))) return { kind: '페이지', label: '월간일정 · ' + mm[1] + '년 ' + (+mm[2]) + '월', href: 'schedule.html?m=' + sub };
+    return { kind: '페이지', label: (PAGE_CMT[pg] || pg) + ' 페이지', href: pg + '.html' };
+  }
   if (aid.indexOf('board:') === 0) { const id = aid.slice(6), t = boards && boards[id]; return { kind: '자유게시판', label: t ? '자유게시판 · ' + t : '자유게시판 글', href: 'board.html?id=' + encodeURIComponent(id) }; }
   const n = newsById && newsById[aid];
   return n ? { kind: '뉴스', label: n.title, href: 'article.html?id=' + encodeURIComponent(aid) } : { kind: '뉴스', label: '(삭제되었거나 비공개된 기사)', href: '', gone: true };
@@ -875,6 +881,13 @@ document.addEventListener('click', e => {
   cmOpen(b.dataset.cid, b.dataset.title || '', b.dataset.href || '');
 }, true);
 /* 페이지 맨 아래 댓글 (오늘일정·월간일정·자유게시판·조인게시판·회사소개) */
+/* 오늘일정은 날짜별, 월간일정은 달별로 댓글이 따로 달림 (페이지가 pgnCm(key, label)을 부름) */
+const CM_P2 = n => String(n).padStart(2, '0');
+function cmDayKey(d) { return { key: d.getFullYear() + '-' + CM_P2(d.getMonth() + 1) + '-' + CM_P2(d.getDate()), label: (d.getMonth() + 1) + '월 ' + d.getDate() + '일(' + WD[d.getDay()] + ') 일정' }; }
+function cmMonKey(y, m) { return { key: y + '-' + CM_P2(m + 1), label: y + '년 ' + (m + 1) + '월 월간일정' }; }
+const CM_DATED = { today: () => cmDayKey(today0()), schedule: () => { const t = today0(); return cmMonKey(t.getFullYear(), t.getMonth()); } };
+const CM_OLD = { 'page:today:2026-10-10': 'page:today', 'page:schedule:2026-10': 'page:schedule' };   // 날짜 구분 전(10/10)에 달린 댓글 이어서 보기
+const CM_NEW = { 'today': 'today:2026-10-10', 'schedule': 'schedule:2026-10' };
 function pageComments(active) {
   const name = PAGE_CMT[active]; if (!name) return;
   const sp = new URLSearchParams(location.search);
@@ -882,9 +895,16 @@ function pageComments(active) {
   const w = document.createElement('div'); w.className = 'wrap pgcm';
   w.innerHTML = '<section class="card comments" id="pgcm"></section>';
   const place = () => { const f = document.querySelector('footer.site'); if (f && f.previousElementSibling !== w) f.before(w); };
+  let cur = '';
+  const show = (key, label) => {
+    const id = 'page:' + active + (key ? ':' + key : ''); if (id === cur) return; cur = id;
+    const nm = label || name, nx = key ? active + '.html?' + (active === 'today' ? 'd=' : 'm=') + key : '';
+    cmBox(w.firstChild, CM_OLD[id] || id, { title: nm + ' 댓글', ph: nm + '에 대한 의견을 남겨 주세요 (1000자 이내)', next: nx });
+  };
+  if (CM_DATED[active]) window.pgnCm = (key, label) => show(key, label);
   setTimeout(() => {
     place();
-    cmBox(w.firstChild, 'page:' + active, { title: name + ' 댓글', ph: name + '에 대한 의견을 남겨 주세요 (1000자 이내)' });
+    if (!cur) { if (CM_DATED[active]) { const k = CM_DATED[active](); show(k.key, k.label); } else show(); }
     new MutationObserver(place).observe(document.body, { childList: true });   // 페이지 내용이 나중에 붙어도 댓글은 항상 맨 아래
   }, 0);
 }
