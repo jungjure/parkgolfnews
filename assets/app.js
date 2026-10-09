@@ -890,7 +890,7 @@ const CM_DATED = { today: () => cmDayKey(today0()), schedule: () => { const t = 
 const CM_OLD = { 'page:today:2026-10-10': 'page:today', 'page:schedule:2026-10': 'page:schedule' };   // 날짜 구분 전(10/10)에 달린 댓글 이어서 보기
 const CM_NEW = { 'today': 'today:2026-10-10', 'schedule': 'schedule:2026-10' };
 function pageComments(active) {
-  const name = PAGE_CMT[active]; if (!name || active === 'board') return;   // 자유게시판은 맨 아래 페이지 댓글 없음 (글마다 댓글은 그대로)
+  const name = PAGE_CMT[active]; if (!name || active === 'board' || active === 'join') return;   // 자유게시판·조인게시판은 맨 아래 페이지 댓글 없음 (글마다 댓글은 그대로)
   const sp = new URLSearchParams(location.search);
   if (sp.get('id') || sp.get('write') || sp.get('edit')) return;   // 글 보기·쓰기 화면은 글마다 댓글이 따로 있음
   const w = document.createElement('div'); w.className = 'wrap pgcm';
