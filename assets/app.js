@@ -803,7 +803,7 @@ const PAGE_CMT = { today: '오늘일정', schedule: '월간일정', board: '자�
     '#cmm .box{background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:88vh;overflow:auto;padding:20px 22px;position:relative}' +
     '#cmm .x{position:sticky;top:0;float:right;margin:-8px -8px 0 8px;width:40px;height:40px;border-radius:50%;border:0;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.3);font-size:1.8rem;cursor:pointer;line-height:1;z-index:2}' +
     '#cmm .cm-t{font-weight:800;font-size:1.1rem;line-height:1.45;margin:0 44px 4px 0;color:var(--g900)}#cmm .go{display:inline-block;margin:2px 0 12px;font-size:.92rem;color:var(--g700);font-weight:700}' +
-    '#cmm .comments{margin:0;padding:0;border:0;box-shadow:none}.pgcm{margin-top:26px;margin-bottom:10px}.pgcm .comments{margin-top:0}';
+    '#cmm .comments{margin:0;padding:0;border:0;box-shadow:none}.pgcm{max-width:905px;margin-top:26px;margin-bottom:10px}.pgcm .comments{margin-top:0}';
   document.head.appendChild(st);
 })();
 const CMC = { counts: null, p: null };
