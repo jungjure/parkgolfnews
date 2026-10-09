@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261010e">
+<link rel="stylesheet" href="assets/style.css?v=20261010f">
 <style>
 .st-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px}
 .st-tabs button,.st-per button,.st-gran button{border:1px solid var(--line);background:#fff;color:var(--g900);border-radius:999px;padding:7px 14px;font-weight:700;font-size:.92rem;cursor:pointer;font-family:inherit}
@@ -74,7 +74,7 @@
 </style>
 </head>
 <body>
-<script src="assets/app.js?v=20261010e"></script>
+<script src="assets/app.js?v=20261010f"></script>
 <script>
 (async () => {
   const me = Auth.get();
@@ -283,12 +283,12 @@
         cm = r.items.map(c => Object.assign(c, { w: cmWhere(c.aid, byId, r.boards) }));
       } catch (e) { if (!Auth.get()) { location.replace('login.html?next=stats.html%23cmt'); return; } $('#body').innerHTML = '<div class="msg err">' + esc(e.message) + '</div>'; return; }
     }
-    const kinds = ['전체', '뉴스', '페이지', '자유게시판'];
+    const kinds = ['전체', '뉴스', '페이지', '자유게시판', '조인게시판'];
     const today = dk(T), live = cm.filter(c => c.state !== '삭제');
     const f = cm.filter(c => (cmF.del || c.state !== '삭제') && (cmF.w === '전체' || c.w.kind === cmF.w) && (!cmF.q || (c.text + ' ' + c.nick + ' ' + c.uid + ' ' + c.w.label).includes(cmF.q)));
     const byKind = k => live.filter(c => c.w.kind === k).length;
     $('#body').innerHTML =
-      '<div class="cm-sum">전체 <b>' + nf(live.length) + '</b>건 · 오늘 <b>' + nf(live.filter(c => c.at.slice(0, 10) === today).length) + '</b>건 · 뉴스 ' + nf(byKind('뉴스')) + ' · 페이지 ' + nf(byKind('페이지')) + ' · 자유게시판 ' + nf(byKind('자유게시판')) + (cm.length > live.length ? ' · 삭제됨 ' + nf(cm.length - live.length) : '') + '</div>' +
+      '<div class="cm-sum">전체 <b>' + nf(live.length) + '</b>건 · 오늘 <b>' + nf(live.filter(c => c.at.slice(0, 10) === today).length) + '</b>건 · 뉴스 ' + nf(byKind('뉴스')) + ' · 페이지 ' + nf(byKind('페이지')) + ' · 자유게시판 ' + nf(byKind('자유게시판')) + ' · 조인게시판 ' + nf(byKind('조인게시판')) + (cm.length > live.length ? ' · 삭제됨 ' + nf(cm.length - live.length) : '') + '</div>' +
       '<div class="cm-tools"><span class="cm-k">' + kinds.map(k => '<button data-k="' + k + '" class="' + (k === cmF.w ? 'on' : '') + '">' + k + '</button>').join('') + '</span><input id="cmq" type="search" placeholder="내용·작성자·위치 검색" value="' + esc(cmF.q) + '"><label><input type="checkbox" id="cmdel"' + (cmF.del ? ' checked' : '') + '> 삭제된 댓글 포함</label></div>' +
       (f.length ? '<div class="cm-wrap"><table class="cm-tb"><thead><tr><th>일시</th><th>위치</th><th>작성자</th><th>내용</th><th>관리</th></tr></thead><tbody>' + f.slice(0, cmN).map(c =>
         '<tr class="' + (c.state === '삭제' ? 'del' : '') + '"><td class="d">' + esc(c.at) + '</td><td class="w"><span class="k">' + esc(c.w.kind) + '</span>' + (c.w.href ? '<a href="' + esc(c.w.href) + '">' + esc(c.w.label) + '</a>' : esc(c.w.label)) + '</td><td class="n">' + esc(c.nick) + '<small>' + esc(c.uid) + '</small></td><td class="t">' + esc(c.text) + '</td><td class="a">' + (c.state === '삭제' ? '<button data-s="정상" data-id="' + esc(c.id) + '">복구</button>' : '<button class="rm" data-s="삭제" data-id="' + esc(c.id) + '">삭제</button>') + '</td></tr>').join('') + '</tbody></table></div>' + (f.length > cmN ? '<div style="text-align:center;margin:12px 0"><button id="cmmore" class="w">더 보기 (' + nf(f.length - cmN) + '건 남음)</button></div>' : '')

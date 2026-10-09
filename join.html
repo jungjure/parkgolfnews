@@ -18,7 +18,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261010e">
+<link rel="stylesheet" href="assets/style.css?v=20261010f">
 <style>
 .jn{max-width:869px;margin:0 auto;padding:4px 0 10px;font-size:1.05rem}
 .jn .intro{background:var(--g50);border:1px solid var(--g100);border-radius:12px;padding:12px 16px;font-size:.95rem;line-height:1.7;margin-bottom:14px}
@@ -78,10 +78,11 @@
 .jadm{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:#fff8e1;border:1px solid #ffe08a;border-radius:10px;margin-bottom:10px;font-size:.95rem}
 .jcard .ck{width:22px;height:22px;margin-right:6px;vertical-align:middle}
 @media(max-width:600px){.jform .two{grid-template-columns:1fr}.jd th{width:88px}.jcard .main{font-size:1.15rem}}
+.jcf{display:flex;justify-content:flex-end}.jcf .cmb{margin-top:6px}
 </style>
 </head>
 <body>
-<script src="assets/app.js?v=20261010e"></script>
+<script src="assets/app.js?v=20261010f"></script>
 <script>
 (async () => {
   await layout('join');
@@ -105,6 +106,7 @@
   const say = (el, t, k) => { el.innerHTML = t ? '<div class="msg ' + (k || 'err') + '">' + esc(t) + '</div>' : ''; };
   const needLogin = () => '<div class="jbox"><h3>로그인이 필요합니다</h3><p>글을 자세히 보거나 신청하려면 로그인해 주세요.</p><div class="row"><a class="jbig" href="login.html?next=' + encodeURIComponent(location.pathname.slice(1) + location.search) + '">로그인</a><a class="jbig w" href="signup.html">회원가입</a></div></div>';
   const go = p => { location.href = 'join.html' + (p ? '?' + p : ''); };
+  window.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.cmb[data-cid^="join:"]'); if (!b || me()) return; e.preventDefault(); e.stopPropagation(); location.href = 'login.html?next=' + encodeURIComponent(b.dataset.href || 'join.html'); }, true);   /* 손님은 댓글 버튼을 누르면 로그인으로 */
 
   /* ---------- 목록 ---------- */
   async function showList() {
@@ -136,7 +138,8 @@
       $('#list').innerHTML = rows.length ? rows.map(it => '<a class="jcard ' + (it.state === '마감' ? 'done' : '') + '" href="join.html?id=' + esc(it.id) + '">'
         + '<div class="top">' + (data.admin ? '<input type="checkbox" class="ck" data-id="' + esc(it.id) + '" onclick="event.stopPropagation()">' : '') + '<span class="jt ' + catCls(it.cat) + '">' + esc(it.cat) + '</span><span class="jt ' + stCls(it.state) + '">' + esc(it.state) + '</span>' + (it.st === '숨김' ? '<span class="jt hid">숨김</span>' : '') + (it.reports ? '<span class="jt s1">신고 ' + it.reports + '</span>' : '') + (it.mine ? '<span class="jt">내 글</span>' : '') + (it.apps && it.mine ? '<span class="jt s1">신청 ' + it.apps + '</span>' : '') + '</div>'
         + '<div class="main">' + esc(whenTxt(it)) + ' · ' + esc(it.place) + ' · <span class="left">' + esc(leftTxt(it)) + '</span></div>'
-        + '<div class="sub">' + esc([it.sido + (it.sgg ? ' ' + it.sgg : ''), it.holes, it.level && it.level !== '무관' ? '실력 ' + it.level : '', it.cat !== '조인 희망' && it.need ? '모집 ' + it.need + '명' : '', it.nick].filter(Boolean).join(' · ')) + '</div></a>').join('')
+        + '<div class="sub">' + esc([it.sido + (it.sgg ? ' ' + it.sgg : ''), it.holes, it.level && it.level !== '무관' ? '실력 ' + it.level : '', it.cat !== '조인 희망' && it.need ? '모집 ' + it.need + '명' : '', it.nick].filter(Boolean).join(' · ')) + '</div>'
+        + '<div class="jcf"><button type="button" class="cmb" data-cid="join:' + esc(it.id) + '" data-title="' + esc(whenTxt(it) + ' · ' + it.place) + '" data-href="join.html?id=' + esc(it.id) + '" aria-label="댓글 보기·쓰기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>댓글 <b>0</b></button></div></a>').join('')
         : '<div class="empty" style="padding:30px 16px;text-align:center">' + (data.items.length ? '조건에 맞는 글이 없습니다. 지역이나 날짜를 바꿔 보세요.' : '아직 글이 없습니다. 첫 조인 글을 올려 보세요!') + '</div>';
     };
     $('#cats').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { st.cat = b.dataset.c; draw(); } };
@@ -179,6 +182,8 @@
       + row('비용', esc(it.cost)) + row('카풀', esc(it.carpool)) + row('구장 예약', esc(it.resv)) + row('연락 방법', esc(it.contact)) + '</table>'
       + (it.text ? '<div class="txt">' + esc(it.text) + '</div>' : '') + '</div><div id="act"></div>';
     jn.innerHTML = h;
+    jn.insertAdjacentHTML('beforeend', '<section class="card comments" id="jcm" style="margin-top:18px"></section>');   /* 이 글의 댓글 (목록의 댓글 버튼과 같은 댓글) */
+    cmBox($('#jcm'), 'join:' + id, { title: '댓글', next: 'join.html?id=' + id });
     const act = $('#act'); let a = '';
     if (it.authorPhone) a += '<div class="jbox"><h3>작성자 연락처</h3><a class="ph" href="tel:' + esc(it.authorPhone.replace(/-/g, '')) + '">' + esc(it.authorPhone) + '</a> <a class="jbig sm w" href="tel:' + esc(it.authorPhone.replace(/-/g, '')) + '">전화</a> <a class="jbig sm w" href="sms:' + esc(it.authorPhone.replace(/-/g, '')) + '">문자</a>' + (it.together ? '<p style="margin:10px 0 0">함께하는 분: ' + esc(it.together.join(', ')) + '</p>' : '') + '<p style="margin:8px 0 0;color:var(--muted);font-size:.9rem">이 번호는 약속 목적 외에 쓰지 마세요.</p></div>';
     if (it.mine) {
