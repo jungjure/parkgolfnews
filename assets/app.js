@@ -3,6 +3,7 @@ const CONFIG = {
   SHEET_ID: '1sl-4jdTKIqpiUM-s2kjPAF-jJoIrCnBnoM8mmcY36cc',   // 구글시트 주소의 /d/ 와 /edit 사이 긴 문자열
   TABS: { news: '뉴스', schedule: '일정', calendar: '캘린더', settings: '설정' },
   CACHE_MIN: 3,
+  KAKAO_JS: '',   // 카카오 개발자센터 앱의 JavaScript 키 (넣으면 카카오톡 친구선택 화면이 바로 열림)
   API_URL: 'https://script.google.com/macros/s/AKfycby4zEPx3AB25E7x4peqc9UTlYsGgywDjew64Xh8Va7VhM4zMG8clQGM0eCUZIQqsW2tVg/exec'   // 글쓰기·로그인용 Apps Script 웹앱 주소 (배포 후 여기에 넣습니다)
 };
 
@@ -514,17 +515,47 @@ function shareInfo() {
   if (!text) text = t === '파크골프뉴스' ? '파크골프뉴스' : document.querySelector('main.article h1') ? '[파크골프뉴스] ' + t : '파크골프뉴스 ' + t + '입니다.';
   return { url, title: t === '파크골프뉴스' ? t : t + ' - 파크골프뉴스', text };
 }
+/* 앱 자동실행: 앱이 열리면 이 화면이 숨겨짐. 1.6초 뒤에도 화면이 그대로면(앱 없음) fallback 실행 */
+const SH_UA = navigator.userAgent;
+const SH_MOB = /Android|iPhone|iPad|iPod/i.test(SH_UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function launchApp(url, fallback) {
+  let left = false; const hid = () => { if (document.hidden) left = true; };
+  document.addEventListener('visibilitychange', hid); window.addEventListener('pagehide', hid);
+  setTimeout(() => { document.removeEventListener('visibilitychange', hid); window.removeEventListener('pagehide', hid); if (!left && !document.hidden && fallback) fallback(); }, 1600);
+  location.href = url;
+}
+function shareToast(msg) {
+  let t = document.getElementById('shr-toast');
+  if (!t) { t = document.createElement('div'); t.id = 'shr-toast'; t.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);max-width:92vw;background:rgba(25,25,25,.92);color:#fff;padding:12px 18px;border-radius:12px;font-size:.95rem;line-height:1.5;z-index:9999;text-align:center;white-space:pre-line;box-shadow:0 4px 18px rgba(0,0,0,.25)'; document.body.appendChild(t); }
+  t.textContent = msg; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(() => { t.hidden = true; }, 6000);
+}
+function copyText(s) {
+  try { if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(s).catch(() => {}); return; } } catch (e) {}
+  const a = document.createElement('textarea'); a.value = s; a.style.cssText = 'position:fixed;top:-1000px;opacity:0'; document.body.appendChild(a); a.select();
+  try { document.execCommand('copy'); } catch (e) {} a.remove();
+}
+/* 카카오 JavaScript 키(CONFIG.KAKAO_JS)가 있으면 카카오 공유 SDK로 카카오톡 친구선택 화면을 바로 엽니다 */
+function kakaoReady() { return !!(window.Kakao && Kakao.isInitialized && Kakao.isInitialized() && Kakao.Share); }
+function loadKakaoSdk() {
+  if (!CONFIG.KAKAO_JS || window.Kakao || document.getElementById('kakao-sdk')) return;
+  const s = document.createElement('script'); s.id = 'kakao-sdk'; s.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js'; s.crossOrigin = 'anonymous';
+  s.onload = () => { try { if (!Kakao.isInitialized()) Kakao.init(CONFIG.KAKAO_JS); } catch (e) {} };
+  document.head.appendChild(s);
+}
 function shareKakao() {
   const s = shareInfo(); s.url = TRK.tag(s.url, 'kakao');
-  if (navigator.share) { navigator.share({ title: s.text, text: s.text, url: s.url }).catch(() => {}); return; }   // 휴대폰: 공유창에서 카카오톡 선택 (로고는 링크 미리보기로 표시)
   const all = s.text + '\n' + s.url;
-  const done = () => alert('공유 문구와 주소를 복사했습니다.\n카카오톡 대화창에 붙여넣기(Ctrl+V) 해 주세요.\n\n' + all);
-  if (navigator.clipboard) navigator.clipboard.writeText(all).then(done, () => prompt('아래 내용을 복사해 카카오톡에 붙여넣으세요.', all));
-  else prompt('아래 내용을 복사해 카카오톡에 붙여넣으세요.', all);
+  if (kakaoReady()) { try { Kakao.Share.sendScrap({ requestUrl: s.url }); return; } catch (e) {} }
+  copyText(all);   // 앱에서 바로 붙여넣기 할 수 있게 공유 문구+주소 복사
+  shareToast(SH_MOB ? '공유 문구를 복사했습니다.\n카카오톡이 열리면 대화방에 붙여넣기 해 주세요.' : '공유 문구와 주소를 복사했습니다.\n카카오톡 대화창에 붙여넣기(Ctrl+V) 해 주세요.');
+  launchApp('kakaotalk://launch', null);   // 카카오톡 앱(PC는 설치된 경우) 자동실행
 }
 function shareBand() {
   const s = shareInfo(); s.url = TRK.tag(s.url, 'band');
-  location.href = 'https://band.us/plugin/share?body=' + encodeURIComponent(s.text + '\n' + s.url) + '&route=' + encodeURIComponent(location.host);
+  const body = s.text + '\n' + s.url, route = location.host;
+  const web = 'https://band.us/plugin/share?body=' + encodeURIComponent(body) + '&route=' + encodeURIComponent(route);
+  if (!SH_MOB) { location.href = web; return; }   // PC: 밴드 글쓰기(공유) 화면
+  launchApp('bandapp://create/post?text=' + encodeURIComponent(body) + '&route=' + encodeURIComponent(route), () => { location.href = web; });   // 휴대폰: 밴드 앱 자동실행, 앱이 없으면 웹 공유
 }
 function addShareButtons() {
   if (!document.getElementById('shr-css')) {
@@ -551,6 +582,7 @@ document.addEventListener('click', ev => {
 }, true);
 function startShare(active) {
   if (SHARE_SKIP.includes(active)) return;
+  loadKakaoSdk();
   let q = 0; const run = () => { q = 0; addShareButtons(); };
   run();
   new MutationObserver(() => { if (!q) q = requestAnimationFrame(run); }).observe(document.body, { childList: true, subtree: true });
