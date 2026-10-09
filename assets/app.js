@@ -360,6 +360,7 @@ async function layout(active, opts) {
   document.body.insertAdjacentHTML('beforeend', '<footer class="site" id="pgn-foot">' + foot(S) + '</footer>');
   refreshSettings(S2 => { if (JSON.stringify(S2) === JSON.stringify(S)) return; S = S2; $('#pgn-head').innerHTML = head(S); $('#pgn-foot').innerHTML = foot(S); });
   startShare(active);   // 제목 오른쪽 공유 버튼
+  pageComments(active);   // 페이지 맨 아래 댓글
   TRK.pv();             // 방문 통계
   if (me) startPing();
   else if (opts.openList) {   // 뉴스 목록: 로그인 없이 기사 목록을 보여 주고, 기사를 누르면 로그인 안내창
@@ -431,7 +432,7 @@ function newsCard(n) {
   const img = n.images[0];
   return `<a class="card news-card" href="article.html?id=${n.id}">
     <div class="thumb ${img ? '' : 'ph'}" ${img ? 'style="position:relative;overflow:hidden"' : ''}>${img ? `<img src="${esc(thumbUrl(img))}" alt="" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">` : '<img src="assets/logo.png" alt="">'}</div>
-    <div class="body"><span><span class="tag">${esc(n.cat)}</span></span><h3>${esc(n.title)}</h3><p>${esc(n.summary)}</p><div class="meta">${fmtDate(n.date)}</div><div class="rx" data-id="${esc(n.id)}"></div></div></a>`;
+    <div class="body"><span><span class="tag">${esc(n.cat)}</span></span><h3>${esc(n.title)}</h3><p>${esc(n.summary)}</p><div class="meta">${fmtDate(n.date)}</div><div class="cardfoot"><div class="rx" data-id="${esc(n.id)}"></div><button type="button" class="cmb" data-cid="${esc(n.id)}" data-title="${esc(n.title)}" data-href="article.html?id=${esc(n.id)}" aria-label="댓글 보기·쓰기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>댓글 <b>0</b></button></div></div></a>`;
 }
 
 /* 제목·비고·장소에 시범운영(시범 운영) 문구가 있으면 시범운영 일정 */
@@ -790,3 +791,100 @@ setTimeout(rqCheck, 1500);
   addEventListener('resize', () => later(150));
   addEventListener('load', () => later(100));
 })();
+
+/* ---------- 댓글 (페이지별 · 뉴스 항목별) ---------- */
+const PAGE_CMT = { today: '오늘일정', schedule: '월간일정', board: '자유게시판', join: '조인게시판', about: '회사소개' };
+(function () {
+  const st = document.createElement('style');
+  st.textContent = '.cardfoot{display:flex;flex-wrap:wrap;gap:6px;align-items:center}' +
+    '.cmb{font:inherit;font-size:.85rem;background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;color:var(--ink);line-height:1.4;margin-top:8px}' +
+    '.cmb:hover{border-color:var(--g600);background:var(--g50)}.cmb svg{flex:none;color:var(--g700)}' +
+    '#cmm{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}' +
+    '#cmm .box{background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:88vh;overflow:auto;padding:20px 22px;position:relative}' +
+    '#cmm .x{position:sticky;top:0;float:right;margin:-8px -8px 0 8px;width:40px;height:40px;border-radius:50%;border:0;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.3);font-size:1.8rem;cursor:pointer;line-height:1;z-index:2}' +
+    '#cmm .cm-t{font-weight:800;font-size:1.1rem;line-height:1.45;margin:0 44px 4px 0;color:var(--g900)}#cmm .go{display:inline-block;margin:2px 0 12px;font-size:.92rem;color:var(--g700);font-weight:700}' +
+    '#cmm .comments{margin:0;padding:0;border:0;box-shadow:none}.pgcm{margin-top:26px;margin-bottom:10px}.pgcm .comments{margin-top:0}';
+  document.head.appendChild(st);
+})();
+const CMC = { counts: null, p: null };
+function cmCountLoad() {
+  if (!CMC.p) CMC.p = api('ccount').then(r => { CMC.counts = r.counts || {}; }).catch(() => { CMC.counts = CMC.counts || {}; });
+  return CMC.p;
+}
+function cmPaint() {
+  document.querySelectorAll('.cmb[data-cid]').forEach(b => { const v = String((CMC.counts || {})[b.dataset.cid] || 0), x = b.querySelector('b'); b.dataset.ok = 1; if (x && x.textContent !== v) x.textContent = v; });
+}
+let _cmT;
+new MutationObserver(() => { clearTimeout(_cmT); _cmT = setTimeout(() => { if (document.querySelector('.cmb[data-cid]:not([data-ok])')) cmCountLoad().then(cmPaint); }, 60); }).observe(document.documentElement, { childList: true, subtree: true });
+/* 댓글이 어디에 달렸는지 (관리자 목록·내 댓글에서 사용) */
+function cmWhere(aid, newsById, boards) {
+  aid = String(aid || '');
+  if (aid.indexOf('page:') === 0) { const k = aid.slice(5); return { kind: '페이지', label: (PAGE_CMT[k] || k) + ' 페이지', href: k + '.html' }; }
+  if (aid.indexOf('board:') === 0) { const id = aid.slice(6), t = boards && boards[id]; return { kind: '자유게시판', label: t ? '자유게시판 · ' + t : '자유게시판 글', href: 'board.html?id=' + encodeURIComponent(id) }; }
+  const n = newsById && newsById[aid];
+  return n ? { kind: '뉴스', label: n.title, href: 'article.html?id=' + encodeURIComponent(aid) } : { kind: '뉴스', label: '(삭제되었거나 비공개된 기사)', href: '', gone: true };
+}
+/* 댓글 상자: el 안에 목록 + 입력창을 그림 */
+function cmBox(el, aid, opt) {
+  opt = opt || {};
+  const me = Auth.get(), nx = encodeURIComponent(opt.next || ((location.pathname.split('/').pop() || 'index.html') + location.search));
+  el.innerHTML = '<h3>' + esc(opt.title || '댓글') + ' <span class="cc"></span></h3>' +
+    (me ? '<div class="cform"><textarea maxlength="1000" placeholder="' + esc(opt.ph || '댓글을 입력하세요 (1000자 이내)') + '"></textarea><div class="bar"><small>' + esc(me.name) + '님으로 작성</small><button type="button" class="btn green cs">댓글 등록</button></div><div class="cm-msg"></div></div>'
+      : '<div class="cneed">댓글은 회원만 쓸 수 있습니다.<br><a class="btn green" href="login.html?next=' + nx + '">로그인</a><a class="btn green" href="signup.html?next=' + nx + '">회원가입</a></div>') +
+    '<div class="cl"><div class="loading">불러오는 중...</div></div>';
+  const q = s => el.querySelector(s);
+  const draw = async () => {
+    try {
+      const r = await api('comments', { aid });
+      q('.cc').textContent = r.items.length ? '(' + r.items.length + ')' : '';
+      if (CMC.counts) { CMC.counts[aid] = r.items.length; cmPaint(); }
+      q('.cl').innerHTML = r.items.length ? r.items.map(c => '<div class="citem"><div class="ch"><b>' + esc(c.nick) + '</b><span>' + esc(c.at) + '</span>' + (c.mine ? '<button type="button" data-id="' + esc(c.id) + '">삭제</button>' : '') + '</div><div class="ct">' + esc(c.text) + '</div></div>').join('') : '<div class="empty" style="padding:18px">첫 댓글을 남겨 보세요.</div>';
+    } catch (e) { q('.cl').innerHTML = '<div class="empty" style="padding:18px">댓글을 불러오지 못했습니다.<br><small>' + esc(e.message) + '</small></div>'; }
+  };
+  draw();
+  q('.cl').onclick = async e => {
+    const b = e.target.closest('button[data-id]'); if (!b || !confirm('이 댓글을 삭제할까요?')) return;
+    try { await api('cdelete', { cid: b.dataset.id }); draw(); } catch (err) { alert(err.message); }
+  };
+  const send = q('.cs'); if (!send) return;
+  const ta = q('textarea'), m = q('.cm-msg');
+  ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send.click(); });
+  send.onclick = async () => {
+    const t = ta.value.trim(); if (!t) { m.innerHTML = '<div class="msg err">댓글 내용을 입력해 주세요.</div>'; return; }
+    send.disabled = true; send.textContent = '등록 중...'; m.innerHTML = '';
+    try { await api('cpost', { aid, text: t }); ta.value = ''; await draw(); }
+    catch (err) { m.innerHTML = '<div class="msg err">' + esc(err.message) + '</div>'; if (!Auth.get()) setTimeout(() => location.reload(), 1500); }
+    send.disabled = false; send.textContent = '댓글 등록';
+  };
+}
+/* 뉴스 항목의 [댓글] 버튼 -> 그 기사 댓글 창 (기사 화면의 댓글과 같은 댓글) */
+function cmOpen(aid, title, href) {
+  const old = document.getElementById('cmm'); if (old) old.remove();
+  document.body.insertAdjacentHTML('beforeend', '<div id="cmm" role="dialog" aria-modal="true"><div class="box"><button type="button" class="x" aria-label="닫기" title="닫기">&times;</button><div class="cm-t">' + esc(title || '댓글') + '</div>' + (href ? '<a class="go" href="' + esc(href) + '">기사 보기 &rsaquo;</a>' : '') + '<section class="card comments"></section></div></div>');
+  const md = document.getElementById('cmm');
+  const close = () => { md.remove(); document.removeEventListener('keydown', esc1); };
+  const esc1 = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', esc1);
+  md.addEventListener('click', e => { if (e.target === md || e.target.closest('.x')) close(); });
+  cmBox(md.querySelector('section'), aid, { title: '댓글' });
+  const t = md.querySelector('textarea'); if (t && matchMedia('(pointer:fine)').matches) t.focus();
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('.cmb[data-cid]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  cmOpen(b.dataset.cid, b.dataset.title || '', b.dataset.href || '');
+}, true);
+/* 페이지 맨 아래 댓글 (오늘일정·월간일정·자유게시판·조인게시판·회사소개) */
+function pageComments(active) {
+  const name = PAGE_CMT[active]; if (!name) return;
+  const sp = new URLSearchParams(location.search);
+  if (sp.get('id') || sp.get('write') || sp.get('edit')) return;   // 글 보기·쓰기 화면은 글마다 댓글이 따로 있음
+  const w = document.createElement('div'); w.className = 'wrap pgcm';
+  w.innerHTML = '<section class="card comments" id="pgcm"></section>';
+  const place = () => { const f = document.querySelector('footer.site'); if (f && f.previousElementSibling !== w) f.before(w); };
+  setTimeout(() => {
+    place();
+    cmBox(w.firstChild, 'page:' + active, { title: name + ' 댓글', ph: name + '에 대한 의견을 남겨 주세요 (1000자 이내)' });
+    new MutationObserver(place).observe(document.body, { childList: true });   // 페이지 내용이 나중에 붙어도 댓글은 항상 맨 아래
+  }, 0);
+}
