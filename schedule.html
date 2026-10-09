@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="icon" href="assets/logo.png">
 <link rel="stylesheet" href="assets/style.css?v=20261009j">
-<style>#chips button.tag{border:2px solid transparent;cursor:pointer;font-family:inherit;line-height:inherit}#chips button.tag.on{border-color:currentColor}#chips.f button.tag:not(.on){opacity:.4}</style>
+<style>#chips button.tag{border:2px solid transparent;cursor:pointer;font-family:inherit;line-height:inherit}#chips button.tag.on{border-color:currentColor}#chips.f button.tag:not(.on){opacity:.4}#list{transition:border-color .2s,box-shadow .2s}#list[data-f]{border-width:3px}#list[data-f="대회"]{border-color:var(--blue);box-shadow:0 0 0 4px #e3f0ff}#list[data-f="접수"]{border-color:var(--red);box-shadow:0 0 0 4px #fdecea}#list[data-f="연습일"],#list[data-f="연습라운딩"]{border-color:var(--amber);box-shadow:0 0 0 4px #fff3e0}#list[data-f="시범운영"]{border-color:#0f766e;box-shadow:0 0 0 4px #ccfbf1}</style>
 </head>
 <body>
 <div class="wrap cols">
@@ -39,6 +39,7 @@
     const ord = ['대회', '접수', '연습일'], keys = Object.keys(cnt).sort((a, b) => (a === '시범운영') - (b === '시범운영') || ((ord.indexOf(a) + 1 || 9) - (ord.indexOf(b) + 1 || 9)));
     if (type !== '전체' && !cnt[type]) type = '전체';
     $('#chips').classList.toggle('f', type !== '전체');
+    const lf = $('#list'); if (type !== '전체') lf.dataset.f = type; else delete lf.dataset.f;   /* 고른 구분 색으로 목록 테두리 */
     $('#chips').innerHTML = keys.map(k => '<button type="button" class="tag ' + esc(k) + (k === type ? ' on' : '') + '" data-c="' + esc(k) + '" title="' + esc(k) + '만 보기">' + esc(k) + ' ' + cnt[k] + '건</button>').join('');
     const f = mon.filter(e => type === '전체' || kind(e) === type);
     if (!f.length) { $('#list').innerHTML = '<div class="empty">이 달에 등록된 일정이 없습니다.</div>'; return; }
