@@ -18,7 +18,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261010g">
+<link rel="stylesheet" href="assets/style.css?v=20261010h">
 <style>
 .bd{max-width:860px;margin:0 auto;padding:22px 0 10px}
 .bd .rules{background:var(--g50);border:1px solid var(--g100);border-radius:12px;padding:12px 16px;font-size:.88rem;line-height:1.7;color:#345;margin-bottom:14px}
@@ -40,10 +40,11 @@
 .bpost .bar .btn{padding:8px 18px;font-size:.95rem}
 .btn.red{background:#fff;color:var(--red);border-color:var(--red)}
 .bd textarea.big{min-height:260px}
+.bitem .bf{display:flex;align-items:center;justify-content:space-between;gap:8px}.bitem .bf .cmb{margin-top:3px;flex:none}
 </style>
 </head>
 <body>
-<script src="assets/app.js?v=20261010g"></script>
+<script src="assets/app.js?v=20261010h"></script>
 <script>
 (async () => {
   await layout('board');
@@ -68,13 +69,13 @@
       const pages = Math.max(1, Math.ceil(f.length / PER)); if (page > pages) page = pages;
       { const n1 = f.length; window.PGN_SHARE = () => new URLSearchParams(location.search).get('id') ? '' : '파크골프뉴스 자유게시판 총 ' + n1 + '건입니다.'; }   /* 공유 문구 */
       $('#blist').innerHTML = f.length ? f.slice((page - 1) * PER, page * PER).map(x =>
-        '<a class="bitem" href="board.html?id=' + esc(x.id) + '"><div class="bt">' + esc(x.title) + (x.cm ? '<em>[' + x.cm + ']</em>' : '') + (x.status === '숨김' ? ' <span class="tag hide">숨김</span>' : '') + (isAdmin && x.reports ? ' <span class="tag 접수">신고 ' + x.reports + '</span>' : '') + '</div><div class="bm">' + esc(x.nick) + ' · ' + esc(x.at.slice(5)) + '</div></a>').join('')
+        '<a class="bitem" href="board.html?id=' + esc(x.id) + '"><div class="bt">' + esc(x.title) + (x.status === '숨김' ? ' <span class="tag hide">숨김</span>' : '') + (isAdmin && x.reports ? ' <span class="tag 접수">신고 ' + x.reports + '</span>' : '') + '</div><div class="bf"><div class="bm">' + esc(x.nick) + ' · ' + esc(x.at.slice(5)) + '</div><button type="button" class="cmb" data-cid="board:' + esc(x.id) + '" data-title="' + esc(x.title) + '" data-href="board.html?id=' + esc(x.id) + '" aria-label="댓글 보기·쓰기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>댓글 <b>' + (x.cm || 0) + '</b></button></div></a>').join('')
         : '<div class="empty">' + (k ? '검색 결과가 없습니다.' : '아직 글이 없습니다. 첫 글을 남겨 보세요.') + '</div>';
       $('#bpg').innerHTML = pages > 1 ? Array.from({ length: pages }, (_, i) => '<button class="btn ' + (i + 1 === page ? 'green' : 'gray') + '" data-p="' + (i + 1) + '" style="padding:6px 14px">' + (i + 1) + '</button>').join('') : '';
     };
     $('#bpg').onclick = e => { const b = e.target.closest('[data-p]'); if (b) { page = +b.dataset.p; draw(); window.scrollTo(0, 0); } };
     $('#bs').oninput = e => { kw = e.target.value; page = 1; draw(); };
-    try { all = (await api('blist')).items; draw(); }
+    try { all = (await api('blist')).items; CMC.counts = Object.assign(CMC.counts || {}, Object.fromEntries(all.map(x => ['board:' + x.id, x.cm || 0]))); CMC.p = CMC.p || Promise.resolve(); draw(); }   /* 댓글 수는 목록에서 받은 값 사용 */
     catch (e) { $('#blist').innerHTML = '<div class="empty">목록을 불러오지 못했습니다.<br><small>' + esc(errOut(e)) + '</small></div>'; }
   }
 
