@@ -18,14 +18,14 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261009k">
+<link rel="stylesheet" href="assets/style.css?v=20261010a">
 </head>
 <body>
 <div class="wrap cols">
   <main class="article" id="art"><div class="loading">불러오는 중...</div></main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261009k"></script>
+<script src="assets/app.js?v=20261010a"></script>
 <script>
 (async () => {
   const S = await layout('news');
@@ -48,8 +48,9 @@
       <div class="content">${n.images.map(u => `<img src="${esc(u)}" alt="${esc(n.title)}" loading="lazy">`).join('')}${renderBody(n)}</div>
       ${n.link ? `<div class="src">${n.source ? esc(n.source) + ' · ' : '관련 링크 · '}<a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(n.link)}</a></div>` : ''}
       <div class="share">
-        <button class="btn green" onclick="navigator.clipboard.writeText(location.href).then(()=>this.textContent='주소가 복사되었습니다')">기사 주소 복사</button>
-        <a class="btn green" target="_blank" rel="noopener" href="https://band.us/plugin/share?body=${encodeURIComponent(n.title + '\n' + location.href)}&route=${encodeURIComponent(location.href)}">밴드로 공유</a>
+        <button class="btn" style="background:#FEE500;color:#191919;border-color:#FEE500" onclick="shareKakao()">카카오톡 공유</button>
+        <button class="btn" style="background:#00C73C;color:#fff;border-color:#00C73C" onclick="shareBand()">밴드 공유</button>
+        <button class="btn green" onclick="copyText(location.href);this.textContent='주소가 복사되었습니다'">기사 주소 복사</button>
         <a class="btn green" href="news.html">목록</a>
       </div>
       <p class="rxhead">이 기사 어떠셨나요?</p>
