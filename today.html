@@ -7,6 +7,16 @@
 <meta name="description" content="오늘 열리는 전국 파크골프 대회, 접수 시작·마감, 연습일 일정을 날짜별로 확인하세요.">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<meta property="og:site_name" content="파크골프뉴스">
+<meta property="og:type" content="website">
+<meta property="og:title" content="파크골프뉴스 오늘일정">
+<meta property="og:description" content="오늘 열리는 전국 파크골프 대회, 접수, 연습일 일정을 날짜별로 확인하세요.">
+<meta property="og:url" content="https://parkgolfnews.org/today.html">
+<meta property="og:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1280">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
 <link rel="icon" href="assets/logo.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/icon-180.png">
@@ -14,7 +24,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="파크골프뉴스">
-<link rel="stylesheet" href="assets/style.css?v=20261009j">
+<link rel="stylesheet" href="assets/style.css?v=20261009k">
 <style>#sum button.tag{border:2px solid transparent;cursor:pointer;font-family:inherit;line-height:inherit}#sum button.tag.on{border-color:currentColor}#sum.f button.tag:not(.on){opacity:.4}#list{transition:border-color .2s,box-shadow .2s}#list[data-f]{border-width:3px}#list[data-f="대회"]{border-color:var(--blue);box-shadow:0 0 0 4px #e3f0ff}#list[data-f="접수"]{border-color:var(--red);box-shadow:0 0 0 4px #fdecea}#list[data-f="연습일"],#list[data-f="연습라운딩"]{border-color:var(--amber);box-shadow:0 0 0 4px #fff3e0}#list[data-f="시범운영"]{border-color:#0f766e;box-shadow:0 0 0 4px #ccfbf1}</style>
 
 </head>
@@ -81,7 +91,7 @@
   window.pgnInstallBtn = add;
 })();
 </script>
-<script src="assets/app.js?v=20261009j"></script>
+<script src="assets/app.js?v=20261009k"></script>
 <script>
 (async () => {
   const S = await layout('today');
@@ -102,6 +112,8 @@
     const lf = $('#list'); if (type !== '전체') lf.dataset.f = type; else delete lf.dataset.f;   /* 고른 구분 색으로 목록 테두리 */
     $('#sum').innerHTML = td.length ? Object.entries(cnt).map(([k, v]) => '<button type="button" class="tag ' + esc(k) + (k === type ? ' on' : '') + '" data-c="' + esc(k) + '" title="' + esc(k) + '만 보기">' + esc(k) + ' ' + v + '건</button>').join('') : '';
     const f = td.filter(e => type === '전체' || (isTrial(e) ? '시범운영' : e.type) === type);
+    { const lb = diff === 0 ? '오늘일정' : (cur.getMonth() + 1) + '월 ' + cur.getDate() + '일(' + WD[cur.getDay()] + ') 일정', ty = type, n1 = td.length, n2 = f.length;   /* 공유 문구 */
+      window.PGN_SHARE = () => '파크골프뉴스 ' + lb + (ty === '전체' ? ' 총 ' + n1 : ' ' + ty + ' ' + n2) + '건입니다.'; }
     $('#list').innerHTML = f.length ? f.map(e => eventRow(e)).join('') : '<div class="empty">이 날 등록된 일정이 없습니다.</div>';
   };
   try {

@@ -7,8 +7,18 @@
 <meta name="description" content="같은 지역에서 함께 파크골프 칠 사람을 찾는 조인게시판. 멤버 구함, 조인 희망, 정기 라운딩, 원정·투어 동행.">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<meta property="og:site_name" content="파크골프뉴스">
+<meta property="og:type" content="website">
+<meta property="og:title" content="파크골프뉴스 조인게시판">
+<meta property="og:description" content="함께 라운딩할 동반자를 찾는 조인게시판입니다.">
+<meta property="og:url" content="https://parkgolfnews.org/join.html">
+<meta property="og:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1280">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261009i">
+<link rel="stylesheet" href="assets/style.css?v=20261009k">
 <style>
 .jn{max-width:869px;margin:0 auto;padding:4px 0 10px;font-size:1.05rem}
 .jn .intro{background:var(--g50);border:1px solid var(--g100);border-radius:12px;padding:12px 16px;font-size:.95rem;line-height:1.7;margin-bottom:14px}
@@ -71,7 +81,7 @@
 </style>
 </head>
 <body>
-<script src="assets/app.js?v=20261009i"></script>
+<script src="assets/app.js?v=20261009k"></script>
 <script>
 (async () => {
   await layout('join');
@@ -122,6 +132,7 @@
       const cnt = { '전체': base.length }; base.forEach(it => cnt[it.cat] = (cnt[it.cat] || 0) + 1);
       $('#cats').innerHTML = ['전체'].concat(CATS).map(c => '<button data-c="' + esc(c) + '" class="' + (c === st.cat ? 'on' : '') + '" title="' + esc(CAT_HELP[c] || '') + '">' + esc(c) + ' ' + (cnt[c] || 0) + '</button>').join('');
       const rows = base.filter(it => st.cat === '전체' || it.cat === st.cat).sort((a, b) => (a.state === '마감') - (b.state === '마감') || (a.rep ? '0' : a.date + a.time).localeCompare(b.rep ? '0' : b.date + b.time));
+      { const c0 = st.cat, n1 = rows.length; window.PGN_SHARE = () => new URLSearchParams(location.search).get('id') ? '' : '파크골프뉴스 조인게시판' + (c0 === '전체' ? '' : ' ' + c0) + ' 총 ' + n1 + '건입니다.'; }   /* 공유 문구 */
       $('#list').innerHTML = rows.length ? rows.map(it => '<a class="jcard ' + (it.state === '마감' ? 'done' : '') + '" href="join.html?id=' + esc(it.id) + '">'
         + '<div class="top">' + (data.admin ? '<input type="checkbox" class="ck" data-id="' + esc(it.id) + '" onclick="event.stopPropagation()">' : '') + '<span class="jt ' + catCls(it.cat) + '">' + esc(it.cat) + '</span><span class="jt ' + stCls(it.state) + '">' + esc(it.state) + '</span>' + (it.st === '숨김' ? '<span class="jt hid">숨김</span>' : '') + (it.reports ? '<span class="jt s1">신고 ' + it.reports + '</span>' : '') + (it.mine ? '<span class="jt">내 글</span>' : '') + (it.apps && it.mine ? '<span class="jt s1">신청 ' + it.apps + '</span>' : '') + '</div>'
         + '<div class="main">' + esc(whenTxt(it)) + ' · ' + esc(it.place) + ' · <span class="left">' + esc(leftTxt(it)) + '</span></div>'

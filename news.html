@@ -8,8 +8,18 @@
 <meta name="description" content="파크골프뉴스의 전체 뉴스. 대회 결과, 협회 소식, 행사 안내를 모았습니다.">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<meta property="og:site_name" content="파크골프뉴스">
+<meta property="og:type" content="website">
+<meta property="og:title" content="파크골프뉴스 뉴스">
+<meta property="og:description" content="전국 파크골프 소식과 대회 뉴스를 전합니다.">
+<meta property="og:url" content="https://parkgolfnews.org/news.html">
+<meta property="og:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1280">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261007p">
+<link rel="stylesheet" href="assets/style.css?v=20261009k">
 </head>
 <body>
 <div class="wrap cols">
@@ -22,7 +32,7 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261007p"></script>
+<script src="assets/app.js?v=20261009k"></script>
 <script>
 (async () => {
   const S = await layout('news', { openList: true });
@@ -31,6 +41,8 @@
   const draw = () => {
     const f = all.filter(n => (cat === '전체' || (cat === '__fav' ? fav.has(n.cat) : n.cat === cat)) && (!q || (n.title + n.summary + n.body).includes(q)));
     const pages = Math.max(1, Math.ceil(f.length / PER)); page = Math.min(page, pages);
+    { const c0 = cat, n1 = f.length;   /* 공유 문구 */
+      window.PGN_SHARE = () => '파크골프뉴스 뉴스' + (c0 === '전체' || c0 === '__fav' ? '' : ' ' + c0) + ' 총 ' + n1 + '건입니다.'; }
     $('#list').innerHTML = f.length ? `<div class="grid">${f.slice((page - 1) * PER, page * PER).map(newsCard).join('')}</div>` : '<div class="empty">해당하는 뉴스가 없습니다.</div>';
     $('#pager').innerHTML = pages > 1 ? Array.from({ length: pages }, (_, i) => `<button class="chip ${i + 1 === page ? 'on' : ''}" data-p="${i + 1}">${i + 1}</button>`).join('') : '';
   };
