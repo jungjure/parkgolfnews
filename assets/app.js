@@ -456,7 +456,7 @@ function showEv(i) {
   const same = ymd(e.start) === ymd(e.end);
   const when = same ? fmtShort(e.start) : fmtShort(e.start) + ' ~ ' + fmtShort(e.end);
   const rows = [['구분', isTrial(e) ? '시범운영' : e.type], ['기간', when], ['장소', [e.region, e.place].filter(Boolean).join(' · ')]].filter(r => r[1]);
-  const link = e.link && e.type === '접수' ? '<div class="evd-link">접수처 : <a href="' + esc(e.link) + '" target="_blank" rel="noopener">' + esc(siteName(e.link)) + '</a></div>' : '';
+  const link = e.link && e.type === '접수' ? '<div class="evd-link">접수처 : <a href="' + esc(e.link) + '" target="_blank" rel="noopener">' + esc(siteName(e.link)) + '</a></div>' : (e.type === '접수' && !isTrial(e) && jeopsuTxt(e) ? '<div class="evd-link">접수처 : ' + esc(jeopsuTxt(e)) + '</div>' : '');
   const body = e.detail ? esc(e.detail).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>') : '등록된 상세 내용이 없습니다.';
   const old = document.getElementById('evd'); if (old) old.remove();
   const el = document.createElement('div'); el.id = 'evd';
@@ -478,6 +478,12 @@ document.addEventListener('click', ev => {
 document.addEventListener('click', ev => { const h = ev.target.closest && ev.target.closest('h4.evt'); if (h) showEv(+h.dataset.ev); });
 document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.classList && ev.target.classList.contains('evt')) showEv(+ev.target.dataset.ev); });
 
+/* 링크 없는 접수: 상세(또는 비고) 첫 줄 "접수: ..." 글자를 접수처로 표시 */
+function jeopsuTxt(e) {
+  const src = [e.detail, e.note].filter(Boolean);
+  for (const s of src) { const m = String(s).split(/\n|---/)[0].match(/^\s*접수\s*[:：]\s*(.+)$/); if (m) return m[1].replace(/https?:\/\/\S+/g, '').trim().slice(0, 80); }
+  return '';
+}
 function eventRow(e, opts = {}) {
   const same = ymd(e.start) === ymd(e.end);
   let dateTxt = same ? fmtShort(e.start) : `~ ${fmtShort(e.end)}`;
@@ -488,10 +494,11 @@ function eventRow(e, opts = {}) {
   const dl = e.type === '접수' && ymd(e.end) >= ymd(t) && (e.end - t) / 864e5 <= 3;
   const trial = isTrial(e);
   const hasLink = !!(e.link && e.type === '접수' && !trial);
+  const jtxt = (!hasLink && e.type === '접수' && !trial) ? jeopsuTxt(e) : '';
   const dateHtml = blank ? '' : `<div class="date" style="min-width:0;padding:0;background:none;color:var(--muted);font-size:.85rem;font-weight:400;line-height:inherit;white-space:nowrap;margin-left:auto">${dateTxt}</div>`;
   return `<div class="ev ${dl ? 'deadline' : ''}">
     <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;gap:10px"><h4 class="evt" tabindex="0" role="button" data-ev="${evReg(e)}" style="flex:1;min-width:0"${opts.max && e.name.length > opts.max ? ` title="${esc(e.name)}"` : ''}>${esc(opts.max && e.name.length > opts.max ? e.name.slice(0, opts.max) + '...' : e.name)}</h4><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap">${trial ? '<span class="tag 시범운영">시범운영</span>' : `<span class="tag ${esc(e.type)}">${esc(e.type)}</span>${dl ? '<span class="tag 접수">마감임박</span>' : (e.type === '접수' && /접수마감/.test(e.name) ? '<span class="tag 접수">마감</span>' : '')}`}</div></div><div class="sub" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span>${[e.region, e.place, e.note].filter(Boolean).map(esc).join(' · ')}</span>${dateHtml}</div>
-    ${hasLink ? `<div style="font-size:.85rem;font-weight:700;color:var(--ink);margin-top:4px">접수처 : <a class="go" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(siteName(e.link))}</a></div>` : ''}</div></div>`;
+    ${hasLink ? `<div style="font-size:.85rem;font-weight:700;color:var(--ink);margin-top:4px">접수처 : <a class="go" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(siteName(e.link))}</a></div>` : (jtxt ? `<div style="font-size:.85rem;font-weight:700;color:var(--ink);margin-top:4px">접수처 : <span style="font-weight:400">${esc(jtxt)}</span></div>` : '')}</div></div>`;
 }
 
 
