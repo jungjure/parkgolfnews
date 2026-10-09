@@ -508,18 +508,23 @@ function shareInfo() {
   const url = location.href.split('#')[0];
   const h = document.querySelector('h1') || document.querySelector('h2.sec');
   const t = (h && h.firstChild && h.firstChild.textContent || document.title).trim();
-  return { url, title: t === '파크골프뉴스' ? t : t + ' - 파크골프뉴스' };
+  /* 공유 문구: 페이지가 PGN_SHARE()로 정해 주면 그것(예: 파크골프뉴스 오늘일정 총 14건입니다.), 없으면 제목으로 */
+  let text = '';
+  try { if (typeof window.PGN_SHARE === 'function') text = window.PGN_SHARE() || ''; } catch (e) {}
+  if (!text) text = t === '파크골프뉴스' ? '파크골프뉴스' : document.querySelector('main.article h1') ? '[파크골프뉴스] ' + t : '파크골프뉴스 ' + t + '입니다.';
+  return { url, title: t === '파크골프뉴스' ? t : t + ' - 파크골프뉴스', text };
 }
 function shareKakao() {
   const s = shareInfo(); s.url = TRK.tag(s.url, 'kakao');
-  if (navigator.share) { navigator.share({ title: s.title, text: s.title, url: s.url }).catch(() => {}); return; }   // 휴대폰: 공유창에서 카카오톡 선택
-  const done = () => alert('주소를 복사했습니다.\n카카오톡 대화창에 붙여넣기(Ctrl+V) 해 주세요.');
-  if (navigator.clipboard) navigator.clipboard.writeText(s.url).then(done, () => prompt('아래 주소를 복사해 카카오톡에 붙여넣으세요.', s.url));
-  else prompt('아래 주소를 복사해 카카오톡에 붙여넣으세요.', s.url);
+  if (navigator.share) { navigator.share({ title: s.text, text: s.text, url: s.url }).catch(() => {}); return; }   // 휴대폰: 공유창에서 카카오톡 선택 (로고는 링크 미리보기로 표시)
+  const all = s.text + '\n' + s.url;
+  const done = () => alert('공유 문구와 주소를 복사했습니다.\n카카오톡 대화창에 붙여넣기(Ctrl+V) 해 주세요.\n\n' + all);
+  if (navigator.clipboard) navigator.clipboard.writeText(all).then(done, () => prompt('아래 내용을 복사해 카카오톡에 붙여넣으세요.', all));
+  else prompt('아래 내용을 복사해 카카오톡에 붙여넣으세요.', all);
 }
 function shareBand() {
   const s = shareInfo(); s.url = TRK.tag(s.url, 'band');
-  location.href = 'https://band.us/plugin/share?body=' + encodeURIComponent(s.title + '\n' + s.url) + '&route=' + encodeURIComponent(location.host);
+  location.href = 'https://band.us/plugin/share?body=' + encodeURIComponent(s.text + '\n' + s.url) + '&route=' + encodeURIComponent(location.host);
 }
 function addShareButtons() {
   if (!document.getElementById('shr-css')) {
