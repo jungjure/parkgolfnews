@@ -92,7 +92,7 @@
     const need = new Date(Math.min(add(T, -59), add(per.from, -len)));
     if (!force && loadedFrom && loadedFrom <= need) return;
     $('#msg').innerHTML = '<div class="empty-s">통계를 불러오는 중입니다...</div>';
-    const r = await api('stats', { from: dk(need), to: dk(T) });
+    const r = await api('stats', { from: dk(need), to: dk(T), vid: localStorage.getItem('pgn_vid') || '' });
     const ix = {}; Object.entries(COLS).forEach(([k, name]) => ix[k] = r.cols.indexOf(name));
     all = r.rows.map(a => { const o = {}; for (const k in ix) o[k] = ix[k] >= 0 ? a[ix[k]] : ''; o.d = o.t.slice(0, 10); o.h = +o.t.slice(11, 13); o.n = o.n === 'Y'; o.w = +o.w || 0; return o; })
       .filter(o => ['pv', 'ev', 'click', 'search'].includes(o.k));
@@ -238,7 +238,7 @@
   /* ---------- 6. 설정 / 관리 ---------- */
   function vSet(rs) {
     const ex = localStorage.getItem('pgn_notrack') === '1';
-    return box('관리자 본인 접속 제외', '<p>관리자로 로그인한 상태의 접속은 <b>자동으로 기록하지 않습니다</b>.</p><p>로그아웃 상태로 볼 때도 빼려면, 평소 쓰는 기기(폰·PC)마다 이 화면에서 아래 버튼을 한 번 눌러 두세요.</p><p>이 브라우저: <b id="exS">' + (ex ? '기록 제외 중' : '기록 중') + '</b> <button class="st-btn ' + (ex ? 'w' : '') + '" id="exB">' + (ex ? '제외 해제' : '이 브라우저 접속 제외') + '</button></p>')
+    return box('관리자 본인 접속 제외', '<p>관리자로 로그인한 상태의 접속은 <b>자동으로 기록하지 않습니다</b>.</p><p><b>정지현·파크골프뉴스</b> 계정으로 로그인한 적이 있는 기기와 이 통계 화면을 연 기기는 로그아웃 상태 접속과 지난 기록까지 통계에서 뺍니다.</p><p>로그아웃 상태로 볼 때도 빼려면, 평소 쓰는 기기(폰·PC)마다 이 화면에서 아래 버튼을 한 번 눌러 두세요.</p><p>이 브라우저: <b id="exS">' + (ex ? '기록 제외 중' : '기록 중') + '</b> <button class="st-btn ' + (ex ? 'w' : '') + '" id="exB">' + (ex ? '제외 해제' : '이 브라우저 접속 제외') + '</button></p>')
       + box('봇·크롤러 제외', '<p>검색 로봇·미리보기 봇(네이버 Yeti, 구글봇, 카카오톡 링크 미리보기 등)과 자동화 브라우저는 기록하지 않습니다. 대부분의 로봇은 화면 스크립트를 실행하지 않아 처음부터 집계에 들어오지 않습니다.</p>')
       + box('데이터 내보내기', '<p>선택한 기간(' + dk(per.from) + ' ~ ' + dk(per.to) + ')의 기록 ' + nf(rs.length) + '건</p><div class="st-form"><button class="st-btn" id="csv">CSV 내려받기</button>' + (info.url ? '<a class="st-btn w" href="' + esc(info.url) + '" style="text-decoration:none">구글시트에서 열기</a>' : '') + '</div>',
         '전체 기록 ' + nf(info.total) + '건' + (info.first ? ' · 첫 기록 ' + esc(info.first) : '') + '. 구글시트 "파크골프뉴스 방문통계 (비공개)"의 [방문로그] 탭에 쌓입니다. 이 시트는 공유하지 마세요.');
