@@ -3,7 +3,7 @@ const CONFIG = {
   SHEET_ID: '1sl-4jdTKIqpiUM-s2kjPAF-jJoIrCnBnoM8mmcY36cc',   // 구글시트 주소의 /d/ 와 /edit 사이 긴 문자열
   TABS: { news: '뉴스', schedule: '일정', calendar: '캘린더', settings: '설정' },
   CACHE_MIN: 3,
-  KAKAO_JS: '',   // 카카오 개발자센터 앱의 JavaScript 키 (넣으면 카카오톡 친구선택 화면이 바로 열림)
+  KAKAO_JS: '329814625fa8441db2871c2b10da8efa',   // 카카오 개발자센터 앱의 JavaScript 키 (넣으면 카카오톡 친구선택 화면이 바로 열림)
   API_URL: 'https://script.google.com/macros/s/AKfycby4zEPx3AB25E7x4peqc9UTlYsGgywDjew64Xh8Va7VhM4zMG8clQGM0eCUZIQqsW2tVg/exec'   // 글쓰기·로그인용 Apps Script 웹앱 주소 (배포 후 여기에 넣습니다)
 };
 
