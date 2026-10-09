@@ -608,18 +608,31 @@ const Auth = {
   logout() { this.clear(); location.href = 'index.html'; }
 };
 
+/* 읽기 전용 요청: 연결이 끊기거나 서버 오류가 나도 다시 보내도 안전함 */
+const API_SAFE = /^(feed|ccount|comments|rlist|jlist|jget|blist|bget|config|me|mycomments|idcheck|stats|callist|members|reqmine|reqlist|mposts)$/;
 async function api(action, data = {}) {
   if (!CONFIG.API_URL) throw new Error('서버 연결이 아직 설정되지 않았습니다.');
-  const a = Auth.get();
-  const res = await fetch(CONFIG.API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },   /* 사전요청(CORS preflight)을 피하기 위해 text/plain 사용 */
-    body: JSON.stringify({ action, token: a ? a.token : '', ...data })
-  });
-  if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
-  const out = await res.json();
-  if (!out.ok) { if (out.auth) Auth.clear(); throw new Error(out.error || '요청에 실패했습니다.'); }
-  return out;
+  for (let n = 0; ; n++) {
+    const a = Auth.get(), last = n >= 2;   /* 접속이 몰려 실패하면 1~2초 쉬었다가 최대 2번 더 시도 */
+    const wait = () => new Promise(r => setTimeout(r, 900 * (n + 1) + Math.random() * 900));
+    let res;
+    try {
+      res = await fetch(CONFIG.API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },   /* 사전요청(CORS preflight)을 피하기 위해 text/plain 사용 */
+        body: JSON.stringify({ action, token: a ? a.token : '', ...data })
+      });
+    } catch (e) { if (!last && API_SAFE.test(action)) { await wait(); continue; } throw new Error('서버에 연결하지 못했습니다. 잠시 후 다시 해 주세요.'); }
+    if (!res.ok) { if (!last && API_SAFE.test(action)) { await wait(); continue; } throw new Error('서버 응답 오류 (' + res.status + ')'); }
+    let out;
+    try { out = await res.json(); } catch (e) { if (!last && API_SAFE.test(action)) { await wait(); continue; } throw new Error('서버 응답을 읽지 못했습니다. 잠시 후 다시 해 주세요.'); }
+    if (!out.ok) {
+      if (out.busy && !last) { await wait(); continue; }   /* 서버가 "처리 못 함"이라고 알려 준 경우만 쓰기 요청도 다시 보냄 */
+      if (out.auth) Auth.clear();
+      throw new Error(out.error || '요청에 실패했습니다.');
+    }
+    return out;
+  }
 }
 function clearSheetCache() { Object.keys(sessionStorage).filter(k => k.startsWith('pgn_') && k !== 'pgn_auth').forEach(k => sessionStorage.removeItem(k)); localStorage.removeItem(LS + 'all'); _mem.all = null; }
 
@@ -896,15 +909,19 @@ function pageComments(active) {
   const w = document.createElement('div'); w.className = 'wrap pgcm';
   w.innerHTML = '<section class="card comments" id="pgcm"></section>';
   const place = () => { const f = document.querySelector('footer.site'); if (f && f.previousElementSibling !== w) f.before(w); };
-  let cur = '';
+  let cur = '', seen = !('IntersectionObserver' in window), pend = null;
+  /* 댓글 칸이 화면 가까이 올 때 처음 불러옴 (아래까지 안 내리는 방문자는 서버를 부르지 않음) */
+  const watch = () => { if (seen) return; const io = new IntersectionObserver(es => { if (!es.some(e => e.isIntersecting)) return; seen = true; io.disconnect(); if (pend) { cmBox(w.firstChild, pend[0], pend[1]); pend = null; } }, { rootMargin: '300px 0px' }); io.observe(w); };
   const show = (key, label) => {
     const id = 'page:' + active + (key ? ':' + key : ''); if (id === cur) return; cur = id;
     const nm = label || name, nx = key ? active + '.html?' + (active === 'today' ? 'd=' : 'm=') + key : '';
-    cmBox(w.firstChild, CM_OLD[id] || id, { title: nm + ' 댓글', ph: nm + '에 대한 의견을 남겨 주세요 (1000자 이내)', next: nx });
+    const opt = { title: nm + ' 댓글', ph: nm + '에 대한 의견을 남겨 주세요 (1000자 이내)', next: nx };
+    if (seen) cmBox(w.firstChild, CM_OLD[id] || id, opt);
+    else { pend = [CM_OLD[id] || id, opt]; w.firstChild.innerHTML = '<h3>' + esc(opt.title) + '</h3><div class="empty" style="padding:18px">댓글을 불러옵니다...</div>'; }
   };
   if (CM_DATED[active]) window.pgnCm = (key, label) => show(key, label);
   setTimeout(() => {
-    place();
+    place(); setTimeout(watch, 1200);   // 목록이 먼저 그려진 뒤 위치를 봄
     if (!cur) { if (CM_DATED[active]) { const k = CM_DATED[active](); show(k.key, k.label); } else show(); }
     new MutationObserver(place).observe(document.body, { childList: true });   // 페이지 내용이 나중에 붙어도 댓글은 항상 맨 아래
   }, 0);
