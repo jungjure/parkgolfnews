@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261010j">
+<link rel="stylesheet" href="assets/style.css?v=20261011a">
 <style>
 .st-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px}
 .st-tabs button,.st-per button,.st-gran button{border:1px solid var(--line);background:#fff;color:var(--g900);border-radius:999px;padding:7px 14px;font-weight:700;font-size:.92rem;cursor:pointer;font-family:inherit}
@@ -74,7 +74,7 @@
 </style>
 </head>
 <body>
-<script src="assets/app.js?v=20261010j"></script>
+<script src="assets/app.js?v=20261011a"></script>
 <script>
 (async () => {
   const me = Auth.get();
@@ -217,7 +217,7 @@
     const ck = rs.filter(o => o.k === 'click');
     const bySite = group(ck, o => siteName(o.tg) || o.tg).map(x => ({ k: x.key, v: x.c }));
     const byLink = group(ck, o => o.tg + '|' + (o.ti || ''), l => ({ url: l[0].tg, ev: l[0].ti, txt: l[0].cd, vis: uniq(l, 'v') })).slice(0, 40);
-    h += box('외부 링크 클릭 (사이트별)', hbars(bySite, '클릭'), '접수처(마틴캐럿·보이스파크 등), 밴드, 오픈채팅, 협회 원문 링크 등 다른 사이트로 나가는 클릭입니다.');
+    h += box('외부 링크 클릭 (사이트별)', hbars(bySite, '클릭'), '접수처(마틴캐럿·보이스파크 등), 밴드, 협회 원문 링크 등 다른 사이트로 나가는 클릭입니다.');
     const jr = joins.filter(j => (j.at || '').slice(0, 10) >= dk(per.from) && (j.at || '').slice(0, 10) <= dk(per.to));
     h += box('조인게시판 현황 (기간 내 새 글 ' + nf(jr.length) + '개)', jr.length ? '<div class="st-grid2"><div>' + hbars(group(jr, j => j.cat).map(x => ({ k: x.key, v: x.c })), '글') + '</div><div>' + hbars(group(jr, j => j.sido || '미상').map(x => ({ k: x.key, v: x.c })), '글') + '</div></div><p class="st-note">신청 ' + nf(jr.reduce((s, j) => s + (j.apps || 0), 0)) + '건 · 마감 ' + nf(jr.filter(j => j.state === '마감').length) + '개 · 신고된 글 ' + nf(jr.filter(j => j.reports).length) + '개</p>' : '<div class="empty-s">이 기간에 새 조인 글이 없습니다.</div>', '왼쪽: 말머리별, 오른쪽: 지역(시·도)별 글 수. 조인게시판 방문 수는 위 페이지별 조회수의 join.html에서 볼 수 있습니다.');
     h += box('외부 링크 클릭 (링크별)', table([['링크'], ['관련 대회'], ['클릭', 1], ['사람', 1]], byLink.map(x => '<tr><td><a href="' + esc(x.url) + '">' + esc(x.txt || siteName(x.url)) + '</a><div class="st-note" style="margin:0">' + esc(x.url.slice(0, 80)) + '</div></td><td>' + esc(x.ev || '-') + '</td><td class="r">' + nf(x.c) + '</td><td class="r">' + nf(x.vis) + '</td></tr>'), '아직 외부 링크 클릭 기록이 없습니다.'));

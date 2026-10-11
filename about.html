@@ -18,7 +18,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/style.css?v=20261010j">
+<link rel="stylesheet" href="assets/style.css?v=20261011a">
 <style>
 .about-contact{display:flex;align-items:stretch;gap:20px;padding:18px;margin-top:18px}
 .about-logo{flex:0 0 240px;position:relative;overflow:hidden;min-height:220px}
@@ -41,12 +41,12 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261010j"></script>
+<script src="assets/app.js?v=20261011a"></script>
 <script>
 (async () => {
   const S = await layout('about');
   $('#side').innerHTML = sideBox(S);
-  $('#contact').innerHTML = `<div class="about-logo"><img src="assets/logo.png" alt="파크골프뉴스 로고"></div><div class="info about-info"><b>업체명</b> ${esc(S.사이트명)}<br><b>주소</b> ${esc(S.주소)}<br><b>전화</b> ${esc(S.전화)}<br><b>팩스</b> ${esc(S.팩스)}<br><b>담당</b> ${esc(S.담당)}<br><b>네이버 밴드</b> <a href="${esc(S.밴드)}" target="_blank" rel="noopener" style="color:var(--g700)">${esc(S.밴드)}</a><br><b>오픈채팅방</b> <a href="${esc(S.오픈채팅)}" target="_blank" rel="noopener" style="color:var(--g700)">${esc(S.오픈채팅)}</a></div>`;
+  $('#contact').innerHTML = `<div class="about-logo"><img src="assets/logo.png" alt="파크골프뉴스 로고"></div><div class="info about-info"><b>업체명</b> ${esc(S.사이트명)}<br><b>주소</b> ${esc(S.주소)}<br><b>전화</b> ${esc(S.전화)}<br><b>팩스</b> ${esc(S.팩스)}<br><b>담당</b> ${esc(S.담당)}<br><b>네이버 밴드</b> <a href="${esc(S.밴드)}" target="_blank" rel="noopener" style="color:var(--g700)">${esc(S.밴드)}</a></div>`;
 })();
 </script>
 </body>
