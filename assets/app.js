@@ -372,32 +372,41 @@ async function layout(active, opts) {
       showLoginGate(false, a.getAttribute('href'));
     });
   }
-  else if (['news', 'board', 'write', 'members', 'mypage', 'request', 'requests'].includes(active)) { showLoginGate(true); return new Promise(() => {}); }   // 뉴스·기사·글쓰기: 로그인 전에는 진행 불가
+  else if (['news', 'board', 'write', 'members', 'mypage', 'request', 'requests', 'noti'].includes(active)) { showLoginGate(true); return new Promise(() => {}); }   // 뉴스·기사·글쓰기: 로그인 전에는 진행 불가
   else if (['home', 'today', 'schedule'].includes(active)) watchScrollGate();                                  // 홈·일정: 스크롤하면 로그인 안내
   return S;
 }
 
-/* ---------- 관리자 알림 배지: 새 개선요청·새 댓글 수를 '○○님' 위에 빨간 숫자로 표시 ----------
-   - 개선요청: 상태가 '접수'이고 마지막으로 개선요청 화면을 본 뒤에 들어온 것
-   - 댓글: 삭제되지 않은 다른 사람 댓글 중 마지막으로 통계 > 댓글 화면을 본 뒤에 달린 것
-   - 배지를 누르면 개선요청(있으면) 또는 통계 > 댓글 화면으로 이동, 그 화면을 보면 숫자가 사라짐 */
-const ADMB = { k: 'pgn_admb', sr: 'pgn_seen_req', sc: 'pgn_seen_cmt' };
-function kstNow() { return new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 16).replace('T', ' '); }
+/* ---------- 알림 배지: '○○님' 위에 빨간 숫자 ----------
+   - 회원(관리자 포함): 내가 쓴 자유게시판·조인 글에 달린 남의 댓글 + 내 조인 글 참가 신청 (서버 mynoti) → 누르면 내 알림(noti.html)
+   - 관리자: 새 개선요청(접수 상태) + 새 댓글 → 누르면 개선요청 또는 통계 > 댓글
+   - 해당 화면을 보면 숫자가 사라짐. 1분 캐시, 2분마다 재확인 */
+const ADMB = { k: 'pgn_admb', sr: 'pgn_seen_req', sc: 'pgn_seen_cmt', nk: 'pgn_noti' };
+function kstNow(ago) { return new Date(Date.now() - (ago || 0) + 9 * 3600e3).toISOString().slice(0, 16).replace('T', ' '); }
 function admIsAdmin() { const me = Auth.get(); return !!(me && me.role === 'admin'); }
 function admSeen(kind) { localStorage.setItem(kind === 'req' ? ADMB.sr : ADMB.sc, kstNow()); admDraw(); }
 function admCounts() {
   let d = null; try { d = JSON.parse(localStorage.getItem(ADMB.k) || 'null'); } catch (e) {}
-  if (!d) return { req: 0, cmt: 0 };
+  if (!d || !admIsAdmin()) return { req: 0, cmt: 0 };
   const sr = localStorage.getItem(ADMB.sr) || '', sc = localStorage.getItem(ADMB.sc) || '';
   return { req: (d.req || []).filter(a => a > sr).length, cmt: (d.cmt || []).filter(a => a > sc).length };
 }
+function notiKey() { const me = Auth.get(); return 'pgn_seen_noti:' + (me ? me.name : ''); }
+function notiCount() {
+  const me = Auth.get(); let d = null; try { d = JSON.parse(localStorage.getItem(ADMB.nk) || 'null'); } catch (e) {}
+  if (!me || !d || d.u !== me.name) return 0;
+  const s = localStorage.getItem(notiKey()) || ''; return (d.at || []).filter(a => a > s).length;
+}
+function notiStore(items) { const me = Auth.get(); if (me) localStorage.setItem(ADMB.nk, JSON.stringify({ t: Date.now(), u: me.name, at: items.map(x => x.at || '') })); }
+function notiSeen() { localStorage.setItem(notiKey(), kstNow()); admDraw(); }
 function admDraw() {
-  if (!admIsAdmin()) return;
+  const me = Auth.get(); if (!me) return;
   if (!document.getElementById('admb-css')) document.head.insertAdjacentHTML('beforeend', '<style id="admb-css">nav.main a.who{position:relative}.admb{position:absolute;top:-13px;right:-8px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#e53935;color:#fff;font-size:12px;font-weight:800;line-height:20px;text-align:center;letter-spacing:0;box-shadow:0 0 0 2px #fff;cursor:pointer;z-index:2}.menu-btn{position:relative}.menu-btn .admb{top:-8px;right:-8px}@media(max-width:760px){nav.main a.who{align-self:flex-start}nav.main a.who .admb{top:-6px;right:-24px}}</style>');
   document.querySelectorAll('.admb').forEach(b => b.remove());
-  const c = admCounts(), n = c.req + c.cmt; if (!n) return;
-  const t = n > 99 ? '99+' : String(n), tip = '새 개선요청 ' + c.req + '건 · 새 댓글 ' + c.cmt + '건';
-  const go = e => { e.preventDefault(); e.stopPropagation(); if (c.req) location.href = 'requests.html'; else if (/stats\.html$/.test(location.pathname)) { const b = document.querySelector('#tabs [data-t="cmt"]'); if (b) b.click(); } else location.href = 'stats.html#cmt'; };
+  const c = admCounts(), m = notiCount(), n = c.req + c.cmt + m; if (!n) return;
+  const t = n > 99 ? '99+' : String(n);
+  const tip = [m ? '내 글 새 소식 ' + m + '건' : '', c.req ? '새 개선요청 ' + c.req + '건' : '', c.cmt ? '새 댓글 ' + c.cmt + '건' : ''].filter(Boolean).join(' · ');
+  const go = e => { e.preventDefault(); e.stopPropagation(); if (m) location.href = 'noti.html'; else if (c.req) location.href = 'requests.html'; else if (/stats\.html$/.test(location.pathname)) { const b = document.querySelector('#tabs [data-t="cmt"]'); if (b) b.click(); } else location.href = 'stats.html#cmt'; };
   const w = document.querySelector('nav.main a.who');
   if (w) { w.insertAdjacentHTML('beforeend', '<span class="admb" title="' + tip + '">' + t + '</span>'); w.querySelector('.admb').onclick = go; }
   const mb = document.querySelector('.menu-btn'); if (mb) mb.insertAdjacentHTML('beforeend', '<span class="admb" title="' + tip + '">' + t + '</span>');
@@ -414,17 +423,27 @@ async function admFetch(force) {
   } catch (e) {}
   admDraw();
 }
+async function notiFetch(force) {
+  const me = Auth.get(); if (!me) return;
+  let d = null; try { d = JSON.parse(localStorage.getItem(ADMB.nk) || 'null'); } catch (e) {}
+  if (!force && d && d.u === me.name && Date.now() - d.t < 60000) return admDraw();
+  try { notiStore((await api('mynoti')).items || []); } catch (e) {}
+  admDraw();
+}
 function startAdmBadge(active) {
-  if (!admIsAdmin()) return;
-  [ADMB.sr, ADMB.sc].forEach(k => { if (!localStorage.getItem(k)) localStorage.setItem(k, kstNow()); });   // 처음에는 지금 이후 들어온 것부터 셈
-  if (active === 'requests') admSeen('req');
-  if (active === 'stats') {
-    if (location.hash === '#cmt') admSeen('cmt');
-    document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#tabs [data-t="cmt"]')) admSeen('cmt'); }, true);
+  const me = Auth.get(); if (!me) return;
+  if (!localStorage.getItem(notiKey())) localStorage.setItem(notiKey(), kstNow(7 * 864e5));   // 처음에는 최근 7일 소식부터 보여 줌
+  if (me.role === 'admin') {
+    [ADMB.sr, ADMB.sc].forEach(k => { if (!localStorage.getItem(k)) localStorage.setItem(k, kstNow()); });   // 처음에는 지금 이후 들어온 것부터 셈
+    if (active === 'requests') admSeen('req');
+    if (active === 'stats') {
+      if (location.hash === '#cmt') admSeen('cmt');
+      document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#tabs [data-t="cmt"]')) admSeen('cmt'); }, true);
+    }
   }
   admDraw();
-  setTimeout(() => admFetch(), 2500);              // 화면이 먼저 뜨도록 조금 늦춤
-  setInterval(() => admFetch(true), 120000);      // 2분마다 새로 확인
+  setTimeout(() => { admFetch(); if (active !== 'noti') notiFetch(); }, 2500);   // 화면이 먼저 뜨도록 조금 늦춤
+  setInterval(() => { admFetch(true); notiFetch(true); }, 120000);               // 2분마다 새로 확인
 }
 
 /* ---------- 로그인 안내 (회사소개 제외) ---------- */
