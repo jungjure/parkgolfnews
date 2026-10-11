@@ -62,7 +62,7 @@ function csvToRows(text) {
     .map(r => Object.fromEntries(head.map((h, i) => [h, (r[i] ?? '').trim()])));
 }
 async function gvizTab(name) {
-  const res = await fetch('https://docs.google.com/spreadsheets/d/' + CONFIG.SHEET_ID + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(name));
+  const res = await fetch('https://docs.google.com/spreadsheets/d/' + CONFIG.SHEET_ID + '/gviz/tq?tqx=out:csv&headers=1&sheet=' + encodeURIComponent(name));
   if (!res.ok) throw new Error('시트를 불러오지 못했습니다 (' + res.status + ')');
   return csvToRows(await res.text());
 }
