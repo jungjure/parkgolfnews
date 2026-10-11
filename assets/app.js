@@ -367,7 +367,7 @@ async function layout(active, opts) {
   else if (opts.openList) {   // 뉴스 목록: 로그인 없이 기사 목록을 보여 주고, 기사를 누르면 로그인 안내창
     document.addEventListener('click', e => {
       const a = e.target.closest && e.target.closest('a[href*="article.html"]');
-      if (!a || e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
+      if (!a || a.closest('#pgn-gate') || e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
       e.preventDefault();
       showLoginGate(false, a.getAttribute('href'));
     });
