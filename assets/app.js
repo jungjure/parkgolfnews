@@ -354,7 +354,7 @@ async function layout(active, opts) {
   const foot = S => `
     <div class="wrap">
       <div><b>${esc(S.사이트명)}</b><br>주소 : ${esc(S.주소)}<br>전화 : ${esc(S.전화)} · 팩스 : ${esc(S.팩스)}<br>담당 : ${esc(S.담당)}</div>
-      <div><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 ${esc(S.밴드.replace(/^https?:\/\//, ''))}</a><br>개선요청사항 접수 : <a href="request.html">개선요청 남기기</a><br><br>&copy; ${new Date().getFullYear()} ${esc(S.사이트명)}. All rights reserved.</div>
+      <div><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 ${esc(S.밴드.replace(/^https?:\/\//, ''))}</a><br>개선요청사항 접수 : <a href="request.html">개선요청 남기기</a><br><a href="privacy.html"><b>개인정보처리방침</b></a><br><br>&copy; ${new Date().getFullYear()} ${esc(S.사이트명)}. All rights reserved.</div>
     </div>`;
   document.body.insertAdjacentHTML('afterbegin', '<div id="pgn-head" style="display:contents">' + head(S) + '</div>');
   document.body.insertAdjacentHTML('beforeend', '<footer class="site" id="pgn-foot">' + foot(S) + '</footer>');
