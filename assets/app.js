@@ -613,10 +613,25 @@ function loadKakaoSdk() {
   s.onload = () => { try { if (!Kakao.isInitialized()) Kakao.init(CONFIG.KAKAO_JS); } catch (e) {} };
   document.head.appendChild(s);
 }
+/* PC 카카오톡 공유: 카카오 로그인은 QR코드로만 (① QR 로그인 창 → ② 같은 창에서 친구 선택) */
+function kakaoQrBox(url) {
+  const old = document.getElementById('kqr'); if (old) old.remove();
+  const FEAT = 'width=480,height=700,left=480,top=100,scrollbars=yes,resizable=1';
+  const QR = 'https://accounts.kakao.com/qr_login/?continue=' + encodeURIComponent('https://accounts.kakao.com/weblogin/account/info') + '&lang=ko&showHeader=false&stay_signed_in=true#main';
+  document.body.insertAdjacentHTML('beforeend', '<div id="kqr" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px"><div style="background:#fff;border-radius:16px;max-width:420px;width:100%;padding:24px 24px 20px;position:relative;text-align:center"><button type="button" class="kx" aria-label="닫기" style="position:absolute;right:10px;top:6px;border:0;background:none;font-size:1.9rem;line-height:1;cursor:pointer;color:#333">&times;</button><h3 style="margin:0 0 10px;font-weight:400">카카오톡 공유</h3><p style="margin:0 0 16px;line-height:1.7">PC에서는 휴대폰 카카오톡으로 <b style="font-weight:400">QR코드를 찍어</b> 로그인합니다.</p><button type="button" class="btn green big kq1" style="margin-bottom:10px">① QR코드로 로그인</button><button type="button" class="btn green big kq2">② 친구에게 보내기</button><p style="margin:12px 0 0;font-size:.88rem;color:#666;line-height:1.6">QR 창에서 로그인을 마친 뒤 ②를 누르세요.<br>이미 로그인되어 있으면 ②만 누르면 됩니다.</p></div></div>');
+  const box = document.getElementById('kqr');
+  const close = () => { box.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  box.onclick = e => { if (e.target === box || e.target.closest('.kx')) close(); };
+  box.querySelector('.kq1').onclick = () => { const w = window.open(QR, 'sharer', FEAT); if (w) try { w.focus(); } catch (e) {} };
+  box.querySelector('.kq2').onclick = () => { close(); try { Kakao.Share.sendScrap({ requestUrl: url }); } catch (e) { copyText(url); shareToast('주소를 복사했습니다.\n카카오톡 대화창에 붙여넣기(Ctrl+V) 해 주세요.'); } };
+}
+
 function shareKakao() {
   const s = shareInfo(); s.url = TRK.tag(s.url, 'kakao');
   const all = s.text + '\n' + s.url;
-  if (kakaoReady()) { try { Kakao.Share.sendScrap({ requestUrl: s.url }); return; } catch (e) {} }
+  if (kakaoReady()) { if (!SH_MOB) { kakaoQrBox(s.url); return; } try { Kakao.Share.sendScrap({ requestUrl: s.url }); return; } catch (e) {} }
   copyText(all);   // 앱에서 바로 붙여넣기 할 수 있게 공유 문구+주소 복사
   shareToast(SH_MOB ? '공유 문구를 복사했습니다.\n카카오톡이 열리면 대화방에 붙여넣기 해 주세요.' : '공유 문구와 주소를 복사했습니다.\n카카오톡 대화창에 붙여넣기(Ctrl+V) 해 주세요.');
   launchApp('kakaotalk://launch', null);   // 카카오톡 앱(PC는 설치된 경우) 자동실행
