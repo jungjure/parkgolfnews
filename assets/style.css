@@ -235,3 +235,17 @@ header.site .wrap,.topbar .wrap,footer.site .wrap{max-width:905px}
 .wrap>main,.wrap>main.article{width:100%;max-width:869px!important;margin-left:auto!important;margin-right:auto!important}
 
 .tag.시범운영{background:#ccfbf1;color:#0f766e}
+
+
+/* 2026-10-12 요청: 게시글·댓글 등 글은 굵게 하지 않고 K80(#333333) */
+.news-card h3,.news-card p,.featured h3,.featured p,
+.ev h4,h4.evt,
+.article h1,.article .content,
+.citem .ch b,.citem .ct,
+.bitem .bt,.bpost h1,.bpost .bbody,
+.jcard .main,.jd h1,.jd td,
+.mp .mc .t,.mp .wl a,
+.nt-t,.nt-b,
+.evd-box h3,.evd-link,.evd-body{font-weight:400!important;color:#333333!important}
+.article .content *,.bpost .bbody *,.citem .ct *,.evd-body *,.jcard .main *,.intro b,
+.ev div[style*="font-weight:700"],.ev a.go,.evd-link a{font-weight:400!important}
