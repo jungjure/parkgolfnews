@@ -184,9 +184,9 @@ function sanitizeFragment(html) {
 let _fid = 0;
 function frameDoc(html, id) {
   const resizer = '<script>(function(){function s(){parent.postMessage({pgnFrame:"' + id + '",h:document.documentElement.offsetHeight},"*")}addEventListener("load",s);new ResizeObserver(s).observe(document.documentElement);setInterval(s,1500)})()<\/script>';
-  const base = '<base target="_blank">';
+  const base = '<base target="_blank"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"><style>*{font-family:Pretendard Variable,Pretendard,Noto Sans KR,sans-serif!important}</style>';   /* 상업적 무료 글꼴(Pretendard, OFL)만 사용 */
   if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, resizer + '</body>').replace(/<head[^>]*>/i, m => m + base);
-  return '<!doctype html><html><head><meta charset="utf-8">' + base + '<style>body{margin:0;font-family:Pretendard,"Noto Sans KR","Malgun Gothic",sans-serif;line-height:1.65}img{max-width:100%}</style></head><body>' + html + resizer + '</body></html>';
+  return '<!doctype html><html><head><meta charset="utf-8">' + base + '<style>body{margin:0;font-family:Pretendard Variable,Pretendard,Noto Sans KR,sans-serif;line-height:1.65}img{max-width:100%}</style></head><body>' + html + resizer + '</body></html>';
 }
 function iframeHTML(html, id) {
   return '<iframe class="artifact" id="' + id + '" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" srcdoc="' + esc(frameDoc(html, id)) + '" style="width:100%;height:600px;border:0;display:block;margin:14px 0"></iframe>';
