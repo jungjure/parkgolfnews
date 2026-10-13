@@ -1,3 +1,4 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 :root{
   --g900:#0b4d2c; --g800:#0f6b3a; --g700:#148a4a; --g600:#1aa05a; --g100:#e6f4ea; --g50:#f3faf5;
   --ink:#333333; --muted:#5b6b62; --line:#dbe7df; --red:#d93025; --amber:#b45f06; --blue:#1a5fb4;
@@ -5,7 +6,7 @@
 }
 *{box-sizing:border-box}
 html{font-size:18px}
-body{margin:0;font-family:"Pretendard","Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:var(--ink);background:#fff;line-height:1.65;word-break:keep-all}
+body{margin:0;font-family:"Pretendard Variable",Pretendard,"Noto Sans KR",sans-serif;color:var(--ink);background:#fff;line-height:1.65;word-break:keep-all}
 a{color:inherit;text-decoration:none}
 img{max-width:100%;display:block}
 .wrap{max-width:1180px;margin:0 auto;padding:0 18px}
@@ -160,7 +161,7 @@ nav.main a.auth.on,nav.main a.auth:hover{background:var(--g700);color:#fff}
 .tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
 .tabs button{border:2px solid var(--line);background:#fff;border-radius:10px 10px 0 0;padding:8px 16px;font-weight:800;cursor:pointer;font-size:.98rem}
 .tabs button.on{background:var(--g700);border-color:var(--g700);color:#fff}
-.editor textarea.code{font-family:Consolas,"Courier New",monospace;font-size:.9rem;min-height:300px;white-space:pre;tab-size:2}
+.editor textarea.code{font-family:"Pretendard Variable",Pretendard,"Noto Sans KR",sans-serif;font-size:.9rem;min-height:300px;white-space:pre;tab-size:2}
 .editor textarea.plain{min-height:300px}
 .counter{text-align:right;font-size:.82rem;color:var(--muted)}
 .counter.over{color:var(--red);font-weight:800}
@@ -257,3 +258,7 @@ body,button,input,select,textarea{color:#1a1a1a}
 #pgn-gate p,#pgn-gate .x,.evd-box dt,.tag.hide,.ins-x,.bd .rules,.jt.s2,.mp .st,.mp .st.s3,.mtable small,
 .nt-help,.nt-s,.nt-s.s3,.nt-at,.nt-b,.nt-empty,.ri .m,.st,.st.s3,.pv,.pv .eff{color:#1a1a1a!important}
 [style*="color:#333"],[style*="color:#444"],[style*="color:#555"],[style*="color:#666"],[style*="color:#777"],[style*="color:#888"],[style*="color:#111"],[style*="color:#000"]{color:#1a1a1a!important}
+
+
+/* 2026-10-14 요청: 상업적 무료 글꼴만 사용 (Pretendard, SIL OFL 1.1). OS 전용 글꼴(맑은 고딕 등) 이름 사용 금지 */
+html,body,button,input,select,textarea{font-family:"Pretendard Variable",Pretendard,"Noto Sans KR",sans-serif}
