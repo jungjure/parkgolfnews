@@ -68,16 +68,34 @@ async function gvizTab(name) {
 }
 async function feedTabs(names) {
   if (!CONFIG.API_URL) throw new Error('no api');
-  const res = await fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'feed', tabs: names }) });
+  const res = await fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'feed', lite: true, tabs: names }) });
   if (!res.ok) throw new Error('feed ' + res.status);
   const out = await res.json();
   if (!out || !out.ok || !out.tabs) throw new Error('feed');
   return out.tabs;
 }
+/* 1순위: 서버가 미리 만들어 둔 파일(data/feed.json, GitHub Pages라 빠름). 실패하거나 글을 막 고친 직후면 서버(feed) -> 시트(gviz) 순서 */
+const minuteKey = () => Math.floor(Date.now() / 60000);
+function liveMode() { const v = lsGet('live'); return v && v > Date.now(); }
+async function staticTabs() {
+  if (liveMode()) throw new Error('live');
+  const res = await fetch('/data/feed.json?t=' + minuteKey());
+  if (!res.ok) throw new Error('static ' + res.status);
+  const j = await res.json();
+  if (!j || !j.tabs || !Array.isArray(j.tabs[CONFIG.TABS.news])) throw new Error('static');
+  return j.tabs;
+}
 function fetchTabs(names) {
   const key = names.join('|');
   if (_fly[key]) return _fly[key];
-  const p = new Promise((resolve, reject) => {
+  const p = staticTabs().then(t => { const o = {}; names.forEach(n => { o[n] = t[n] || null; }); return o; }).catch(() => slowTabs(names));
+  _fly[key] = p;
+  const clr = () => { delete _fly[key]; };
+  p.then(clr, clr);
+  return p;
+}
+function slowTabs(names) {
+  return new Promise((resolve, reject) => {
     let done = false, gvStarted = false, feedBad = false, gvBad = false;
     const finish = t => { if (!done) { done = true; resolve(t); } };
     const maybeFail = e => { if (!done && feedBad && gvBad) { done = true; reject(e); } };
@@ -91,10 +109,28 @@ function fetchTabs(names) {
     feedTabs(names).then(finish).catch(e => { feedBad = true; gv(); maybeFail(e); });
     setTimeout(gv, 6000);
   });
-  _fly[key] = p;
-  const clr = () => { delete _fly[key]; };
-  p.then(clr, clr);
-  return p;
+}
+/* 뉴스 본문(body)·일정 상세(detail)는 필요할 때만 따로 받음 */
+const _x = {}, _xf = {};
+function fetchExtra(kind) {
+  const viaApi = () => api('pubx').then(o => o[kind] || {});
+  if (liveMode()) return viaApi();
+  return fetch('/data/' + kind + '.json?t=' + minuteKey()).then(r => { if (!r.ok) throw new Error(kind); return r.json(); }).catch(viaApi);
+}
+function loadExtra(kind, need) {
+  const c = _x[kind] || lsGet(kind);
+  const ok = !!(c && c.m && (!need || need in c.m));
+  if (ok && Date.now() - c.t < FRESH_MS) return Promise.resolve(c.m);
+  const p = _xf[kind] || (_xf[kind] = fetchExtra(kind).then(m => { _x[kind] = { t: Date.now(), m }; lsSet(kind, _x[kind]); return m; }).finally(() => { delete _xf[kind]; }));
+  if (ok) { p.catch(() => {}); return Promise.resolve(c.m); }
+  return p.catch(e => { if (c && c.m) return c.m; throw e; });
+}
+async function withBodies(list, one) {
+  const need = (list || []).filter(n => n && n.bkey && !n.bfull);
+  if (!need.length) return list;
+  const m = await loadExtra('body', one && one.bkey);
+  need.forEach(n => { if (m[n.bkey] != null) { n.body = m[n.bkey]; n.bfull = true; } });
+  return list;
 }
 function storeAll(tabs) {
   const old = (_mem.all && _mem.all.tabs) || {}, merged = {};
@@ -217,6 +253,7 @@ async function getNews() {
       const d = parseDate(r['날짜']) || new Date(2000, 0, 1);
       const body = r['본문'] || r['요약'] || '';
       return {
+        bkey: r['본문'] ? '' : (r['_b'] || ''), bfull: !!r['본문'],
         id: ymd(d) + '-' + hash((r['제목'] || '')),
         date: d, idx, cat: r['카테고리'] || '뉴스', title: r['제목'],
         summary: r['요약'] || body.replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120),
@@ -239,7 +276,7 @@ async function getSchedule() {
     .map(r => {
       const s = parseDate(r['시작일']); if (!s) return null;
       const e = parseDate(r['종료일']) || s;
-      return { start: s, end: e < s ? s : e, type: (/연습\s*(라운딩|일)/.test(r['대회명']) || r['구분'] === '연습라운딩') ? '연습일' : (r['구분'] || '대회'), name: r['대회명'].replace(/^[\s\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]+/u, ''), region: r['지역'] || '', place: r['장소'] || '', link: (r['링크'] || '').replace(/[)\]\.,;]+$/, ''), note: r['비고'] || '', detail: r['상세'] || '' };
+      return { start: s, end: e < s ? s : e, type: (/연습\s*(라운딩|일)/.test(r['대회명']) || r['구분'] === '연습라운딩') ? '연습일' : (r['구분'] || '대회'), name: r['대회명'].replace(/^[\s\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]+/u, ''), region: r['지역'] || '', place: r['장소'] || '', link: (r['링크'] || '').replace(/[)\]\.,;]+$/, ''), note: r['비고'] || '', detail: r['상세'] || '', dkey: r['_d'] || '' };
     })
     .filter(Boolean)
     .filter(e => { const k = ymd(e.start) + '|' + ymd(e.end) + '|' + e.type + '|' + e.name; if (seen.has(k)) return false; seen.add(k); return true; })
@@ -519,6 +556,7 @@ const EV_REG = [];
 function evReg(e) { EV_REG.push(e); return EV_REG.length - 1; }
 function showEv(i) {
   const e = EV_REG[i]; if (!e) return;
+  if (e.dkey && !e.dfull) { e.dfull = true; loadExtra('detail', e.dkey).then(m => { if (m[e.dkey]) e.detail = m[e.dkey]; }).catch(() => {}).then(() => showEv(i)); return; }
   TRK.ev(e);
   if (!document.getElementById('evd-css')) {
     const st = document.createElement('style'); st.id = 'evd-css';
@@ -694,7 +732,7 @@ const Auth = {
 };
 
 /* 읽기 전용 요청: 연결이 끊기거나 서버 오류가 나도 다시 보내도 안전함 */
-const API_SAFE = /^(feed|ccount|comments|rlist|jlist|jget|blist|bget|config|me|mycomments|idcheck|stats|callist|members|reqmine|reqlist|mposts)$/;
+const API_SAFE = /^(feed|pubx|ccount|comments|rlist|jlist|jget|blist|bget|config|me|mycomments|idcheck|stats|callist|members|reqmine|reqlist|mposts)$/;
 async function api(action, data = {}) {
   if (!CONFIG.API_URL) throw new Error('서버 연결이 아직 설정되지 않았습니다.');
   for (let n = 0; ; n++) {
@@ -719,7 +757,7 @@ async function api(action, data = {}) {
     return out;
   }
 }
-function clearSheetCache() { Object.keys(sessionStorage).filter(k => k.startsWith('pgn_') && k !== 'pgn_auth').forEach(k => sessionStorage.removeItem(k)); localStorage.removeItem(LS + 'all'); _mem.all = null; }
+function clearSheetCache() { Object.keys(sessionStorage).filter(k => k.startsWith('pgn_') && k !== 'pgn_auth').forEach(k => sessionStorage.removeItem(k)); localStorage.removeItem(LS + 'all'); localStorage.removeItem(LS + 'body'); _mem.all = null; delete _x.body; lsSet('live', Date.now() + 10 * 60000); }   /* 글을 고친 직후 10분은 서버에서 바로 받음(파일 갱신 대기) */
 
 
 const fmtPhone = v => v.replace(/[^0-9]/g, '').slice(0, 11).replace(/^(\d{3})(\d{3,4})(\d{0,4}).*/, (m, x, y, z) => z ? x + '-' + y + '-' + z : x + '-' + y);

@@ -32,7 +32,7 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261011e"></script>
+<script src="assets/app.js?v=20261015a"></script>
 <script>
 (async () => {
   const S = await layout('news', { openList: true });
@@ -48,6 +48,7 @@
   };
   const build = async first => {
     all = await getNews();
+    withBodies(all).then(() => { if (q) draw(); }).catch(() => {});   // 내용 검색용 본문은 뒤에서 받음
     const cats = ['전체', ...new Set(all.map(n => n.cat))];
     const want = new URLSearchParams(location.search).get('cat'); if (first && want && cats.includes(want)) cat = want;
     if (!cats.includes(cat) && cat !== '__fav') cat = '전체';

@@ -25,7 +25,7 @@
   <main class="article" id="art"><div class="loading">불러오는 중...</div></main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261011e"></script>
+<script src="assets/app.js?v=20261015a"></script>
 <script>
 (async () => {
   const S = await layout('news');
@@ -35,6 +35,7 @@
     const all = await getNews();
     const n = all.find(x => x.id === id);
     if (!n) { $('#art').innerHTML = '<div class="empty">기사를 찾을 수 없습니다.<br><br><a class="btn green" href="news.html">뉴스 목록으로</a></div>'; return; }
+    await withBodies([n], n).catch(() => {});   // 본문은 data/body.json에서 따로 받음
     document.title = n.title + ' - 파크골프뉴스';
     const setMeta = (sel, attr, v) => { let m = document.querySelector(sel); if (!m) { m = document.createElement('meta'); document.head.appendChild(m); } m.setAttribute(attr, v); };
     setMeta('meta[name=description]', 'content', n.summary);
