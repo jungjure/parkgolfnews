@@ -13,7 +13,7 @@ const DEFAULTS = {
   주소: '대전 유성구 대학로 31, 803호',
   전화: '042-368-7330',
   팩스: '0504-326-2591',
-  담당: '정지현 PD 010-9288-2591',
+  담당: '',
   밴드: 'https://band.us/@parkgolfnews1',
   오픈채팅: 'https://open.kakao.com/o/gsBaV3ni',
   공지: ''
@@ -390,7 +390,7 @@ async function layout(active, opts) {
     ${S.공지 ? `<div class="notice"><div class="wrap">공지 | ${esc(S.공지)}</div></div>` : ''}`;
   const foot = S => `
     <div class="wrap">
-      <div><b>${esc(S.사이트명)}</b><br>주소 : ${esc(S.주소)}<br>전화 : ${esc(S.전화)} · 팩스 : ${esc(S.팩스)}<br>담당 : ${esc(S.담당)}</div>
+      <div><b>${esc(S.사이트명)}</b><br>주소 : ${esc(S.주소)}<br>전화 : ${esc(S.전화)} · 팩스 : ${esc(S.팩스)}${S.담당 ? `<br>담당 : ${esc(S.담당)}` : ''}</div>
       <div><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 ${esc(S.밴드.replace(/^https?:\/\//, ''))}</a><br>개선요청사항 접수 : <a href="request.html">개선요청 남기기</a><br><a href="privacy.html"><b>개인정보처리방침</b></a><br><br>&copy; ${new Date().getFullYear()} ${esc(S.사이트명)}. All rights reserved.</div>
     </div>`;
   document.body.insertAdjacentHTML('afterbegin', '<div id="pgn-head" style="display:contents">' + head(S) + '</div>');
