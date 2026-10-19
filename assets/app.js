@@ -582,16 +582,30 @@ function showEv(i) {
 function mapQ(e) {
   const s = String(e.place || '');
   if (/홈페이지|온라인|네이버\s*폼|구글\s*폼|어플|대리점|총판|밴드|카페|이메일|메일|전화|문자|www\.|https?:|일괄|미정|추후/.test(s)) return '';
+  const ADDR = /[가-힣\d]+(로|길|리|동|가)\s*(산\s*)?\d+(\s*[-~]\s*\d+)?/;
+  const tidy = a => a.replace(/(번지)?\s*일원|번지|\s+내$/g, '').replace(/(\d)\s*~\s*(\d)/g, '$1-$2').replace(/^(대한민국|\d+)\s+/, '').replace(/\s+/g, ' ').trim();
   const par = (s.match(/\(([^)]*)\)/) || [])[1] || '';
-  let p = s.replace(/\([^)]*\)/g, ' ').split(/\s+등\s+|\s·\s|\/|,|\s및\s/).map(x => x.replace(/\s+/g, ' ').trim()).find(x => /[가-힣]{2}/.test(x)) || '';
-  if (!p) return '';
-  if (!/[가-힣](시|군|구)(\s|$)/.test(p)) {
-    const m = par.match(/[가-힣]+(시|군)(?=\s|$|,)/g) || [];
-    const loc = m.find(t => /군$/.test(t)) || m.find(t => !/광역|특별|통합/.test(t)) || '';
-    const r = String(e.region || '').trim();
-    if (loc && !p.includes(loc)) p = loc + ' ' + p; else if (!loc && r && !p.includes(r)) p = r + ' ' + p;
+  let name = s.replace(/\([^)]*\)/g, ' ').split(/\s+등\s+|\s·\s|\/|,|\s및\s|·(?=[가-힣]+파크골프장)/).map(x => x.replace(/\s+/g, ' ').trim()).find(x => /[가-힣]{2}/.test(x)) || '';
+  name = name.replace(/\s+(제\s*)?\d+(\s*[·,]\s*\d+)*\s*구장$/, '').replace(/(파크골프장)\s+[가-힣]{1,4}구장$/, '$1').replace(/\s*[A-Z]{1,4}\s*코스$/, '').trim();
+  const locs = (par + ' ' + name).match(/[가-힣]+(시|군)(?=\s|$|,)/g) || [];
+  const loc = locs.find(t => /군$/.test(t)) || locs.find(t => !/광역|특별|통합/.test(t)) || '';
+  /* 1) 번지·도로명 주소가 있으면 주소로 (네이버지도에서 항상 위치가 나옴) */
+  let addr = par.split(',').map(x => x.trim()).find(x => ADDR.test(x)) || '';
+  if (!addr) { const o = s.replace(/\([^)]*\)/g, ' ').split(',').map(x => x.trim()).find(x => ADDR.test(x)) || ''; const m = o.match(ADDR); if (m) addr = o.slice(0, m.index + m[0].length); }
+  if (addr) {
+    addr = tidy(addr.split(/,\s*(?=[가-힣]+(?:시|군)\s)/).pop());
+    if (!/[가-힣](시|군|구)(\s|$)/.test(addr)) {
+      const eup = (addr.match(/(?:^|\s)([가-힣]{1,3})읍(?=\s)/) || [])[1];
+      const r = loc || (eup ? eup + '군' : '');
+      if (r) addr = r + ' ' + addr.replace(/^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)[가-힣]*\s+/, '');
+      else { const g = String(e.region || '').trim(); if (g && !addr.startsWith(g)) addr = g + ' ' + addr; }
+    }
+    return addr;
   }
-  return p;
+  /* 2) 주소가 없으면 장소 이름 (시·군 또는 지역을 앞에 붙임) */
+  if (!name) return '';
+  if (!/[가-힣](시|군|구)(\s|$)/.test(name)) { const r = String(e.region || '').trim(); if (loc && !name.includes(loc)) name = loc + ' ' + name; else if (!loc && r && !name.includes(r)) name = r + ' ' + name; }
+  return name;
 }
 function mapLink(e) {
   const q = mapQ(e); if (!q) return esc(e.place);
