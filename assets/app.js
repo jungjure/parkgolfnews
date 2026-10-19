@@ -570,14 +570,45 @@ function showEv(i) {
   const body = e.detail ? esc(e.detail).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>') : '등록된 상세 내용이 없습니다.';
   const old = document.getElementById('evd'); if (old) old.remove();
   const el = document.createElement('div'); el.id = 'evd';
-  el.innerHTML = '<div class="evd-box" role="dialog" aria-modal="true"><button class="evd-x" aria-label="닫기">&times;</button><h3>' + esc(e.name) + '</h3><dl>' + rows.map(r => '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>').join('') + '</dl>' + link + '<div class="evd-body">' + body + '</div></div>';
+  el.innerHTML = '<div class="evd-box" role="dialog" aria-modal="true"><button class="evd-x" aria-label="닫기">&times;</button><h3>' + esc(e.name) + '</h3><dl>' + rows.map(r => '<dt>' + esc(r[0]) + '</dt><dd>' + (r[0] === '장소' && e.place ? [esc(e.region), mapLink(e)].filter(Boolean).join(' · ') : esc(r[1])) + '</dd>').join('') + '</dl>' + link + '<div class="evd-body">' + body + '</div></div>';
   document.body.appendChild(el);
   const onKey = ev => { if (ev.key === 'Escape') close(); };
   const close = () => { el.remove(); document.removeEventListener('keydown', onKey); };
   el.addEventListener('click', ev => { if (ev.target === el || ev.target.closest('.evd-x')) close(); });
   document.addEventListener('keydown', onKey);
 }
-(function () { if (document.getElementById('evt-css')) return; const st = document.createElement('style'); st.id = 'evt-css'; st.textContent = 'h4.evt{cursor:pointer}h4.evt:hover,h4.evt:focus-visible{text-decoration:underline}'; document.head.appendChild(st); })();
+(function () { if (document.getElementById('evt-css')) return; const st = document.createElement('style'); st.id = 'evt-css'; st.textContent = 'h4.evt{cursor:pointer}h4.evt:hover,h4.evt:focus-visible{text-decoration:underline}a.pgmap{color:inherit;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer}a.pgmap:hover,a.pgmap:focus-visible{color:var(--g700);text-decoration-style:solid}'; document.head.appendChild(st); })();
+/* 장소 클릭 -> 네이버지도 검색을 팝업 창으로 (홈페이지·온라인·밴드 등 실제 장소가 아닌 것은 글자만, 팝업이 막히면 현재 창에서 이동) */
+function mapQ(e) {
+  const s = String(e.place || '');
+  if (/홈페이지|온라인|네이버\s*폼|구글\s*폼|어플|대리점|총판|밴드|카페|이메일|메일|전화|문자|www\.|https?:|일괄|미정|추후/.test(s)) return '';
+  const par = (s.match(/\(([^)]*)\)/) || [])[1] || '';
+  let p = s.replace(/\([^)]*\)/g, ' ').split(/\s+등\s+|\s·\s|\/|,|\s및\s/).map(x => x.replace(/\s+/g, ' ').trim()).find(x => /[가-힣]{2}/.test(x)) || '';
+  if (!p) return '';
+  if (!/[가-힣](시|군|구)(\s|$)/.test(p)) {
+    const m = par.match(/[가-힣]+(시|군)(?=\s|$|,)/g) || [];
+    const loc = m.find(t => /군$/.test(t)) || m.find(t => !/광역|특별|통합/.test(t)) || '';
+    const r = String(e.region || '').trim();
+    if (loc && !p.includes(loc)) p = loc + ' ' + p; else if (!loc && r && !p.includes(r)) p = r + ' ' + p;
+  }
+  return p;
+}
+function mapLink(e) {
+  const q = mapQ(e); if (!q) return esc(e.place);
+  return '<a class="pgmap" href="https://map.naver.com/p/search/' + encodeURIComponent(q) + '" title="네이버지도에서 위치 보기">' + esc(e.place) + '</a>';
+}
+function openMap(u) {
+  const sw = screen.availWidth || 1280, sh = screen.availHeight || 800;
+  const w = Math.min(1000, sw - 40), h = Math.min(820, sh - 60);
+  const win = window.open(u, 'pgnmap', 'popup=yes,width=' + w + ',height=' + h + ',left=' + Math.max(0, Math.round((sw - w) / 2)) + ',top=' + Math.max(0, Math.round((sh - h) / 2)));
+  if (win) { try { win.opener = null; win.focus(); } catch (x) {} } else location.href = u;
+}
+document.addEventListener('click', ev => {
+  const a = ev.target.closest && ev.target.closest('a.pgmap');
+  if (!a || ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
+  ev.preventDefault(); ev.stopPropagation();
+  openMap(a.href);
+}, true);
 /* 접수처·상세 팝업 링크: 새 창으로 열고 바로 앞으로 가져오기 (막히면 현재 창에서 이동) */
 document.addEventListener('click', ev => {
   const a = ev.target.closest && ev.target.closest('.ev a.go, .evd-link a, .evd-body a');
@@ -607,7 +638,7 @@ function eventRow(e, opts = {}) {
   const jtxt = (!hasLink && e.type === '접수' && !trial) ? jeopsuTxt(e) : '';
   const dateHtml = blank ? '' : `<div class="date" style="min-width:0;padding:0;background:none;color:var(--muted);font-size:.85rem;font-weight:400;line-height:inherit;white-space:nowrap;margin-left:auto">${dateTxt}</div>`;
   return `<div class="ev ${dl ? 'deadline' : ''}">
-    <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;gap:10px"><h4 class="evt" tabindex="0" role="button" data-ev="${evReg(e)}" style="flex:1;min-width:0"${opts.max && e.name.length > opts.max ? ` title="${esc(e.name)}"` : ''}>${esc(opts.max && e.name.length > opts.max ? e.name.slice(0, opts.max) + '...' : e.name)}</h4><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap">${trial ? '<span class="tag 시범운영">시범운영</span>' : `<span class="tag ${esc(e.type)}">${esc(e.type)}</span>${dl ? '<span class="tag 접수">마감임박</span>' : (e.type === '접수' && /접수마감/.test(e.name) ? '<span class="tag 접수">마감</span>' : '')}`}</div></div><div class="sub" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span>${[e.region, e.place, e.note].filter(Boolean).map(esc).join(' · ')}</span>${dateHtml}</div>
+    <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;gap:10px"><h4 class="evt" tabindex="0" role="button" data-ev="${evReg(e)}" style="flex:1;min-width:0"${opts.max && e.name.length > opts.max ? ` title="${esc(e.name)}"` : ''}>${esc(opts.max && e.name.length > opts.max ? e.name.slice(0, opts.max) + '...' : e.name)}</h4><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap">${trial ? '<span class="tag 시범운영">시범운영</span>' : `<span class="tag ${esc(e.type)}">${esc(e.type)}</span>${dl ? '<span class="tag 접수">마감임박</span>' : (e.type === '접수' && /접수마감/.test(e.name) ? '<span class="tag 접수">마감</span>' : '')}`}</div></div><div class="sub" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span>${[esc(e.region), e.place ? mapLink(e) : '', esc(e.note)].filter(Boolean).join(' · ')}</span>${dateHtml}</div>
     ${hasLink ? `<div style="font-size:.85rem;font-weight:700;color:var(--ink);margin-top:4px">접수처 : <a class="go" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(siteName(e.link))}</a></div>` : (jtxt ? `<div style="font-size:.85rem;font-weight:700;color:var(--ink);margin-top:4px">접수처 : <span style="font-weight:400">${esc(jtxt)}</span></div>` : '')}</div></div>`;
 }
 
