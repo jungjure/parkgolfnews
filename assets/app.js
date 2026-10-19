@@ -401,16 +401,8 @@ async function layout(active, opts) {
   TRK.pv();             // 방문 통계
   startAdmBadge(active);   // 관리자: 새 개선요청·댓글 빨간 숫자
   if (me) startPing();
-  else if (opts.openList) {   // 뉴스 목록: 로그인 없이 기사 목록을 보여 주고, 기사를 누르면 로그인 안내창
-    document.addEventListener('click', e => {
-      const a = e.target.closest && e.target.closest('a[href*="article.html"]');
-      if (!a || a.closest('#pgn-gate') || e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
-      e.preventDefault();
-      showLoginGate(false, a.getAttribute('href'));
-    });
-  }
-  else if (['news', 'board', 'write', 'members', 'mypage', 'request', 'requests', 'noti'].includes(active)) { showLoginGate(true); return new Promise(() => {}); }   // 뉴스·기사·글쓰기: 로그인 전에는 진행 불가
-  else if (['home', 'today', 'schedule'].includes(active)) watchScrollGate();                                  // 홈·일정: 스크롤하면 로그인 안내
+  else if (['news', 'board', 'write', 'members', 'mypage', 'request', 'requests', 'noti'].includes(active) && !opts.openList) { showLoginGate(true); return new Promise(() => {}); }   // 기사·게시판·글쓰기 주소로 바로 들어오면: 로그인 전에는 진행 불가
+  else watchClickGate();   // 그 밖의 화면(홈·일정·뉴스 목록 등): 스크롤은 자유, 눌러서 들어갈 때 로그인 안내
   return S;
 }
 
@@ -497,23 +489,43 @@ function showLoginGate(hard, next) {
     <div id="pgn-gate" role="dialog" aria-modal="true"><div class="box">
       <button type="button" class="x" aria-label="닫기" title="닫기">&times;</button>
       <h3>로그인이 필요합니다</h3>
-      <p>${next ? '기사를 읽으려면 로그인해 주세요.' : '로그인하셔야 계속 보실 수 있습니다.'}<br>로그인하면 보시던 페이지로 바로 돌아옵니다.</p>
+      <p>${next ? '내용을 보시려면 로그인해 주세요.' : '로그인하셔야 계속 보실 수 있습니다.'}<br>로그인하면 보시던 페이지로 바로 돌아옵니다.</p>
       <div class="row"><a class="btn green big" href="login.html?next=${nx}">로그인</a><a class="btn green big" href="signup.html?next=${nx}">회원가입</a></div>
     </div></div>`);
   document.body.style.overflow = 'hidden';
-  // 닫기: 일정·홈은 안내창만 닫고(다시 스크롤하면 또 나옴), 뉴스·기사·글쓰기는 홈으로 이동
+  // 닫기: 안내창만 닫고 보던 화면에 그대로 머묾 (기사·게시판 주소로 바로 들어온 경우만 홈으로 이동)
   const close = () => {
     document.removeEventListener('keydown', onKey);
     if (hard) { location.href = 'index.html'; return; }
-    document.getElementById('pgn-gate').remove(); document.body.style.overflow = ''; if (!next) watchScrollGate();
+    document.getElementById('pgn-gate').remove(); document.body.style.overflow = '';
   };
   const onKey = e => { if (e.key === 'Escape') close(); };
   document.addEventListener('keydown', onKey);
   document.querySelector('#pgn-gate .x').onclick = close;
 }
-function watchScrollGate() {
-  const trip = () => { ['scroll', 'wheel', 'touchmove'].forEach(e => window.removeEventListener(e, trip)); window.scrollTo(0, 0); showLoginGate(false); };
-  ['scroll', 'wheel', 'touchmove'].forEach(e => window.addEventListener(e, trip, { passive: true }));
+/* 비회원: 스크롤로는 안내창을 띄우지 않고, 눌러서 들어갈 때(기사·게시판·일정 상세·지도·접수처 등) 로그인 안내창 */
+const GATED = /^(article|board|write|members|mypage|request|requests|noti)\.html/i;
+function gateTarget(t) {
+  if (!t || !t.closest || t.closest('#pgn-gate')) return null;
+  const a = t.closest('a[href]');
+  if (a) {
+    const h = a.getAttribute('href') || '';
+    if (!/^(https?:|\/\/|#|mailto:|tel:|javascript:)/i.test(h) && GATED.test(h.replace(/^\.?\//, ''))) return { next: h };   // 회원 전용 화면으로 가는 링크
+    if (a.matches('a.pgmap, .ev a.go, .evd-link a, .evd-body a')) return { next: loginNext() };   // 일정의 지도·접수처 링크
+  }
+  if (t.closest('h4.evt')) return { next: loginNext() };   // 일정 제목(상세 보기)
+  return null;
+}
+function watchClickGate() {
+  const stop = (ev, g) => { ev.preventDefault(); ev.stopImmediatePropagation(); showLoginGate(false, g.next); };
+  window.addEventListener('click', ev => {
+    if (ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey || Auth.get()) return;
+    const g = gateTarget(ev.target); if (g) stop(ev, g);
+  }, true);
+  window.addEventListener('keydown', ev => {
+    if (ev.key !== 'Enter' || Auth.get()) return;
+    const g = gateTarget(ev.target); if (g) stop(ev, g);
+  }, true);
 }
 
 /* 접속 표시: 로그인한 회원이 페이지를 보고 있으면 1분마다 알립니다 (실패해도 조용히 무시) */
