@@ -401,7 +401,7 @@ async function layout(active, opts) {
   TRK.pv();             // 방문 통계
   startAdmBadge(active);   // 관리자: 새 개선요청·댓글 빨간 숫자
   if (me) startPing();
-  else if (['news', 'board', 'write', 'members', 'mypage', 'request', 'requests', 'noti'].includes(active) && !opts.openList) { showLoginGate(true); return new Promise(() => {}); }   // 기사·게시판·글쓰기 주소로 바로 들어오면: 로그인 전에는 진행 불가
+  else if (['board', 'write', 'members', 'mypage', 'request', 'requests', 'noti'].includes(active) && !opts.openList) { showLoginGate(true); return new Promise(() => {}); }   // 게시판·글쓰기 주소로 바로 들어오면: 로그인 전에는 진행 불가 (기사는 누구나 볼 수 있음)
   else watchClickGate();   // 그 밖의 화면(홈·일정·뉴스 목록 등): 스크롤은 자유, 눌러서 들어갈 때 로그인 안내
   return S;
 }
@@ -503,17 +503,15 @@ function showLoginGate(hard, next) {
   document.addEventListener('keydown', onKey);
   document.querySelector('#pgn-gate .x').onclick = close;
 }
-/* 비회원: 스크롤로는 안내창을 띄우지 않고, 눌러서 들어갈 때(기사·게시판·일정 상세·지도·접수처 등) 로그인 안내창 */
-const GATED = /^(article|board|write|members|mypage|request|requests|noti)\.html/i;
+/* 비회원: 기사·일정 상세·지도·접수처는 로그인 없이 볼 수 있음. 게시판·글쓰기 등 회원 전용 화면으로 갈 때만 로그인 안내창 */
+const GATED = /^(board|write|members|mypage|request|requests|noti)\.html/i;
 function gateTarget(t) {
   if (!t || !t.closest || t.closest('#pgn-gate')) return null;
   const a = t.closest('a[href]');
   if (a) {
     const h = a.getAttribute('href') || '';
     if (!/^(https?:|\/\/|#|mailto:|tel:|javascript:)/i.test(h) && GATED.test(h.replace(/^\.?\//, ''))) return { next: h };   // 회원 전용 화면으로 가는 링크
-    if (a.matches('a.pgmap, .ev a.go, .evd-link a, .evd-body a')) return { next: loginNext() };   // 일정의 지도·접수처 링크
   }
-  if (t.closest('h4.evt')) return { next: loginNext() };   // 일정 제목(상세 보기)
   return null;
 }
 function watchClickGate() {
