@@ -219,7 +219,7 @@ function sanitizeFragment(html) {
 }
 let _fid = 0;
 function frameDoc(html, id) {
-  const resizer = '<script>(function(){function s(){parent.postMessage({pgnFrame:"' + id + '",h:document.documentElement.offsetHeight},"*")}addEventListener("load",s);new ResizeObserver(s).observe(document.documentElement);setInterval(s,1500)})()<\/script>';
+  const resizer = '<script>(function(){function s(){parent.postMessage({pgnFrame:"' + id + '",h:document.documentElement.offsetHeight},"*")}addEventListener("load",s);new ResizeObserver(s).observe(document.documentElement);setInterval(s,1500)})()<\/script>' + '<script>(' + pgnLinkCore.toString() + ')(document,true)<\/script>';   /* 기사 iframe 안 전화·계좌 번호도 누르면 연결 */
   const base = '<base target="_blank"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"><style>*{font-family:Pretendard Variable,Pretendard,Noto Sans KR,sans-serif!important}</style>';   /* 상업적 무료 글꼴(Pretendard, OFL)만 사용 */
   if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, resizer + '</body>').replace(/<head[^>]*>/i, m => m + base);
   return '<!doctype html><html><head><meta charset="utf-8">' + base + '<style>body{margin:0;font-family:Pretendard Variable,Pretendard,Noto Sans KR,sans-serif;line-height:1.65}img{max-width:100%}</style></head><body>' + html + resizer + '</body></html>';
@@ -1105,3 +1105,88 @@ function pageComments(active) {
     new MutationObserver(place).observe(document.body, { childList: true });   // 페이지 내용이 나중에 붙어도 댓글은 항상 맨 아래
   }, 0);
 }
+
+/* ---------- 전화번호·계좌번호 누르면 바로 연결 ----------
+   - 전화번호(042-368-7330, 0507-1234-5678, 1588-1234 등) → 누르면 전화 걸기 (tel:)
+   - 은행 계좌(농협 123-4567-8901-23 등, 은행 이름 + 10자리 이상 숫자) → 누르면 번호가 복사되고 '토스로 송금하기' 창이 뜸
+   - 기사 본문 iframe 안의 번호도 같은 방식 (부모 창에 알려서 처리) */
+function pgnLinkCore(doc, inFrame) {
+  const TEL = /(?<![\d-])(0(?:2|[3-6][1-5]|1[016789]|50[2-8]|70|80)-?\d{3,4}-\d{4}|1[568]\d{2}-\d{4})(?![\d-])/g;
+  const ACCT = /((?:(?:NH|KB|IBK|SC|iM)\s?)?(?:농협은행|농협|축협|국민은행|KB국민|국민|신한은행|신한|우리은행|하나은행|하나|기업은행|카카오뱅크|카뱅|케이뱅크|토스뱅크|새마을금고|새마을|신협|우체국|수협은행|수협|대구은행|iM뱅크|부산은행|경남은행|광주은행|전북은행|제주은행|SC제일은행|제일은행|씨티은행|산업은행))(\s*(?:은행)?\s*[:：]?\s*(?:계좌(?:번호)?\s*[:：]?\s*)?)(\d{2,6}(?:[- ]\d{2,7}){1,4}|\d{10,14})(?![\d-])/g;
+  const isPhone = s => /^(0(?:2|[3-6][1-5]|1[016789]|50[2-8]|70|80)-?\d{3,4}-\d{4}|1[568]\d{2}-\d{4})$/.test(s);
+  const css = 'color:inherit;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;cursor:pointer';
+  function piece(text) {
+    const parts = []; let last = 0, m;
+    const marks = [];
+    ACCT.lastIndex = 0;
+    while ((m = ACCT.exec(text))) { const no = m[3]; if (no.replace(/\D/g, '').length >= 10 && !isPhone(no)) marks.push({ s: m.index, e: m.index + m[0].length, t: 'a', bank: m[1].trim(), no, txt: m[0] }); }
+    TEL.lastIndex = 0;
+    while ((m = TEL.exec(text))) { const s = m.index, e = s + m[0].length; if (/팩스\s*[:：]?\s*$/.test(text.slice(Math.max(0, s - 8), s))) continue; if (!marks.some(k => s < k.e && e > k.s)) marks.push({ s, e, t: 't', no: m[0] }); }
+    if (!marks.length) return null;
+    marks.sort((a, b) => a.s - b.s);
+    const f = doc.createDocumentFragment();
+    for (const k of marks) {
+      if (k.s > last) f.appendChild(doc.createTextNode(text.slice(last, k.s)));
+      const a = doc.createElement('a');
+      if (k.t === 't') { a.href = 'tel:' + k.no.replace(/\D/g, ''); a.className = 'pgtel'; a.textContent = k.no; a.title = '눌러서 전화 걸기'; }
+      else { a.href = '#'; a.className = 'pgacct'; a.dataset.bank = k.bank; a.dataset.no = k.no; a.textContent = k.txt; a.title = '눌러서 계좌번호 복사·송금'; }
+      a.style.cssText = css;
+      f.appendChild(a); last = k.e;
+    }
+    if (last < text.length) f.appendChild(doc.createTextNode(text.slice(last)));
+    return f;
+  }
+  function scan(root) {
+    if (!root) return;
+    if (root.nodeType === 3) root = root.parentNode;
+    if (!root || root.nodeType !== 1 && root.nodeType !== 9 && root.nodeType !== 11) return;
+    const w = doc.createTreeWalker(root, 4, { acceptNode: n => {
+      if (!/\d{3,4}-\d{4}|\d{10}|\d-\d/.test(n.data)) return 2;
+      const p = n.parentElement;
+      return !p || p.closest('a,script,style,textarea,input,select,button,option,[contenteditable],.pgn-nolink,#pgn-head') ? 2 : 1;
+    } });
+    const list = []; while (w.nextNode()) list.push(w.currentNode);
+    for (const n of list) { const f = piece(n.data); if (f && n.parentNode) n.parentNode.replaceChild(f, n); }
+  }
+  scan(doc.body);
+  let q = [], t = 0;
+  new MutationObserver(ms => { for (const m of ms) { if (m.type === 'characterData') q.push(m.target); else m.addedNodes.forEach(n => q.push(n)); } if (!t) t = setTimeout(() => { t = 0; const l = q; q = []; l.forEach(scan); }, 60); })
+    .observe(doc.body, { childList: true, subtree: true, characterData: true });
+  doc.addEventListener('click', ev => {
+    const a = ev.target.closest && ev.target.closest('a.pgtel, a.pgacct'); if (!a) return;
+    if (a.classList.contains('pgtel')) { if (inFrame) { ev.preventDefault(); parent.postMessage({ pgnTel: a.getAttribute('href').slice(4) }, '*'); } return; }
+    ev.preventDefault(); ev.stopPropagation();
+    if (inFrame) parent.postMessage({ pgnAcct: { bank: a.dataset.bank, no: a.dataset.no } }, '*'); else pgnAcctBox(a.dataset.bank, a.dataset.no);
+  }, true);
+}
+function pgnAcctBox(bank, no) {
+  const digits = String(no).replace(/\D/g, '');
+  const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const tb = String(bank).replace(/^(NH|KB|IBK|SC|iM)\s?/, '').replace(/은행$/, '').replace(/^카뱅$/, '카카오뱅크').replace(/^새마을$/, '새마을금고') || bank;
+  const copy = () => { try { navigator.clipboard.writeText(digits); return true; } catch (e) { return false; } };
+  const copied = copy();
+  document.getElementById('pgacct-box')?.remove();
+  const box = document.createElement('div'); box.id = 'pgacct-box';
+  box.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  const btn = 'display:block;width:100%;padding:13px;border-radius:10px;font-size:1.05rem;font-weight:700;border:0;cursor:pointer;margin-top:10px;font-family:inherit;text-decoration:none;text-align:center;box-sizing:border-box';
+  box.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:360px;width:100%;padding:22px 20px 16px;color:#1a1a1a;box-shadow:0 10px 30px rgba(0,0,0,.25)">'
+    + '<div style="font-size:.95rem;color:#555">입금 계좌</div>'
+    + '<div style="font-size:1.25rem;font-weight:800;margin:6px 0 2px">' + esc(tb) + '</div>'
+    + '<div style="font-size:1.35rem;font-weight:800;letter-spacing:.5px;word-break:break-all">' + esc(no) + '</div>'
+    + '<div class="msg" style="margin-top:8px;font-size:.95rem;color:#1f7a3a">' + (copied ? '계좌번호가 복사됐습니다. 은행 앱에서 붙여넣기 하시면 됩니다.' : '') + '</div>'
+    + (mobile ? '<a class="toss" href="supertoss://send?bank=' + encodeURIComponent(tb) + '&accountNo=' + digits + '" style="' + btn + ';background:#0064ff;color:#fff">토스로 송금하기</a>' : '<div style="margin-top:8px;font-size:.9rem;color:#666">휴대폰에서 누르면 토스 앱 송금 화면이 바로 열립니다.</div>')
+    + '<button type="button" class="cp" style="' + btn + ';background:#e8f3ec;color:#1f5f35">계좌번호 복사</button>'
+    + '<button type="button" class="x" style="' + btn + ';background:#f1f1f1;color:#333">닫기</button>'
+    + '<div style="margin-top:10px;font-size:.82rem;color:#777;line-height:1.5">보내기 전에 예금주와 금액을 꼭 확인하세요.</div></div>';
+  box.addEventListener('click', ev => {
+    if (ev.target === box || ev.target.closest('.x')) box.remove();
+    else if (ev.target.closest('.cp')) { const ok = copy(); box.querySelector('.msg').textContent = ok ? '계좌번호가 복사됐습니다. 은행 앱에서 붙여넣기 하시면 됩니다.' : '복사하지 못했습니다. 번호를 길게 눌러 복사해 주세요.'; }
+  });
+  document.body.appendChild(box);
+}
+window.addEventListener('message', ev => {
+  const d = ev.data; if (!d) return;
+  if (d.pgnTel && /^\d{7,12}$/.test(d.pgnTel)) location.href = 'tel:' + d.pgnTel;
+  else if (d.pgnAcct && d.pgnAcct.no) pgnAcctBox(String(d.pgnAcct.bank || ''), String(d.pgnAcct.no));
+});
+if (document.body) pgnLinkCore(document, false); else document.addEventListener('DOMContentLoaded', () => pgnLinkCore(document, false));
