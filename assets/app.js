@@ -781,7 +781,8 @@ const Auth = {
     } catch (e) {}
     this.clear(); return null;
   },
-  set(v, keep) { this.clear(); (keep ? localStorage : sessionStorage).setItem('pgn_auth', JSON.stringify(v)); },
+  /* 로그인하면 브라우저를 닫아도 유지: 기본 1일(24시간), '7일 유지'를 고르면 서버 만료(7일)까지 */
+  set(v, keep) { this.clear(); const day = Date.now() + 864e5; if (!keep) v = { ...v, exp: Math.min(+v.exp || day, day) }; localStorage.setItem('pgn_auth', JSON.stringify(v)); },
   clear() { localStorage.removeItem('pgn_auth'); sessionStorage.removeItem('pgn_auth'); },
   logout() { this.clear(); location.href = 'index.html'; }
 };
