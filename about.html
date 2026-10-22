@@ -46,7 +46,7 @@
 (async () => {
   const S = await layout('about');
   $('#side').innerHTML = sideBox(S);
-  $('#contact').innerHTML = `<div class="about-logo"><img src="assets/logo.png" alt="파크골프뉴스 로고"></div><div class="info about-info"><b>업체명</b> ${esc(S.사이트명)}<br><b>주소</b> ${esc(S.주소)}<br><b>전화</b> ${esc(S.전화)}<br><b>팩스</b> ${esc(S.팩스)}<br><b>담당</b> ${esc(S.담당)}<br><b>네이버 밴드</b> <a href="${esc(S.밴드)}" target="_blank" rel="noopener" style="color:var(--g700)">${esc(S.밴드)}</a></div>`;
+  $('#contact').innerHTML = `<div class="about-logo"><img src="assets/logo.png" alt="파크골프뉴스 로고"></div><div class="info about-info"><b>업체명</b> ${esc(S.사이트명)}<br><b>주소</b> ${esc(S.주소)}<br><b>전화</b> ${esc(S.전화)}<br><b>팩스</b> ${esc(S.팩스)}<br><b>네이버 밴드</b> <a href="${esc(S.밴드)}" target="_blank" rel="noopener" style="color:var(--g700)">${esc(S.밴드)}</a></div>`;
 })();
 </script>
 </body>
