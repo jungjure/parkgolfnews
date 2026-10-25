@@ -228,7 +228,7 @@
       + '<div class="f"><span class="lb">홀 수</span>' + radios('holes', ['9홀', '18홀', '27홀', '36홀'], v.holes) + '</div>'
       + '<div class="f" id="pplBox"><span class="lb" id="pplLb">인원</span><div class="two"><label>현재 인원 (나 포함)' + sel('cur', [1, 2, 3, 4, 5, 6, 7, 8], v.cur) + '</label><label id="needWrap">더 구하는 인원' + sel('need', [1, 2, 3, 4, 5, 6, 7, 8, 10, 12], v.need) + '</label></div><small>보통 4명이 1조입니다.</small></div>'
       + '<div class="f"><span class="lb">실력</span>' + radios('level', ['무관', '입문', '중급', '상급'], v.level) + '</div>'
-      + '<div class="f"><span class="lb">함께할 분 조건</span><div class="two"><label>성별' + sel('gender', ['무관', '남성', '여성', '혼성 원해요'], v.gender) + '</label><label>연령대' + sel('age', ['무관', '50대', '60대', '70대 이상', '비슷한 연령'], v.age) + '</label></div></div>'
+      + '<div class="f"><span class="lb">함께할 분 조건</span><div class="two"><label>성별' + sel('gender', ['무관', '남성', '여성', '혼성 원해요', '부부'], v.gender) + '</label><label>연령대' + sel('age', ['무관', '50대', '60대', '70대 이상', '비슷한 연령'], v.age) + '</label></div></div>'
       + '<div class="f"><label for="cost">비용 <small>입장료 등</small></label><input type="text" id="cost" maxlength="60" value="' + esc(v.cost) + '" placeholder="예: 입장료 각자 3,000원 / 무료"></div>'
       + '<div class="f"><span class="lb">카풀</span>' + radios('carpool', ['없음', '카풀 가능 (유류비 분담)', '카풀 가능 (무료)', '카풀 구해요'], v.carpool) + '</div>'
       + '<div class="f"><span class="lb">구장 예약</span>' + radios('resv', ['예약 완료', '현장 대기', '예약 필요 없음'], v.resv) + '</div>'
