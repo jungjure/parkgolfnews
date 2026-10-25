@@ -14,7 +14,7 @@
 .st-tabs button,.st-per button,.st-gran button{border:1px solid var(--line);background:#fff;color:var(--g900);border-radius:999px;padding:7px 14px;font-weight:700;font-size:.92rem;cursor:pointer;font-family:inherit}
 .st-tabs button.on,.st-per button.on,.st-gran button.on{background:var(--g700);border-color:var(--g700);color:#fff}
 .st-per{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:var(--g50);border:1px solid var(--line);border-radius:12px;margin-bottom:12px}
-.st-per input[type=date]{padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:.9rem}
+.st-per input[type=date],.st-per input.pgdp{padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:.9rem}
 .st-per .lbl{font-weight:700;margin-right:4px}
 .st-per .rng{margin-left:auto;color:var(--muted);font-size:.88rem}
 .st-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:14px}
@@ -75,6 +75,7 @@
 </head>
 <body>
 <script src="assets/app.js?v=20261022b"></script>
+<script src="assets/picker.js?v=20261026a"></script>
 <script>
 (async () => {
   const me = Auth.get();

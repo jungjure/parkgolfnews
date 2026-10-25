@@ -68,6 +68,7 @@
 .jform select,.jform input[type=text],.jform input[type=date],.jform input[type=time],.jform textarea{padding:12px 13px;border:2px solid var(--line);border-radius:10px;font-size:1.05rem;font-family:inherit;width:100%;background:#fff}
 .jform textarea{min-height:120px}
 .jform .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.jform .two>label>span{display:block;font-size:.92rem;font-weight:700;color:#444;margin-bottom:4px}
 .opts{display:flex;gap:8px;flex-wrap:wrap}
 .opts label{position:relative}
 .opts input{position:absolute;opacity:0}
@@ -83,6 +84,7 @@
 </head>
 <body>
 <script src="assets/app.js?v=20261022b"></script>
+<script src="assets/picker.js?v=20261026a"></script>
 <script>
 (async () => {
   await layout('join');
@@ -102,7 +104,7 @@
   const catCls = c => 'c' + (CATS.indexOf(c) + 1);
   const stCls = s => s === '모집중' ? 's0' : s === '마감임박' ? 's1' : 's2';
   const leftTxt = it => it.cat === '조인 희망' ? (it.cur > 1 ? it.cur + '명 조인 희망' : '혼자 조인 희망') : (it.state === '마감' ? '마감' : Math.max(0, it.need - it.acc) + '자리 남음');
-  const whenTxt = it => (it.rep ? '매주 ' + it.rep + '요일' + (it.date > TODAY ? ' (' + fmtDay(it.date) + '부터)' : '') : fmtDay(it.date)) + (it.time ? ' ' + fmtTime(it.time) : '');
+  const whenTxt = it => (it.rep ? '매주 ' + it.rep + '요일' + (it.date > TODAY ? ' (' + fmtDay(it.date) + '부터)' : '') : fmtDay(it.date) + (it.end && it.end > it.date ? ' ~ ' + fmtDay(it.end) : '')) + (it.time ? ' ' + fmtTime(it.time) : '');
   const say = (el, t, k) => { el.innerHTML = t ? '<div class="msg ' + (k || 'err') + '">' + esc(t) + '</div>' : ''; };
   const needLogin = () => '<div class="jbox"><h3>로그인이 필요합니다</h3><p>글을 자세히 보거나 신청하려면 로그인해 주세요.</p><div class="row"><a class="jbig" href="login.html?next=' + encodeURIComponent(location.pathname.slice(1) + location.search) + '">로그인</a><a class="jbig w" href="signup.html">회원가입</a></div></div>';
   const go = p => { location.href = 'join.html' + (p ? '?' + p : ''); };
@@ -124,10 +126,11 @@
       if (st.when === '전체') return true;
       if (it.rep) return true;
       const d = it.date; if (!d) return false;
-      if (st.when === '오늘') return d === TODAY;
+      const e = it.end && it.end > d ? it.end : d;   /* 원정·투어는 시작일~끝날짜 기간으로 봄 */
+      if (st.when === '오늘') return d <= TODAY && e >= TODAY;
       const dow = T.getDay(), mon = new Date(T); mon.setDate(T.getDate() - ((dow + 6) % 7)); const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-      if (st.when === '이번 주') return d >= TODAY && d <= dk(sun);
-      const sat = new Date(mon); sat.setDate(mon.getDate() + 5); return d >= dk(sat) && d <= dk(sun) && d >= TODAY;
+      if (st.when === '이번 주') return e >= TODAY && d <= dk(sun);
+      const sat = new Date(mon); sat.setDate(mon.getDate() + 5); return e >= dk(sat) && d <= dk(sun) && e >= TODAY;
     };
     const draw = () => {
       const base = data.items.filter(it => (!st.sido || it.sido === st.sido) && inWhen(it) && (!st.q || (it.place + it.sido + it.sgg + it.nick).includes(st.q)) && (!st.hideDone || it.state !== '마감' || it.mine) && (!st.rep || it.reports > 0));
@@ -216,12 +219,12 @@
     document.title = (editId ? '조인 글 수정' : '조인 글쓰기') + ' - 파크골프뉴스';
     const radios = (name, list, val) => '<div class="opts">' + list.map(v => '<label><input type="radio" name="' + name + '" value="' + esc(v) + '"' + (v === val ? ' checked' : '') + '><span>' + esc(v) + '</span></label>').join('') + '</div>';
     const sel = (id, list, val) => '<select id="' + id + '">' + list.map(v => '<option' + (String(v) === String(val) ? ' selected' : '') + '>' + v + '</option>').join('') + '</select>';
-    const v = it || { cat: qs.get('cat') || '멤버 구함', sido: localStorage.getItem('pgn_jsido') || '', sgg: '', place: '', date: TODAY, time: '08:00', holes: '18홀', cur: 3, need: 1, level: '무관', gender: '무관', age: '무관', cost: '', carpool: '없음', resv: '예약 필요 없음', contact: '사이트에서 신청만', text: '', rep: '' };
+    const v = it || { cat: qs.get('cat') || '멤버 구함', sido: localStorage.getItem('pgn_jsido') || '', sgg: '', place: '', date: TODAY, end: '', time: '08:00', holes: '18홀', cur: 3, need: 1, level: '무관', gender: '무관', age: '무관', cost: '', carpool: '없음', resv: '예약 필요 없음', contact: '사이트에서 신청만', text: '', rep: '' };
     jn.innerHTML = '<h2 class="sec">' + (editId ? '조인 글 수정' : '조인 글쓰기') + '</h2><div class="card jform">'
       + '<div class="f"><span class="lb">어떤 글인가요?</span>' + radios('cat', CATS, v.cat) + '<small id="catHelp"></small></div>'
       + '<div class="f"><span class="lb">지역</span><div class="two"><select id="sido"><option value="">시·도 선택</option>' + Object.keys(REG).map(k => '<option' + (k === v.sido ? ' selected' : '') + '>' + k + '</option>').join('') + '</select><select id="sgg"></select></div></div>'
       + '<div class="f"><label for="place">구장 <small>목록에서 고르거나 직접 입력</small></label><input type="text" id="place" list="places" maxlength="40" value="' + esc(v.place) + '" placeholder="예: 갑천파크골프장"><datalist id="places"></datalist></div>'
-      + '<div class="f"><span class="lb">날짜·시간</span><div class="two"><input type="date" id="date" value="' + esc(v.date) + '" min="' + TODAY + '"><input type="time" id="time" value="' + esc(v.time) + '" step="600"></div><div id="repBox" style="margin-top:8px"><span class="lb" style="font-size:.95rem">매주 반복 <small>(정기 라운딩)</small></span>' + radios('rep', ['없음', '월', '화', '수', '목', '금', '토', '일'], v.rep || '없음') + '</div></div>'
+      + '<div class="f"><span class="lb">날짜·시간</span><div class="two"><label><span id="dSl">날짜</span><input type="date" id="date" value="' + esc(v.date) + '" min="' + TODAY + '"></label><label id="endWrap"><span>끝날짜</span><input type="date" id="end" value="' + esc(v.end || '') + '" min="' + esc(v.date > TODAY ? v.date : TODAY) + '"></label><label><span id="tSl">시간</span><input type="time" id="time" value="' + esc(v.time) + '" step="600"></label></div><div id="repBox" style="margin-top:8px"><span class="lb" style="font-size:.95rem">매주 반복 <small>(정기 라운딩)</small></span>' + radios('rep', ['없음', '월', '화', '수', '목', '금', '토', '일'], v.rep || '없음') + '</div></div>'
       + '<div class="f"><span class="lb">홀 수</span>' + radios('holes', ['9홀', '18홀', '27홀', '36홀'], v.holes) + '</div>'
       + '<div class="f" id="pplBox"><span class="lb" id="pplLb">인원</span><div class="two"><label>현재 인원 (나 포함)' + sel('cur', [1, 2, 3, 4, 5, 6, 7, 8], v.cur) + '</label><label id="needWrap">더 구하는 인원' + sel('need', [1, 2, 3, 4, 5, 6, 7, 8, 10, 12], v.need) + '</label></div><small>보통 4명이 1조입니다.</small></div>'
       + '<div class="f"><span class="lb">실력</span>' + radios('level', ['무관', '입문', '중급', '상급'], v.level) + '</div>'
@@ -236,12 +239,13 @@
     const fillSgg = (s, val) => { const l = REG[s] || []; $('#sgg').innerHTML = '<option value="">' + (l.length ? '시·군·구 선택' : '(전체)') + '</option>' + l.map(x => '<option' + (x === val ? ' selected' : '') + '>' + x + '</option>').join(''); };
     fillSgg(v.sido, v.sgg); $('#sido').onchange = e => fillSgg(e.target.value, '');
     const rv = n => (document.querySelector('input[name="' + n + '"]:checked') || {}).value || '';
-    const sync = () => { const c = rv('cat'); $('#catHelp').textContent = CAT_HELP[c] || ''; $('#repBox').style.display = c === '정기 라운딩 모집' ? '' : 'none'; $('#needWrap').style.display = c === '조인 희망' ? 'none' : ''; $('#pplLb').textContent = c === '조인 희망' ? '함께 가는 인원 (나 포함)' : '인원'; };
+    const sync = () => { const c = rv('cat'); $('#catHelp').textContent = CAT_HELP[c] || ''; $('#repBox').style.display = c === '정기 라운딩 모집' ? '' : 'none'; $('#needWrap').style.display = c === '조인 희망' ? 'none' : ''; $('#pplLb').textContent = c === '조인 희망' ? '함께 가는 인원 (나 포함)' : '인원'; const tour = c === '원정·투어 동행'; $('#endWrap').style.display = tour ? '' : 'none'; $('#dSl').textContent = tour ? '시작일' : '날짜'; $('#tSl').textContent = tour ? '출발 시간' : '시간'; };
+    $('#date').addEventListener('change', () => { const s = $('#date').value || TODAY, e = $('#end'); e.min = s; if (e.value && e.value < s) e.value = s; });
     jn.querySelectorAll('input[name="cat"]').forEach(x => x.onchange = sync); sync();
     getSchedule().then(all => { const s = new Set(); all.forEach(e => (e.place || '').split(/[,·]| 등 /).forEach(p => { p = p.replace(/\(.*$/, '').replace(/^(서울|경기|강원|충북|충남|충청|전북|전남|전라|경북|경남|경상|제주|대전|대구|부산|광주|울산|인천|세종)\s+/, '').trim(); if (/파크골프|구장/.test(p) && p.length <= 30) s.add(p); })); $('#places').innerHTML = [...s].sort().map(p => '<option value="' + esc(p) + '">').join(''); }).catch(() => {});
     $('#save').onclick = async () => {
       const cat = rv('cat'), rep = cat === '정기 라운딩 모집' && rv('rep') !== '없음' ? rv('rep') : '';
-      const body = { cat, sido: $('#sido').value, sgg: $('#sgg').value, place: $('#place').value, date: $('#date').value, time: $('#time').value, holes: rv('holes'), cur: $('#cur').value, need: cat === '조인 희망' ? 0 : $('#need').value, level: rv('level'), gender: $('#gender').value, age: $('#age').value, cost: $('#cost').value, carpool: rv('carpool'), resv: rv('resv'), contact: rv('contact'), text: $('#text').value, rep };
+      const body = { cat, sido: $('#sido').value, sgg: $('#sgg').value, place: $('#place').value, date: $('#date').value, end: cat === '원정·투어 동행' && $('#end').value > $('#date').value ? $('#end').value : '', time: $('#time').value, holes: rv('holes'), cur: $('#cur').value, need: cat === '조인 희망' ? 0 : $('#need').value, level: rv('level'), gender: $('#gender').value, age: $('#age').value, cost: $('#cost').value, carpool: rv('carpool'), resv: rv('resv'), contact: rv('contact'), text: $('#text').value, rep };
       const b = $('#save'); b.disabled = true;
       try { if (editId) { await api('jupdate', Object.assign({ id: editId }, body)); go('id=' + editId); } else { const r = await api('jpost', body); localStorage.setItem('pgn_jsido', body.sido); go('id=' + r.id); } }
       catch (e) { if (!Auth.get()) { location.replace('login.html?next=' + encodeURIComponent('join.html?write=1')); return; } say($('#msg'), e.message); b.disabled = false; }
