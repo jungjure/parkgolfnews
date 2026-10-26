@@ -37,7 +37,7 @@
 .jcard{display:block;padding:16px 18px;border-top:1px solid var(--line);color:inherit;text-decoration:none;cursor:pointer}
 .jcard:first-child{border-top:0}
 .jcard:hover{background:var(--g50)}
-.jcard.done{opacity:.55}
+.jcard.done,.jcard.done *{color:#a3a3a3 !important}
 .jcard .top{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
 .jcard .main{font-size:1.25rem;font-weight:800;line-height:1.45;color:var(--g900)}
 .jcard .main .left{color:var(--red)}
@@ -102,6 +102,7 @@
   const fmtDay = s => { if (!s) return ''; const d = pd(s); return (d.getMonth() + 1) + '/' + d.getDate() + '(' + WDN[d.getDay()] + ')'; };
   const fmtTime = t => { if (!t) return ''; const [h, m] = t.split(':').map(Number); return (h < 12 ? '오전 ' : '오후 ') + (h % 12 || 12) + '시' + (m ? ' ' + m + '분' : ''); };
   const catCls = c => 'c' + (CATS.indexOf(c) + 1);
+  const past = it => { if (!it || it.rep || it.state === '마감' || !it.date) return it; const e = it.end && it.end > it.date ? it.end + 'T23:59' : it.date + 'T' + (it.time || '23:59'); if (new Date(e) < new Date()) it.state = '마감'; return it; };   /* 모임 시간이 지나면 바로 마감으로 표시 */
   const stCls = s => s === '모집중' ? 's0' : s === '마감임박' ? 's1' : 's2';
   const leftTxt = it => it.cat === '조인 희망' ? (it.cur > 1 ? it.cur + '명 조인 희망' : '혼자 조인 희망') : (it.state === '마감' ? '마감' : Math.max(0, it.need - it.acc) + '자리 남음');
   const whenTxt = it => (it.rep ? '매주 ' + it.rep + '요일' + (it.date > TODAY ? ' (' + fmtDay(it.date) + '부터)' : '') : fmtDay(it.date) + (it.end && it.end > it.date ? ' ~ ' + fmtDay(it.end) : '')) + (it.time ? ' ' + fmtTime(it.time) : '');
@@ -113,7 +114,7 @@
   /* ---------- 목록 ---------- */
   async function showList() {
     document.title = '조인게시판 - 파크골프뉴스';
-    const st = { cat: qs.get('cat') || '전체', sido: localStorage.getItem('pgn_jsido') || '', when: '전체', q: '', hideDone: false, rep: false };
+    const st = { cat: qs.get('cat') || '전체', sido: '', when: '전체', q: '', hideDone: false, rep: false };
     jn.innerHTML = '<h2 class="sec">조인게시판</h2><div class="intro"><b>함께 칠 사람을 찾는 곳입니다.</b> 같은 지역에서 같이 칠 분, 빈자리 채울 분, 정기 멤버, 원정 동행을 구해 보세요. 연락처는 공개되지 않고, 신청을 수락하면 서로 번호가 보입니다. 레슨·용품 판매 등 영업 글은 올릴 수 없습니다.</div>'
       + '<div style="margin-bottom:12px"><button class="jbig" id="wr">+ 조인 글쓰기</button></div>'
       + '<div class="jcats" id="cats"></div>'
@@ -133,10 +134,10 @@
       const sat = new Date(mon); sat.setDate(mon.getDate() + 5); return e >= dk(sat) && d <= dk(sun) && e >= TODAY;
     };
     const draw = () => {
-      const base = data.items.filter(it => (!st.sido || it.sido === st.sido) && inWhen(it) && (!st.q || (it.place + it.sido + it.sgg + it.nick).includes(st.q)) && (!st.hideDone || it.state !== '마감' || it.mine) && (!st.rep || it.reports > 0));
+      const base = data.items.map(past).filter(it => (!st.sido || it.sido === st.sido) && inWhen(it) && (!st.q || (it.place + it.sido + it.sgg + it.nick).includes(st.q)) && (!st.hideDone || it.state !== '마감' || it.mine) && (!st.rep || it.reports > 0));
       const cnt = { '전체': base.length }; base.forEach(it => cnt[it.cat] = (cnt[it.cat] || 0) + 1);
       $('#cats').innerHTML = ['전체'].concat(CATS).map(c => '<button data-c="' + esc(c) + '" class="' + (c === st.cat ? 'on' : '') + '" title="' + esc(CAT_HELP[c] || '') + '">' + esc(c) + ' ' + (cnt[c] || 0) + '</button>').join('');
-      const rows = base.filter(it => st.cat === '전체' || it.cat === st.cat).sort((a, b) => (a.state === '마감') - (b.state === '마감') || (a.rep ? '0' : a.date + a.time).localeCompare(b.rep ? '0' : b.date + b.time));
+      const rows = base.filter(it => st.cat === '전체' || it.cat === st.cat).sort((a, b) => (b.at || '').localeCompare(a.at || ''));   /* 최근에 쓴 글이 위로, 마감 글도 자리 그대로 */
       { const c0 = st.cat, n1 = rows.length; window.PGN_SHARE = () => new URLSearchParams(location.search).get('id') ? '' : '파크골프뉴스 조인게시판' + (c0 === '전체' ? '' : ' ' + c0) + ' 총 ' + n1 + '건입니다.'; }   /* 공유 문구 */
       $('#list').innerHTML = rows.length ? rows.map(it => '<a class="jcard ' + (it.state === '마감' ? 'done' : '') + '" href="join.html?id=' + esc(it.id) + '">'
         + '<div class="top">' + (data.admin ? '<input type="checkbox" class="ck" data-id="' + esc(it.id) + '" onclick="event.stopPropagation()">' : '') + '<span class="jt ' + catCls(it.cat) + '">' + esc(it.cat) + '</span><span class="jt ' + stCls(it.state) + '">' + esc(it.state) + '</span>' + (it.st === '숨김' ? '<span class="jt hid">숨김</span>' : '') + (it.reports ? '<span class="jt s1">신고 ' + it.reports + '</span>' : '') + (it.mine ? '<span class="jt">내 글</span>' : '') + (it.apps && it.mine ? '<span class="jt s1">신청 ' + it.apps + '</span>' : '') + '</div>'
@@ -172,7 +173,7 @@
     if (!me()) { jn.innerHTML = '<h2 class="sec">조인게시판</h2>' + needLogin() + '<p><a href="join.html">← 목록으로</a></p>'; return; }
     jn.innerHTML = '<div class="loading">불러오는 중...</div>';
     let it;
-    try { it = (await api('jget', { id })).item; } catch (e) { if (!Auth.get()) { location.replace('login.html?next=' + encodeURIComponent('join.html?id=' + id)); return; } jn.innerHTML = '<div class="msg err">' + esc(e.message) + '</div><p><a href="join.html">← 목록으로</a></p>'; return; }
+    try { it = past((await api('jget', { id })).item); } catch (e) { if (!Auth.get()) { location.replace('login.html?next=' + encodeURIComponent('join.html?id=' + id)); return; } jn.innerHTML = '<div class="msg err">' + esc(e.message) + '</div><p><a href="join.html">← 목록으로</a></p>'; return; }
     const admin = me().role === 'admin';
     document.title = whenTxt(it) + ' ' + it.place + ' - 조인게시판';
     const row = (k, v) => v ? '<tr><th>' + k + '</th><td>' + v + '</td></tr>' : '';
