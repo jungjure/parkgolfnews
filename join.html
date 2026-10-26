@@ -113,11 +113,11 @@
   /* ---------- 목록 ---------- */
   async function showList() {
     document.title = '조인게시판 - 파크골프뉴스';
-    const st = { cat: qs.get('cat') || '전체', sido: localStorage.getItem('pgn_jsido') || '', when: '전체', q: '', hideDone: true, rep: false };
+    const st = { cat: qs.get('cat') || '전체', sido: localStorage.getItem('pgn_jsido') || '', when: '전체', q: '', hideDone: false, rep: false };
     jn.innerHTML = '<h2 class="sec">조인게시판</h2><div class="intro"><b>함께 칠 사람을 찾는 곳입니다.</b> 같은 지역에서 같이 칠 분, 빈자리 채울 분, 정기 멤버, 원정 동행을 구해 보세요. 연락처는 공개되지 않고, 신청을 수락하면 서로 번호가 보입니다. 레슨·용품 판매 등 영업 글은 올릴 수 없습니다.</div>'
       + '<div style="margin-bottom:12px"><button class="jbig" id="wr">+ 조인 글쓰기</button></div>'
       + '<div class="jcats" id="cats"></div>'
-      + '<div class="jfil"><select id="fSido"><option value="">전국 (모든 지역)</option>' + Object.keys(REG).map(k => '<option>' + k + '</option>').join('') + '</select><select id="fWhen"><option>전체</option><option>오늘</option><option>이번 주</option><option>이번 주말</option></select><input type="search" id="fQ" placeholder="구장·지역 검색"><label><input type="checkbox" id="fDone" checked>마감 글 숨기기</label></div>'
+      + '<div class="jfil"><select id="fSido"><option value="">전국 (모든 지역)</option>' + Object.keys(REG).map(k => '<option>' + k + '</option>').join('') + '</select><select id="fWhen"><option>전체</option><option>오늘</option><option>이번 주</option><option>이번 주말</option></select><input type="search" id="fQ" placeholder="구장·지역 검색"><label><input type="checkbox" id="fDone">마감 글 숨기기</label></div>'
       + '<div id="adm"></div><div id="msg"></div><div class="card" id="list"><div class="loading">불러오는 중...</div></div>';
     $('#fSido').value = st.sido;
     $('#wr').onclick = () => { if (!me()) { location.href = 'login.html?next=' + encodeURIComponent('join.html?write=1'); return; } go('write=1'); };
