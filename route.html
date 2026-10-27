@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>이동경로 지도</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+/* 글꼴: 상업적 무료(SIL OFL) Pretendard만 사용 */
+html,body{margin:0;height:100%;font-family:'Pretendard Variable',Pretendard,'Noto Sans KR',sans-serif;color:#1a1a1a;background:#fff}
+.gm-style,.gm-style *{font-family:'Pretendard Variable',Pretendard,'Noto Sans KR',sans-serif!important}
+#bar{position:absolute;left:0;right:0;top:0;z-index:2;display:flex;gap:14px;align-items:center;padding:10px 14px;background:rgba(255,255,255,.94);border-bottom:1px solid #e5e5e5;font-size:15px}
+#bar b{font-weight:700}
+#bar .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+#map{position:absolute;left:0;right:0;top:44px;bottom:0}
+#msg{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;font-size:17px;line-height:1.6;padding:24px}
+</style>
+<script>
+// Google 지도가 자동으로 넣는 Roboto 글꼴 로딩을 막고 Pretendard로 통일
+(function(){var h=document.head||document.getElementsByTagName('head')[0];var ib=h.insertBefore;h.insertBefore=function(n,r){if(n&&n.href&&/fonts\.googleapis\.com/.test(n.href))return n;return ib.call(h,n,r);};})();
+</script>
+</head>
+<body>
+<div id="bar"><b>이동경로</b><span id="dist"></span><span><i class="dot" style="background:#1e9e5a"></i>출발</span><span><i class="dot" style="background:#d93025"></i>도착</span></div>
+<div id="map"></div>
+<div id="msg"></div>
+<script>
+var KEY='AIzaSyA4hg5KMDSsED4eww_EdcPP5eGoyYn5ZFk';
+function fullDecode(s){for(var i=0;i<4;i++){try{var d=decodeURIComponent(s);if(d===s)break;s=d;}catch(e){break;}}return s;}
+function getPoly(){
+  var raw=fullDecode(location.hash.replace(/^#/,''));
+  var m=raw.match(/enc:([^&]+)/);
+  if(m)return m[1];
+  m=raw.match(/(?:^|&)p=([^&]+)/);
+  return m?m[1]:'';
+}
+function decodePoly(str){var i=0,lat=0,lng=0,pts=[];while(i<str.length){var b,s=0,r=0;do{b=str.charCodeAt(i++)-63;r|=(b&31)<<s;s+=5;}while(b>=32&&i<=str.length);lat+=(r&1)?~(r>>1):(r>>1);s=0;r=0;do{b=str.charCodeAt(i++)-63;r|=(b&31)<<s;s+=5;}while(b>=32&&i<=str.length);lng+=(r&1)?~(r>>1):(r>>1);pts.push({lat:lat/1e5,lng:lng/1e5});}return pts;}
+function dist(p){var t=0,R=6371000,rad=Math.PI/180;for(var i=1;i<p.length;i++){var a=p[i-1],b=p[i],dl=(b.lat-a.lat)*rad,dn=(b.lng-a.lng)*rad,x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dn/2)*Math.sin(dn/2);t+=2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}return t;}
+function showMsg(t){var m=document.getElementById('msg');m.style.display='flex';m.innerHTML=t;document.getElementById('bar').style.display='none';}
+var PTS=[];
+var poly=getPoly();
+if(poly){try{PTS=decodePoly(poly).filter(function(p){return isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(p.lat)<=90&&Math.abs(p.lng)<=180;});}catch(e){PTS=[];}}
+if(PTS.length<2){showMsg('이 기록에는 GPS 이동경로가 없습니다.<br>시계에서 실외 운동으로 시작하면 경로가 기록됩니다.');}
+else{
+  var d=dist(PTS);document.getElementById('dist').textContent=d>=1000?(d/1000).toFixed(2)+' km':Math.round(d)+' m';
+  window.initMap=function(){
+    var map=new google.maps.Map(document.getElementById('map'),{mapTypeId:'roadmap',disableDefaultUI:true,zoomControl:true,mapTypeControl:true,fullscreenControl:true,gestureHandling:'greedy',clickableIcons:false});
+    new google.maps.Polyline({path:PTS,map:map,strokeColor:'#FC4C02',strokeOpacity:0.95,strokeWeight:5});
+    function pin(p,c){return new google.maps.Marker({position:p,map:map,clickable:false,icon:{path:google.maps.SymbolPath.CIRCLE,scale:7,fillColor:c,fillOpacity:1,strokeColor:'#fff',strokeWeight:2}});}
+    pin(PTS[0],'#1e9e5a');pin(PTS[PTS.length-1],'#d93025');
+    var bd=new google.maps.LatLngBounds();PTS.forEach(function(p){bd.extend(p);});map.fitBounds(bd,40);
+  };
+  window.gm_authFailure=function(){showMsg('지도를 불러오지 못했습니다. 잠시 후 다시 열어 주세요.');};
+  var s=document.createElement('script');s.src='https://maps.googleapis.com/maps/api/js?key='+KEY+'&language=ko&region=KR&loading=async&callback=initMap';s.async=true;document.head.appendChild(s);
+}
+</script>
+</body>
+</html>
