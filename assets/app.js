@@ -430,6 +430,7 @@ function notiStore(items) { const me = Auth.get(); if (me) localStorage.setItem(
 function notiSeen() { localStorage.setItem(notiKey(), kstNow()); admDraw(); }
 function admDraw() {
   const me = Auth.get(); if (!me) return;
+  vsDraw();   // 이름 밑 오늘 방문자/페이지뷰 (헤더를 다시 그려도 유지)
   if (!document.getElementById('admb-css')) document.head.insertAdjacentHTML('beforeend', '<style id="admb-css">nav.main a.who{position:relative}.admb{position:absolute;top:-13px;right:-8px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#e53935;color:#fff;font-size:12px;font-weight:800;line-height:20px;text-align:center;letter-spacing:0;box-shadow:0 0 0 2px #fff;cursor:pointer;z-index:2}.menu-btn{position:relative}.menu-btn .admb{top:-8px;right:-8px}@media(max-width:760px){nav.main a.who{align-self:flex-start}nav.main a.who .admb{top:-6px;right:-24px}}</style>');
   document.querySelectorAll('.admb').forEach(b => b.remove());
   const c = admCounts(), m = notiCount(), n = c.req + c.cmt + m; if (!n) return;
@@ -471,8 +472,38 @@ function startAdmBadge(active) {
     }
   }
   admDraw();
+  startVsum();
   setTimeout(() => { admFetch(); if (active !== 'noti') notiFetch(); }, 2500);   // 화면이 먼저 뜨도록 조금 늦춤
   setInterval(() => { admFetch(true); notiFetch(true); }, 120000);               // 2분마다 새로 확인
+}
+
+/* ---------- 오늘 방문자 수/페이지뷰 (관리자·본인 계정만): 이름 밑에 작게 00/00. 로그인·비로그인 합산, 통계와 같은 기준 ---------- */
+const VS_K = 'pgn_vsum', VS_WHO = ['정지현', '파크골프뉴스'];
+function vsOn() { const me = Auth.get(); return !!(me && (me.role === 'admin' || VS_WHO.indexOf(me.name) >= 0)); }
+function vsDraw() {
+  const w = document.querySelector('nav.main a.who'); if (!w) return;
+  let d = null; try { d = JSON.parse(localStorage.getItem(VS_K) || 'null'); } catch (e) {}
+  const me = Auth.get(), old = w.querySelector('.vsum');
+  if (!vsOn() || !d || d.u !== me.name || d.hide) { if (old) old.remove(); return; }
+  if (!document.getElementById('vsum-css')) document.head.insertAdjacentHTML('beforeend', '<style id="vsum-css">nav.main a.who{position:relative}nav.main a.who .vsum{position:absolute;left:0;right:0;top:100%;margin-top:1px;font-size:11px;font-weight:600;line-height:1;letter-spacing:0;color:var(--g900);text-align:center;white-space:nowrap}@media(max-width:760px){nav.main a.who .vsum{position:static;display:block;text-align:left;margin-top:3px}}</style>');
+  const p2 = n => String(n).padStart(2, '0');
+  const el = old || w.appendChild(Object.assign(document.createElement('span'), { className: 'vsum' }));
+  el.textContent = p2(d.v) + '/' + p2(d.p);
+  el.title = '오늘(' + d.d + ') 방문자 ' + d.v + '명 / 페이지뷰 ' + d.p + '회 (로그인·비로그인 합산, 관리자·본인 기기 제외, 1분마다 갱신)';
+}
+async function vsFetch(force) {
+  if (!vsOn()) return;
+  const me = Auth.get(); let d = null; try { d = JSON.parse(localStorage.getItem(VS_K) || 'null'); } catch (e) {}
+  if (!force && d && d.u === me.name && Date.now() - d.t < 60000) return vsDraw();   // 1분 안에 받아 온 게 있으면 다시 부르지 않음
+  try { const r = await api('vsum'); localStorage.setItem(VS_K, JSON.stringify({ t: Date.now(), u: me.name, d: r.d, v: r.v || 0, p: r.p || 0, hide: !!r.hide })); } catch (e) {}
+  vsDraw();
+}
+function startVsum() {
+  if (!vsOn()) return;
+  vsDraw();
+  setTimeout(() => vsFetch(), 1500);
+  setInterval(() => { if (!document.hidden) vsFetch(true); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) vsFetch(); });
 }
 
 /* ---------- 로그인 안내 (회사소개 제외) ---------- */
