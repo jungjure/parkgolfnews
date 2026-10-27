@@ -590,7 +590,31 @@ function siteName(u) {
   let h = '';
   try { h = new URL(u).hostname.replace(/^www\./, '').toLowerCase(); } catch (x) { return u; }
   const M = { 'martincarat.com': '마틴캐럿', 'kpga7330.com': '대한파크골프협회', 'park-ro.com': '파크로', 'vcparkgolf.com': '보이스파크', 'parkmoa.kr': '파크모아', 'xn--bb0bp9it32a1kcc8ci3c.com': '파크골프대회.com' };
-  return M[h] || h;
+  return M[h] || idnHost(h);
+}
+/* 한글 도메인: 브라우저가 바꾼 xn--... (퓨니코드)를 다시 한글로 (예: xn--bb0bp9it32a1kcc8ci3c.com -> 파크골프대회.com) */
+function idnHost(h) {
+  const dec = s => {
+    const B = 36, TMIN = 1, TMAX = 26; let n = 128, i = 0, bias = 72, d0 = s.lastIndexOf('-'); const out = [];
+    for (let j = 0; j < Math.max(d0, 0); j++) out.push(s.charCodeAt(j));
+    for (let p = d0 > 0 ? d0 + 1 : 0; p < s.length;) {
+      const old = i; let w = 1;
+      for (let k = B; ; k += B) {
+        if (p >= s.length) throw new Error('bad');
+        const c = s.charCodeAt(p++), d = c - 48 < 10 ? c - 22 : c - 97 < 26 ? c - 97 : c - 65 < 26 ? c - 65 : B;
+        if (d >= B) throw new Error('bad');
+        i += d * w; const t = k <= bias ? TMIN : k >= bias + TMAX ? TMAX : k - bias;
+        if (d < t) break; w *= B - t;
+      }
+      const len = out.length + 1; let delta = old === 0 ? Math.floor((i - old) / 700) : (i - old) >> 1, k = 0;
+      delta += Math.floor(delta / len);
+      while (delta > ((B - TMIN) * TMAX) >> 1) { delta = Math.floor(delta / (B - TMIN)); k += B; }
+      bias = k + Math.floor((B - TMIN + 1) * delta / (delta + 38));
+      n += Math.floor(i / len); i %= len; out.splice(i++, 0, n);
+    }
+    return String.fromCodePoint(...out);
+  };
+  return String(h || '').split('.').map(l => { if (!/^xn--/i.test(l)) return l; try { return dec(l.slice(4).toLowerCase()); } catch (e) { return l; } }).join('.');
 }
 /* 일정 제목 클릭 -> 상세내용 */
 const EV_REG = [];
@@ -1145,12 +1169,16 @@ function pgnLinkCore(doc, inFrame) {
   const TEL = /(?<![\d-])(0(?:2|[3-6][1-5]|1[016789]|50[2-8]|70|80)-?\d{3,4}-\d{4}|1[568]\d{2}-\d{4})(?![\d-])/g;
   const ACCT = /((?:(?:NH|KB|IBK|SC|iM)\s?)?(?:농협은행|농협|축협|국민은행|KB국민|국민|신한은행|신한|우리은행|하나은행|하나|기업은행|카카오뱅크|카뱅|케이뱅크|토스뱅크|새마을금고|새마을|신협|우체국|수협은행|수협|대구은행|iM뱅크|부산은행|경남은행|광주은행|전북은행|제주은행|SC제일은행|제일은행|씨티은행|산업은행))(\s*(?:은행)?\s*[:：]?\s*(?:계좌(?:번호)?\s*[:：]?\s*)?)(\d{2,6}(?:[- ]\d{2,7}){1,4}|\d{10,14})(?![\d-])/g;
   const isPhone = s => /^(0(?:2|[3-6][1-5]|1[016789]|50[2-8]|70|80)-?\d{3,4}-\d{4}|1[568]\d{2}-\d{4})$/.test(s);
+  /* 한글 도메인 주소 (https:// 없이 써도 됨): 파크골프대회.com, www.진주시장배파크골프.kr, 홈페이지.co.kr/경로 */
+  const WEB = /(?<![\w가-힣.\/@-])((?:[A-Za-z0-9-]+\.)*[A-Za-z0-9-]*[가-힣][가-힣A-Za-z0-9-]*\.(?:co\.kr|or\.kr|go\.kr|ne\.kr|re\.kr|pe\.kr|com|net|org|kr|한국))(?![A-Za-z0-9-])(\/[A-Za-z0-9\-._~%!$&*+,;=:@\/?#]*)?/g;
   const css = 'color:inherit;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;cursor:pointer';
   function piece(text) {
     const parts = []; let last = 0, m;
     const marks = [];
     ACCT.lastIndex = 0;
     while ((m = ACCT.exec(text))) { const no = m[3]; if (no.replace(/\D/g, '').length >= 10 && !isPhone(no)) marks.push({ s: m.index, e: m.index + m[0].length, t: 'a', bank: m[1].trim(), no, txt: m[0] }); }
+    WEB.lastIndex = 0;
+    while ((m = WEB.exec(text))) { const path = (m[2] || '').replace(/[.,;:!?]+$/, ''), s = m.index, e = s + m[1].length + path.length; if (!marks.some(k => s < k.e && e > k.s)) marks.push({ s, e, t: 'w', url: 'https://' + m[1] + path, txt: m[1] + path }); }
     TEL.lastIndex = 0;
     while ((m = TEL.exec(text))) { const s = m.index, e = s + m[0].length; if (/팩스\s*[:：]?\s*$/.test(text.slice(Math.max(0, s - 8), s))) continue; if (!marks.some(k => s < k.e && e > k.s)) marks.push({ s, e, t: 't', no: m[0] }); }
     if (!marks.length) return null;
@@ -1160,6 +1188,7 @@ function pgnLinkCore(doc, inFrame) {
       if (k.s > last) f.appendChild(doc.createTextNode(text.slice(last, k.s)));
       const a = doc.createElement('a');
       if (k.t === 't') { a.href = 'tel:' + k.no.replace(/\D/g, ''); a.className = 'pgtel'; a.textContent = k.no; a.title = '눌러서 전화 걸기'; }
+      else if (k.t === 'w') { a.href = k.url; a.className = 'pgweb'; a.textContent = k.txt; a.title = '눌러서 홈페이지로 이동'; }
       else { a.href = '#'; a.className = 'pgacct'; a.dataset.bank = k.bank; a.dataset.no = k.no; a.textContent = k.txt; a.title = '눌러서 계좌번호 복사·송금'; }
       a.style.cssText = css;
       f.appendChild(a); last = k.e;
@@ -1172,7 +1201,7 @@ function pgnLinkCore(doc, inFrame) {
     if (root.nodeType === 3) root = root.parentNode;
     if (!root || root.nodeType !== 1 && root.nodeType !== 9 && root.nodeType !== 11) return;
     const w = doc.createTreeWalker(root, 4, { acceptNode: n => {
-      if (!/\d{3,4}-\d{4}|\d{10}|\d-\d/.test(n.data)) return 2;
+      if (!/\d{3,4}-\d{4}|\d{10}|\d-\d|[가-힣]\.(?:[A-Za-z]{2,}|한국)/.test(n.data)) return 2;
       const p = n.parentElement;
       return !p || p.closest('a,script,style,textarea,input,select,button,option,[contenteditable],.pgn-nolink,#pgn-head') ? 2 : 1;
     } });
@@ -1184,7 +1213,8 @@ function pgnLinkCore(doc, inFrame) {
   new MutationObserver(ms => { for (const m of ms) { if (m.type === 'characterData') q.push(m.target); else m.addedNodes.forEach(n => q.push(n)); } if (!t) t = setTimeout(() => { t = 0; const l = q; q = []; l.forEach(scan); }, 60); })
     .observe(doc.body, { childList: true, subtree: true, characterData: true });
   doc.addEventListener('click', ev => {
-    const a = ev.target.closest && ev.target.closest('a.pgtel, a.pgacct'); if (!a) return;
+    const a = ev.target.closest && ev.target.closest('a.pgtel, a.pgacct, a.pgweb'); if (!a) return;
+    if (a.classList.contains('pgweb')) { if (ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey) return; ev.preventDefault(); ev.stopPropagation(); if (inFrame) parent.postMessage({ pgnWeb: a.href }, '*'); else location.href = a.href; return; }   /* 같은 창에서 이동 */
     if (a.classList.contains('pgtel')) { if (inFrame) { ev.preventDefault(); parent.postMessage({ pgnTel: a.getAttribute('href').slice(4) }, '*'); } return; }
     ev.preventDefault(); ev.stopPropagation();
     if (inFrame) parent.postMessage({ pgnAcct: { bank: a.dataset.bank, no: a.dataset.no } }, '*'); else pgnAcctBox(a.dataset.bank, a.dataset.no);
@@ -1218,6 +1248,7 @@ function pgnAcctBox(bank, no) {
 window.addEventListener('message', ev => {
   const d = ev.data; if (!d) return;
   if (d.pgnTel && /^\d{7,12}$/.test(d.pgnTel)) location.href = 'tel:' + d.pgnTel;
+  else if (d.pgnWeb && /^https:\/\/[^\s"'<>]+$/.test(String(d.pgnWeb))) location.href = String(d.pgnWeb);   /* 기사 속 한글 도메인 */
   else if (d.pgnAcct && d.pgnAcct.no) pgnAcctBox(String(d.pgnAcct.bank || ''), String(d.pgnAcct.no));
 });
 if (document.body) pgnLinkCore(document, false); else document.addEventListener('DOMContentLoaded', () => pgnLinkCore(document, false));
