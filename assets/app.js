@@ -695,7 +695,7 @@ document.addEventListener('click', ev => {
   ev.preventDefault();
   location.href = a.href;   /* 새 창이 안 보이는 경우가 있어 현재 창에서 바로 이동 */
 });
-document.addEventListener('click', ev => { const h = ev.target.closest && ev.target.closest('h4.evt'); if (h) showEv(+h.dataset.ev); });
+document.addEventListener('click', ev => { const h = ev.target.closest && ev.target.closest('h4.evt'); if (h) showEv(+h.dataset.ev); }); /* 뉴스레터 등에서 today.html?d=날짜&ev=일정이름 으로 들어오면 그 일정으로 이동해 상세 자동 열기 (2026-10-30) */ (function () { try { const q = new URLSearchParams(location.search).get('ev'); if (!q) return; const norm = s => (s || '').replace(/\s+/g, '').toLowerCase(); const key = norm(q); let n = 0; const tm = setInterval(() => { n++; const h = Array.from(document.querySelectorAll('h4.evt')).find(x => norm(x.textContent).indexOf(key) >= 0); if (h) { clearInterval(tm); const card = h.closest('.ev') || h; card.scrollIntoView({ block: 'center' }); setTimeout(() => showEv(+h.dataset.ev), 300); } else if (n > 60) clearInterval(tm); }, 250); } catch (e) {} })();
 document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.classList && ev.target.classList.contains('evt')) showEv(+ev.target.dataset.ev); });
 
 /* 링크 없는 접수: 상세(또는 비고) 첫 줄 "접수: ..." 글자를 접수처로 표시 */
