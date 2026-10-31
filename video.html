@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>뉴스 영상 · 파크골프뉴스</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard Variable',Pretendard,'Noto Sans KR',sans-serif;background:#0f241c;color:#F7F3EA;-webkit-text-size-adjust:100%}
+.top{background:#14342A;color:#F0D9A6;padding:14px 18px;font-size:14px;font-weight:700;letter-spacing:.02em}
+.wrap{max-width:960px;margin:0 auto;padding:14px}
+h1{font-size:20px;font-weight:800;line-height:1.4;margin:2px 0 12px}
+video{width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;display:block}
+.note{font-size:13px;color:#b9c6bf;line-height:1.6;margin-top:12px}
+.btn{display:flex;align-items:center;justify-content:center;min-height:52px;margin-top:12px;border-radius:12px;font-size:16px;font-weight:700;text-decoration:none;background:#F0D9A6;color:#14342A}
+</style>
+</head>
+<body>
+<div class="top">PARKGOLF NEWS · 뉴스 영상</div>
+<div class="wrap">
+  <h1 id="tt">파크골프뉴스 영상</h1>
+  <video id="v" controls playsinline preload="metadata"></video>
+  <p class="note">화면을 누르면 바로 재생됩니다. 와이파이가 아니면 데이터가 사용될 수 있습니다(약 13MB).</p>
+  <a class="btn" href="https://parkgolfnews.org/">파크골프뉴스 홈페이지</a>
+</div>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search), f=(q.get('v')||'').replace(/[^0-9A-Za-z_\-]/g,''), t=q.get('t');
+  if(t){document.getElementById('tt').textContent=t;document.title=t+' · 파크골프뉴스';}
+  var v=document.getElementById('v');
+  if(f){v.poster='assets/'+f+'_poster.jpg';v.src='assets/'+f+'_mobile.mp4';}
+})();
+</script>
+</body>
+</html>
