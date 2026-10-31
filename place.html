@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>장소 보기 · 파크골프뉴스</title>
+<link rel="preconnect" href="https://tile.openstreetmap.org">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard Variable',Pretendard,'Noto Sans KR',sans-serif;background:#F7F3EA;color:#14342A;-webkit-text-size-adjust:100%}
+.top{background:#14342A;color:#F0D9A6;padding:14px 18px;font-size:14px;font-weight:700;letter-spacing:.02em}
+.wrap{max-width:480px;margin:0 auto;padding:16px}
+h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 12px}
+.map{position:relative;width:100%;height:260px;overflow:hidden;border-radius:14px;background:#e6e2d8;border:1px solid #d9d2c3}
+.tiles{position:absolute;left:0;top:0;width:768px;height:768px}
+.tiles img{position:absolute;width:256px;height:256px;display:block}
+.pin{position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-28px 0 0 -14px;border-radius:50% 50% 50% 0;background:#B5543C;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.pin::after{content:'';position:absolute;left:9px;top:9px;width:10px;height:10px;border-radius:50%;background:#fff}
+.attr{position:absolute;right:6px;bottom:4px;font-size:10px;background:rgba(255,255,255,.85);padding:1px 5px;border-radius:4px;color:#333}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:54px;margin-top:10px;border-radius:12px;font-size:17px;font-weight:700;text-decoration:none}
+.b1{background:#03C75A;color:#fff}
+.b2{background:#FEE500;color:#191919}
+.b3{background:#fff;color:#14342A;border:1px solid #cfc7b6}
+.note{font-size:12.5px;color:#5b6b63;line-height:1.6;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="top">PARKGOLF NEWS · 장소 보기</div>
+<div class="wrap">
+  <h1 id="nm">장소</h1>
+  <div class="map" id="map"><div class="tiles" id="tiles"></div><div class="pin"></div><div class="attr">© OpenStreetMap contributors</div></div>
+  <a class="btn b1" id="nav">네이버 지도 앱으로 보기</a>
+  <a class="btn b2" id="kko">카카오맵으로 보기</a>
+  <a class="btn b3" id="web">네이버 장소 정보(웹)</a>
+  <p class="note">지도 앱이 없으면 아래 버튼을 눌러 주세요. 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright</p>
+</div>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var n=q.get('n')||'장소', lat=parseFloat(q.get('lat')), lng=parseFloat(q.get('lng')), id=q.get('id')||'';
+  document.getElementById('nm').textContent=n; document.title=n+' · 파크골프뉴스';
+  var en=encodeURIComponent(n), app='org.parkgolfnews';
+  var ua=navigator.userAgent||'', android=/Android/i.test(ua);
+  var nav=document.getElementById('nav');
+  if(android){ nav.href='intent://place?lat='+lat+'&lng='+lng+'&name='+en+'&appname='+app+'#Intent;scheme=nmap;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.nhn.android.nmap;end'; }
+  else { nav.href='nmap://place?lat='+lat+'&lng='+lng+'&name='+en+'&appname='+app; }
+  document.getElementById('kko').href='https://map.kakao.com/link/map/'+en+','+lat+','+lng;
+  document.getElementById('web').href=id?('https://m.place.naver.com/place/'+id+'/location'):('https://m.map.naver.com/search2/search.naver?query='+en);
+  if(isNaN(lat)||isNaN(lng)){document.getElementById('map').style.display='none';return;}
+  var z=16, N=Math.pow(2,z), r=lat*Math.PI/180;
+  var fx=(lng+180)/360*N, fy=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*N;
+  var tx=Math.floor(fx), ty=Math.floor(fy), tiles=document.getElementById('tiles');
+  for(var dx=-1;dx<=1;dx++)for(var dy=-1;dy<=1;dy++){var im=new Image();im.alt='';im.src='https://tile.openstreetmap.org/'+z+'/'+(tx+dx)+'/'+(ty+dy)+'.png';im.style.left=((dx+1)*256)+'px';im.style.top=((dy+1)*256)+'px';tiles.appendChild(im);}
+  function place(){var m=document.getElementById('map');var px=256+(fx-tx)*256, py=256+(fy-ty)*256;tiles.style.left=(m.clientWidth/2-px)+'px';tiles.style.top=(m.clientHeight/2-py)+'px';}
+  place(); window.addEventListener('resize',place);
+})();
+</script>
+</body>
+</html>
