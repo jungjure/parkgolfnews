@@ -43,8 +43,10 @@ h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 12px}
   var en=encodeURIComponent(n), app='org.parkgolfnews';
   var ua=navigator.userAgent||'', android=/Android/i.test(ua);
   var nav=document.getElementById('nav');
-  if(android){ nav.href='intent://place?lat='+lat+'&lng='+lng+'&name='+en+'&appname='+app+'#Intent;scheme=nmap;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.nhn.android.nmap;end'; }
-  else { nav.href='nmap://place?lat='+lat+'&lng='+lng+'&name='+en+'&appname='+app; }
+  var qs='appSchemeName=nmap'+(id?'&id='+id:'')+'&lat='+lat+'&lng='+lng+'&name='+en+'&appname='+app;
+  var webUrl=id?('https://m.place.naver.com/place/'+id+'/location'):('https://m.map.naver.com/search2/search.naver?query='+en);
+  if(android){ nav.href='intent://place?'+qs+'#Intent;scheme=nmap;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end'; }
+  else { nav.href='nmap://place?'+qs; }
   document.getElementById('kko').href='https://map.kakao.com/link/map/'+en+','+lat+','+lng;
   document.getElementById('web').href=id?('https://m.place.naver.com/place/'+id+'/location'):('https://m.map.naver.com/search2/search.naver?query='+en);
   if(isNaN(lat)||isNaN(lng)){document.getElementById('map').style.display='none';return;}
