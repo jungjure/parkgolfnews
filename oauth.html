@@ -12,18 +12,21 @@
 </head>
 <body>
 <div class="wrap"><div class="card authbox" style="text-align:center"><h2>로그인 처리 중</h2><div id="st" class="loading">잠시만 기다려 주세요...</div></div></div>
-<script src="assets/app.js?v=20261027c"></script>
+<script src="assets/app.js?v=20261102b"></script>
 <script>
 (async () => {
   await layout('login');
-  const q = new URLSearchParams(location.search), code = q.get('code'), state = q.get('state') || '';
+  const q = new URLSearchParams(location.search), h = new URLSearchParams(location.hash.slice(1));   /* 구글은 주소 # 뒤로 id_token 이 옴 */
+  const code = q.get('code'), idt = h.get('id_token'), state = q.get('state') || h.get('state') || '';
   const saved = sessionStorage.getItem('pgn_oauth_state'), next = sessionStorage.getItem('pgn_oauth_next') || '';
   const fail = t => { $('#st').className = 'msg err'; $('#st').innerHTML = esc(t) + '<br><br><a class="btn green" href="login.html">로그인 화면으로</a>'; };
-  if (q.get('error')) return fail('로그인이 취소되었거나 허용되지 않았습니다.');
-  if (!code || !saved || state !== saved) return fail('잘못된 접근입니다. 로그인 화면에서 다시 시도해 주세요.');
+  if (location.hash) history.replaceState(null, '', location.pathname);   /* 토큰이 주소창·기록에 남지 않게 */
+  if (q.get('error') || h.get('error')) return fail('로그인이 취소되었거나 허용되지 않았습니다.');
+  if (!(code || idt) || !saved || state !== saved) return fail('잘못된 접근입니다. 로그인 화면에서 다시 시도해 주세요.');
   sessionStorage.removeItem('pgn_oauth_state');
   try {
-    const r = await api('social', { provider: state.split('.')[0], code, state, redirect: OAUTH_REDIRECT });
+    const p = state.split('.')[0];
+    const r = idt ? await api('social', { provider: 'google', credential: idt }) : await api('social', { provider: p, code, state, redirect: OAUTH_REDIRECT });
     $('#st').textContent = '확인되었습니다.';
     socialResult(r, next);
   } catch (e) { fail(e.message); }
