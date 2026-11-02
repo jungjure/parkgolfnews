@@ -896,7 +896,7 @@ function socialStart(provider, cid, next) {
   sessionStorage.setItem('pgn_oauth_state', st); sessionStorage.setItem('pgn_oauth_next', next || '');
   const q = 'response_type=code&client_id=' + encodeURIComponent(cid) + '&redirect_uri=' + encodeURIComponent(OAUTH_REDIRECT) + '&state=' + encodeURIComponent(st);
   if (provider === 'google') { location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + q.replace('response_type=code', 'response_type=id_token') + '&scope=' + encodeURIComponent('openid profile') + '&nonce=' + encodeURIComponent(st) + '&prompt=select_account'; return; }   // 구글도 사이트 단추(Pretendard) → 구글 로그인 화면 → oauth.html#id_token
-  location.href = provider === 'kakao' ? 'https://kauth.kakao.com/oauth/authorize?' + q : 'https://nid.naver.com/oauth2.0/authorize?' + q;
+  location.href = provider === 'kakao' ? 'https://kauth.kakao.com/oauth/authorize?' + q + '&scope=profile_nickname' : 'https://nid.naver.com/oauth2.0/authorize?' + q;   // 카카오: 닉네임만 요청(메시지 전송 동의는 묻지 않음)
 }
 async function socialResult(r, next) {
   if (r.needNick) { showNickForm(r, next); return; }
