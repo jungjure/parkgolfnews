@@ -91,7 +91,7 @@
   window.pgnInstallBtn = add;
 })();
 </script>
-<script src="assets/app.js?v=20261030a"></script>
+<script src="assets/app.js?v=20261103a"></script>
 <script>
 (async () => {
   const S = await layout('today');
@@ -104,6 +104,7 @@
     const k = ymd(cur), diff = Math.round((cur - t) / 864e5);
     $('#dl').textContent = cur.getFullYear() + '년 ' + (cur.getMonth() + 1) + '월 ' + cur.getDate() + '일 (' + WD[cur.getDay()] + ')' + (diff === 0 ? ' · 오늘' : diff === 1 ? ' · 내일' : diff === -1 ? ' · 어제' : '');
     $('#now').classList.toggle('on', diff === 0);
+    if (window.pgnSubOn) pgnSubOn(diff === 0 ? 'today' : 'pick');   /* 하위 메뉴: 오늘이 아니면 '특정일 조회' 강조 */
     const td = all.filter(e => on(e, cur)).sort((a, b) => (order[a.type] ?? 9) - (order[b.type] ?? 9) || a.start - b.start);
     const cnt = {}; td.forEach(e => { const k = isTrial(e) ? '시범운영' : e.type; cnt[k] = (cnt[k] || 0) + 1; }); if (cnt['시범운영']) { const tv = cnt['시범운영']; delete cnt['시범운영']; cnt['시범운영'] = tv; }   // 시범운영은 맨 마지막
     /* 월간일정처럼 구분 버튼을 누르면 그 구분만 보기, 다시 누르면 전체 */

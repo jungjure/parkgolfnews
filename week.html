@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>주간일정 - 파크골프뉴스</title>
+<meta name="description" content="이번 주 전국 파크골프 대회, 접수, 연습일 일정을 요일별로 확인하세요.">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<meta property="og:site_name" content="파크골프뉴스">
+<meta property="og:type" content="website">
+<meta property="og:title" content="파크골프뉴스 주간일정">
+<meta property="og:description" content="이번 주 전국 파크골프 대회, 접수, 연습일 일정을 요일별로 확인하세요.">
+<meta property="og:url" content="https://parkgolfnews.org/week.html">
+<meta property="og:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1280">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css?v=20261022b">
+<style>#chips button.tag{border:2px solid transparent;cursor:pointer;font-family:inherit;line-height:inherit}#chips button.tag.on{border-color:currentColor}#chips.f button.tag:not(.on){opacity:.4}#list{transition:border-color .2s,box-shadow .2s}#list[data-f]{border-width:3px}#list[data-f="대회"]{border-color:var(--blue);box-shadow:0 0 0 4px #e3f0ff}#list[data-f="접수"]{border-color:var(--red);box-shadow:0 0 0 4px #fdecea}#list[data-f="연습일"],#list[data-f="연습라운딩"]{border-color:var(--amber);box-shadow:0 0 0 4px #fff3e0}#list[data-f="시범운영"]{border-color:#0f766e;box-shadow:0 0 0 4px #ccfbf1}.wkday .none{padding:10px 14px;color:var(--muted);font-size:.92rem;border-bottom:1px solid var(--line)}#wl{flex:1;min-width:0;text-align:center}.monthnav{flex-wrap:wrap}@media(max-width:760px){.monthnav{font-size:1.02rem;gap:8px}.monthnav button{padding:4px 10px}}</style>
+</head>
+<body>
+<div class="wrap cols">
+  <main style="width:100%;max-width:869px;margin:0 auto">
+    <h2 class="sec">주간일정</h2>
+    <div class="monthnav"><button id="prev" aria-label="이전 주">&lsaquo;</button><span id="wl"></span><button id="next" aria-label="다음 주">&rsaquo;</button><button id="now" style="font-size:.9rem;font-weight:700">이번 주</button></div>
+    <div class="sumline" id="chips"></div>
+    <div class="card" id="list"><div class="loading">불러오는 중...</div></div>
+  </main>
+  <div id="side"></div>
+</div>
+<script src="assets/app.js?v=20261103a"></script>
+<script>
+/* 주간일정 (2026-11-03): 월요일~일요일 7일을 날짜별로 묶어 보여 줌. 카드·구분 버튼은 월간일정(schedule.html)과 같은 방식
+   - 여러 날 이어지는 일정(접수 기간 등)은 이번 주 안에서 시작한 날(이번 주 전에 시작했으면 월요일)에 한 번만 보임
+   - 주소: week.html?w=YYYY-MM-DD (그 날짜가 들어 있는 주) */
+(async () => {
+  const S = await layout('week');
+  $('#side').innerHTML = sideBox(S);
+  let all = [], type = new URLSearchParams(location.search).get('type') || '전체';
+  const t = today0(), monOf = d => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x; };
+  let mon = monOf(t);
+  { const q = /^(\d{4})-(\d{2})-(\d{2})$/.exec(new URLSearchParams(location.search).get('w') || ''); if (q) mon = monOf(new Date(+q[1], q[2] - 1, +q[3])); }
+  const kind = e => isTrial(e) ? '시범운영' : e.type;
+  const md = d => (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
+  const draw = () => {
+    const sun = new Date(mon); sun.setDate(sun.getDate() + 6); sun.setHours(23, 59, 59, 999);
+    const thisWeek = ymd(mon) === ymd(monOf(t));
+    $('#wl').textContent = mon.getFullYear() + '년 ' + md(mon) + '(월) ~ ' + (sun.getMonth() !== mon.getMonth() ? md(sun) : sun.getDate() + '일') + '(일)' + (thisWeek ? ' · 이번 주' : '');
+    $('#now').classList.toggle('on', thisWeek);
+    const wk = all.filter(e => e.end >= mon && e.start <= sun);
+    const cnt = {}; wk.forEach(e => { const k = kind(e); cnt[k] = (cnt[k] || 0) + 1; });
+    const ord = ['대회', '접수', '연습일'], keys = Object.keys(cnt).sort((a, b) => (a === '시범운영') - (b === '시범운영') || ((ord.indexOf(a) + 1 || 9) - (ord.indexOf(b) + 1 || 9)));
+    if (type !== '전체' && !cnt[type]) type = '전체';
+    $('#chips').classList.toggle('f', type !== '전체');
+    const lf = $('#list'); if (type !== '전체') lf.dataset.f = type; else delete lf.dataset.f;   /* 고른 구분 색으로 목록 테두리 */
+    $('#chips').innerHTML = keys.map(k => '<button type="button" class="tag ' + esc(k) + (k === type ? ' on' : '') + '" data-c="' + esc(k) + '" title="' + esc(k) + '만 보기">' + esc(k) + ' ' + cnt[k] + '건</button>').join('');
+    const f = wk.filter(e => type === '전체' || kind(e) === type);
+    { const lb = md(mon) + '~' + md(sun), ty = type, n1 = f.length;   /* 공유 문구 */
+      window.PGN_SHARE = () => '파크골프뉴스 주간일정 ' + lb + ' ' + (ty === '전체' ? '총 ' : ty + ' ') + n1 + '건입니다.'; }
+    const order = { '대회': 0, '접수': 1, '연습일': 2 };
+    const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); return { d, items: [] }; });
+    f.forEach(e => { const s = e.start < mon ? mon : e.start, i = Math.round((new Date(s.getFullYear(), s.getMonth(), s.getDate()) - mon) / 864e5); if (days[i]) days[i].items.push(e); });
+    $('#list').innerHTML = days.map(g => { const td = ymd(g.d) === ymd(t);
+      return '<div class="wkday"><div class="dayhead ' + (td ? 'today' : '') + '">' + md(g.d) + ' (' + WD[g.d.getDay()] + ')' + (td ? ' · 오늘' : '') + '</div>' +
+        (g.items.length ? g.items.sort((a, b) => (order[a.type] ?? 9) - (order[b.type] ?? 9) || a.start - b.start).map(e => eventRow(e)).join('') : '<div class="none">' + (type === '전체' ? '등록된 일정이 없습니다.' : type + ' 일정이 없습니다.') + '</div>') + '</div>'; }).join('');
+  };
+  const shift = n => { mon.setDate(mon.getDate() + n); draw(); };
+  try {
+    all = await getSchedule();
+    draw();
+    $('#chips').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; type = type === b.dataset.c ? '전체' : b.dataset.c; draw(); };
+    $('#prev').onclick = () => shift(-7);
+    $('#next').onclick = () => shift(7);
+    $('#now').onclick = () => { mon = monOf(t); draw(); };
+    addEventListener('pgn-data', async () => { try { all = await getSchedule(); draw(); } catch (e) {} });
+  } catch (e) { showError($('#list'), e); }
+})();
+</script>
+</body>
+</html>
