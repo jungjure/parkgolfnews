@@ -266,7 +266,6 @@ async function getNews() {
 
 async function getSchedule() {
   const all = await getAll();
-  await loadMatjip();   /* 대회·연습일 카드의 주변 맛집 링크용 */
   const tabs = [all[CONFIG.TABS.calendar] || [], all[CONFIG.TABS.schedule] || []];
   tabs[0] = tabs[0].map(r => ({ ...r, 비고: '' }));   /* 캘린더 설명은 길고 계좌번호 등이 섞여 있어 화면에는 쓰지 않음 */
   const rows = tabs.flat();
@@ -705,25 +704,6 @@ function jeopsuTxt(e) {
   for (const s of src) { const m = String(s).split(/\n|---/)[0].match(/^\s*접수\s*[:：]\s*(.+)$/); if (m) return m[1].replace(/https?:\/\/\S+/g, '').trim().slice(0, 80); }
   return '';
 }
-/* ---------- 구장 주변 맛집 글 연결: 대회·연습일 카드에 같은 구장 맛집 글(뉴스 탭 맛집) 링크 ---------- */
-let MATJIP = [];
-async function loadMatjip() {
-  try {
-    MATJIP = (await getNews()).filter(n => n.cat === '맛집').map(n => {
-      const m = /([^\s(]+?)\s*파크골프장/.exec(n.title); if (!m) return null;
-      const pre = n.title.slice(0, m.index).trim().split(/\s+/).pop() || '';
-      const venue = m[1].replace(/^(.+?)(군|시)$/, '$1');
-      return { id: n.id, venue, full: m[1] + '파크골프장', city: pre.replace(/^(.+?)(군|시)$/, '$1') };
-    }).filter(Boolean);
-  } catch (e) { MATJIP = []; }
-}
-function matjipFor(e) {
-  if (!MATJIP.length || isTrial(e) || !(e.type === '대회' || e.type === '연습일')) return null;
-  const t = (e.place + ' ' + e.name).replace(/\s+/g, '');
-  return MATJIP.find(m => m.city ? (t.includes(m.venue) && t.includes(m.city)) : t.includes(m.full)) || null;
-}
-function matjipLink(e) { const m = matjipFor(e); return m ? '<a class="go" href="article.html?id=' + m.id + '">주변 맛집</a>' : ''; }
-
 function eventRow(e, opts = {}) {
   const same = ymd(e.start) === ymd(e.end);
   let dateTxt = same ? fmtShort(e.start) : `~ ${fmtShort(e.end)}`;
@@ -737,7 +717,7 @@ function eventRow(e, opts = {}) {
   const jtxt = (!hasLink && e.type === '접수' && !trial) ? jeopsuTxt(e) : '';
   const dateHtml = blank ? '' : `<div class="date" style="min-width:0;padding:0;background:none;color:var(--muted);font-size:.85rem;font-weight:400;line-height:inherit;white-space:nowrap;margin-left:auto">${dateTxt}</div>`;
   return `<div class="ev ${dl ? 'deadline' : ''}">
-    <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;gap:10px"><h4 class="evt" tabindex="0" role="button" data-ev="${evReg(e)}" style="flex:1;min-width:0"${opts.max && e.name.length > opts.max ? ` title="${esc(e.name)}"` : ''}>${esc(opts.max && e.name.length > opts.max ? e.name.slice(0, opts.max) + '...' : e.name)}</h4><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap">${trial ? '<span class="tag 시범운영">시범운영</span>' : `<span class="tag ${esc(e.type)}">${esc(e.type)}</span>${dl ? '<span class="tag 접수">마감임박</span>' : (e.type === '접수' && /접수마감/.test(e.name) ? '<span class="tag 접수">마감</span>' : '')}`}</div></div><div class="sub" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span>${[esc(e.region), e.place ? mapLink(e) : '', esc(e.note), matjipLink(e)].filter(Boolean).join(' · ')}</span>${dateHtml}</div>
+    <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;gap:10px"><h4 class="evt" tabindex="0" role="button" data-ev="${evReg(e)}" style="flex:1;min-width:0"${opts.max && e.name.length > opts.max ? ` title="${esc(e.name)}"` : ''}>${esc(opts.max && e.name.length > opts.max ? e.name.slice(0, opts.max) + '...' : e.name)}</h4><div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap">${trial ? '<span class="tag 시범운영">시범운영</span>' : `<span class="tag ${esc(e.type)}">${esc(e.type)}</span>${dl ? '<span class="tag 접수">마감임박</span>' : (e.type === '접수' && /접수마감/.test(e.name) ? '<span class="tag 접수">마감</span>' : '')}`}</div></div><div class="sub" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span>${[esc(e.region), e.place ? mapLink(e) : '', esc(e.note)].filter(Boolean).join(' · ')}</span>${dateHtml}</div>
     ${hasLink ? `<div style="font-size:.85rem;font-weight:700;color:var(--ink);margin-top:4px">접수처 : <a class="go" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(siteName(e.link))}</a></div>` : (jtxt ? `<div style="font-size:.85rem;font-weight:700;color:var(--ink);margin-top:4px">접수처 : <span style="font-weight:400">${esc(jtxt)}</span></div>` : '')}</div></div>`;
 }
 
