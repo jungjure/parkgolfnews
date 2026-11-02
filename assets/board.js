@@ -186,7 +186,7 @@
     let lastTa = null, lastPos = null;
     const queue = []; let busy = false;
     const autoH = ta => { ta.style.height = 'auto'; ta.style.height = Math.max(52, ta.scrollHeight + 2) + 'px'; };
-    const mkTa = v => { const d = document.createElement('div'); d.className = 'bk txt'; const ta = document.createElement('textarea'); ta.className = 'bta'; ta.rows = 2; ta.value = v || ''; d.appendChild(ta); return d; };
+    const mkTa = v => { const d = document.createElement('div'); d.className = 'bk txt'; const ta = document.createElement('textarea'); ta.className = 'bta'; ta.rows = 1; ta.value = v || ''; d.appendChild(ta); return d; };
     const mkImg = o => { const d = document.createElement('div'); d.className = 'bk img'; d._o = o; o.node = d; paint(o); return d; };
     function paint(o) {
       const d = o.node; if (!d) return;
@@ -300,9 +300,9 @@
       '<span class="hint">사진은 한 글에 ' + PHOTO_MAX + '장까지, 자동으로 줄여서(긴 변 ' + LONG + 'px) 올라갑니다. 사진의 ↑ ↓ 로 순서를 바꾸고 × 로 뺄 수 있습니다.</span></div><div id="bpmsg"></div></div>' +
       '<div id="bmsg"></div><button class="btn green big" id="bgo" type="submit">' + (editId ? '수정 저장' : '등록') + '</button>' +
       '<p style="text-align:center;margin:10px 0 0"><a href="' + (editId ? CFG.page + '?id=' + esc(editId) : CFG.page) + '" style="color:var(--muted)">취소</a></p></form></div>';
-    let dirty = false;
-    const upd = () => { const n = E.text().length, c = E.count(); $('#bc').textContent = '글자 ' + n + ' / ' + TEXT_MAX + '자 · 사진 ' + c + ' / ' + PHOTO_MAX + '장'; $('#bph').disabled = c >= PHOTO_MAX; };
-    const E = makeEditor($('#bedh'), old ? blocksOf(old) : [{ t: '' }], () => { dirty = true; upd(); });
+    let dirty = false, E = null;
+    const upd = () => { if (!E) return; const n = E.text().length, c = E.count(); $('#bc').textContent = '글자 ' + n + ' / ' + TEXT_MAX + '자 · 사진 ' + c + ' / ' + PHOTO_MAX + '장'; $('#bph').disabled = c >= PHOTO_MAX; };
+    E = makeEditor($('#bedh'), old ? blocksOf(old) : [{ t: '' }], () => { dirty = true; upd(); });
     dirty = false; upd();
     if (old) $('#bt').value = old.title;
     $('#bt').oninput = () => { dirty = true; };
