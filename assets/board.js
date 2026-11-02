@@ -7,6 +7,18 @@
   const CFG = Object.assign({ kind: '자유', page: 'board.html', name: '자유게시판', active: 'board' }, window.PGN_BOARD || {});
   const OTHER = { '자유': 'board.html', '칼럼': 'column.html' };
   const PHOTO_MAX = 10, LONG = 1280, MAXB = 850 * 1024, TEXT_MAX = CFG.kind === '칼럼' ? 10000 : 3000;
+  /* 파일 첨부·동영상·유튜브 (2026-11-03): window.PGN_BOARD 에 media: true 를 넣은 게시판에서만 켜짐 (지금은 독자칼럼만) */
+  const MEDIA = !!CFG.media, FILE_MAX = 20 * 1024 * 1024, VIDEO_MAX = 100 * 1024 * 1024, FILE_N = 5, VIDEO_N = 3, CHUNK = 8 * 1024 * 1024;
+  const FILE_EXT = ['pdf', 'hwp', 'hwpx', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'zip', 'jpg', 'jpeg', 'png', 'gif'], VIDEO_EXT = ['mp4', 'mov', 'm4v', 'webm'];
+  const extOf = n => ((/\.([a-z0-9]{1,5})$/i.exec(n || '') || [])[1] || '').toLowerCase();
+  const fmtSize = s => s >= 1048576 ? (s / 1048576).toFixed(s >= 10485760 ? 0 : 1) + 'MB' : Math.max(1, Math.round(s / 1024)) + 'KB';
+  const DL = id => 'https://drive.google.com/uc?export=download&id=' + encodeURIComponent(id);
+  const ytId = s => { const m = /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/|v\/))([A-Za-z0-9_-]{11})/.exec(String(s || '').trim()); return m ? m[1] : ''; };
+  const FCOL = { pdf: '#d93025', hwp: '#1a5fb4', hwpx: '#1a5fb4', doc: '#2b579a', docx: '#2b579a', xls: '#1d6f42', xlsx: '#1d6f42', csv: '#1d6f42', ppt: '#c43e1c', pptx: '#c43e1c', zip: '#6b4f1d', txt: '#555', jpg: '#0f766e', jpeg: '#0f766e', png: '#0f766e', gif: '#0f766e' };
+  const fic = n => { const e = extOf(n); return '<span class="fic" style="background:' + (FCOL[e] || '#555') + '">' + esc((e || '파일').toUpperCase()) + '</span>'; };
+  const VIC = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="14" height="14" rx="2"/><path d="M16.5 10l5-3v10l-5-3z"/></svg>';
+  const FIC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7.1-7.1l8.6-8.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg>';
+  const YIC = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="1.5" y="5" width="21" height="14" rx="4" fill="#ff0000"/><path d="M10 9l5 3-5 3z" fill="#fff"/></svg>';
   const IMGURL = (id, w) => 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(id) + '=w' + (w || 1280);
   const IMGALT = (id, w) => 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + (w || 1280);
   window.pgnImgErr = img => { if (!img.dataset.alt) { img.dataset.alt = 1; img.src = IMGALT(img.dataset.id, img.dataset.w); } };
@@ -42,6 +54,21 @@
     '.btools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 2px}' +
     '.bphoto{display:inline-flex;align-items:center;gap:7px;border:2px solid var(--g700);background:#fff;color:var(--g900);border-radius:999px;padding:9px 18px;font-family:inherit;font-weight:800;font-size:1rem;cursor:pointer;line-height:1.3}.bphoto:hover{background:var(--g50)}.bphoto:disabled{opacity:.45;cursor:default}' +
     '.btools .cnt{font-size:.88rem;color:var(--muted)}.btools .hint{flex-basis:100%;font-size:.82rem;color:var(--muted);line-height:1.5}' +
+    '.bed .bk.med{position:relative;margin:6px 4px;border-radius:10px;background:var(--g50);min-height:64px;padding:10px 150px 10px 12px;display:flex;align-items:center;gap:10px;overflow:hidden}' +
+    '.bed .bk.med .ic{position:absolute;top:50%;right:6px;transform:translateY(-50%);display:flex;gap:6px}.bed .bk.med .no{display:none}' +
+    '.bed .bk.med .ic button{width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.62);color:#fff;font-family:inherit;font-size:1.1rem;font-weight:700;cursor:pointer;padding:0}.bed .bk.med .ic button:disabled{opacity:.35;cursor:default}' +
+    '.bed .bk.med .mt{min-width:0;flex:1}.bed .bk.med .mt b{display:block;font-size:.95rem;word-break:break-all}.bed .bk.med .mt small{color:var(--muted);font-size:.82rem}' +
+    '.bed .bk.med .pv{flex:none;width:96px;height:60px;border-radius:8px;object-fit:cover;background:#000;display:block}' +
+    '.bed .bk.med .st{display:block;color:var(--g800);font-size:.85rem;font-weight:700;margin-top:2px}.bed .bk.med.err{background:#fdecea}.bed .bk.med.err .st{color:var(--red)}' +
+    '.bed .bk.med .bar2{height:6px;border-radius:3px;background:#dfe9e2;margin-top:5px;overflow:hidden}.bed .bk.med .bar2 i{display:block;height:100%;background:var(--g700)}' +
+    '.fic{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:46px;height:46px;padding:0 4px;border-radius:9px;color:#fff;font-size:.78rem;font-weight:800;letter-spacing:.02em}' +
+    '.bmed2{display:flex;gap:8px;flex-wrap:wrap}.ytrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}.ytrow input{flex:1;min-width:200px;padding:9px 12px;border:2px solid var(--line);border-radius:10px;font-family:inherit;font-size:1rem}' +
+    '.ytrow .btn{padding:8px 16px;font-size:.95rem}.ytrow[hidden]{display:none}' +
+    '.bpost a.bfile{display:flex;align-items:center;gap:12px;margin:12px 0;padding:12px 14px;border:1px solid var(--line);border-radius:12px;color:inherit;background:#fff}.bpost a.bfile:hover{background:var(--g50);border-color:var(--g600)}' +
+    '.bpost a.bfile span.ft{flex:1;min-width:0}.bpost a.bfile b{display:block;word-break:keep-all;overflow-wrap:anywhere;font-size:1rem}.bpost a.bfile small{color:var(--muted);font-size:.85rem}' +
+    '.bpost a.bfile em{flex:none;font-style:normal;font-weight:800;color:#fff;background:var(--g700);border-radius:999px;padding:6px 14px;font-size:.9rem}' +
+    '.bpost .bvid,.bpost .byt{margin:14px 0}.bpost .r169{position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:10px;overflow:hidden}' +
+    '.bpost .r169 iframe{position:absolute;inset:0;width:100%;height:100%;border:0}.bpost .vcap{font-size:.85rem;color:var(--muted);margin-top:6px;line-height:1.5}' +
     '#blb{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;display:flex;align-items:center;justify-content:center}#blb img{max-width:100vw;max-height:100vh;object-fit:contain}' +
     '#blb button{position:absolute;border:0;background:rgba(255,255,255,.18);color:#fff;font-family:inherit;font-size:1.8rem;width:50px;height:50px;border-radius:50%;cursor:pointer;line-height:1;padding:0}' +
     '#blb .x{top:12px;right:12px}#blb .p{left:10px;top:calc(50% - 25px)}#blb .n{right:10px;top:calc(50% - 25px)}#blb .c{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:#fff;font-size:.95rem}';
@@ -75,8 +102,8 @@
       $('#blist').innerHTML = f.length ? f.slice((page - 1) * PER, page * PER).map(x =>
         '<a class="bitem" href="' + CFG.page + '?id=' + esc(x.id) + '"><div class="bx"><div class="bt">' + esc(x.title) + (x.status === '숨김' ? ' <span class="tag hide">숨김</span>' : '') + (isAdmin && x.reports ? ' <span class="tag 접수">신고 ' + x.reports + '</span>' : '') + '</div>' +
         (x.ex ? '<div class="bex">' + esc(x.ex) + '</div>' : '') +
-        '<div class="bf"><div class="bm">' + esc(x.nick) + ' · ' + esc(x.at.slice(5)) + (x.pc ? ' · 사진 ' + x.pc + '장' : '') + '</div><button type="button" class="cmb" data-cid="board:' + esc(x.id) + '" data-title="' + esc(x.title) + '" data-href="' + CFG.page + '?id=' + esc(x.id) + '" aria-label="댓글 보기·쓰기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>댓글 <b>' + (x.cm || 0) + '</b></button></div></div>' +
-        (x.th ? '<div class="bth">' + imgTag(x.th, 240) + (x.pc > 1 ? '<i>+' + (x.pc - 1) + '</i>' : '') + '</div>' : '') + '</a>').join('')
+        '<div class="bf"><div class="bm">' + esc(x.nick) + ' · ' + esc(x.at.slice(5)) + (x.pc ? ' · 사진 ' + x.pc + '장' : '') + (x.vc ? ' · 동영상 ' + x.vc : '') + (x.fc ? ' · 파일 ' + x.fc : '') + '</div><button type="button" class="cmb" data-cid="board:' + esc(x.id) + '" data-title="' + esc(x.title) + '" data-href="' + CFG.page + '?id=' + esc(x.id) + '" aria-label="댓글 보기·쓰기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>댓글 <b>' + (x.cm || 0) + '</b></button></div></div>' +
+        (x.th ? '<div class="bth">' + imgTag(x.th, 240) + (x.pc > 1 ? '<i>+' + (x.pc - 1) + '</i>' : '') + '</div>' : x.yt ? '<div class="bth"><img src="https://i.ytimg.com/vi/' + esc(x.yt) + '/mqdefault.jpg" alt="" loading="lazy"><i>영상</i></div>' : '') + '</a>').join('')
         : '<div class="empty">' + (k ? '검색 결과가 없습니다.' : '아직 글이 없습니다. 첫 글을 남겨 보세요.') + '</div>';
       $('#bpg').innerHTML = pages > 1 ? Array.from({ length: pages }, (_, i) => '<button class="btn ' + (i + 1 === page ? 'green' : 'gray') + '" data-p="' + (i + 1) + '" style="padding:6px 14px">' + (i + 1) + '</button>').join('') : '';
     };
@@ -120,7 +147,11 @@
     if (!guest && !p.mine && !isAdmin && p.status === '정상') btns.push('<button class="btn gray" id="brep"' + (p.reported ? ' disabled' : '') + '>' + (p.reported ? '신고함' : '신고') + '</button>');
     if (isAdmin) btns.push('<button class="btn gray" id="bhide">' + (p.status === '숨김' ? '숨김 해제' : '숨기기') + '</button>');
     const bl = blocksOf(p), ids = bl.filter(b => b.i).map(b => b.i);
-    const body = bl.map(b => b.i ? '<figure class="bimg">' + imgTag(b.i, 1280, ' data-k="' + ids.indexOf(b.i) + '"') + '</figure>' : '<div class="bbody">' + esc(b.t || '') + '</div>').join('');
+    const body = bl.map(b => b.i ? '<figure class="bimg">' + imgTag(b.i, 1280, ' data-k="' + ids.indexOf(b.i) + '"') + '</figure>'
+      : b.f ? '<a class="bfile" href="' + DL(b.f) + '" rel="nofollow" title="내려받기">' + fic(b.n) + '<span class="ft"><b>' + esc(b.n || '첨부파일') + '</b><small>' + esc((extOf(b.n) || '파일').toUpperCase()) + ' · ' + fmtSize(b.s || 0) + '</small></span><em>내려받기</em></a>'
+      : b.v ? '<div class="bvid"><div class="r169"><iframe src="https://drive.google.com/file/d/' + encodeURIComponent(b.v) + '/preview" allow="autoplay; fullscreen" allowfullscreen loading="lazy" title="' + esc(b.n || '동영상') + '"></iframe></div><div class="vcap">' + esc(b.n || '동영상') + ' · ' + fmtSize(b.s || 0) + '<br>영상이 바로 안 나오면 올린 직후라 Google 드라이브가 처리 중인 것입니다. 몇 분 뒤 다시 열어 주세요.</div></div>'
+      : b.y ? '<div class="byt"><div class="r169"><iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(b.y) + '?rel=0&playsinline=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy" title="유튜브 영상"></iframe></div></div>'
+      : '<div class="bbody">' + esc(b.t || '') + '</div>').join('');
     bd.innerHTML = '<h2 class="sec">' + esc(CFG.name) + '</h2><article class="card bpost"><h1>' + esc(p.title) + (p.status === '숨김' ? ' <span class="tag hide">숨김</span>' : '') + '</h1>' +
       '<div class="bm">' + esc(p.nick) + ' · ' + esc(p.at) + (p.edited ? ' (수정 ' + esc(p.edited) + ')' : '') + (isAdmin && p.reports ? ' · 신고 ' + p.reports + '건' : '') + '</div>' +
       (p.status === '숨김' ? '<div class="msg warn">' + (p.mine ? '신고가 쌓여 다른 회원에게는 보이지 않는 글입니다. 운영자가 확인 중입니다.' : '신고가 쌓여 숨겨진 글입니다.') + '</div>' : '') +
@@ -128,7 +159,7 @@
       '<section class="card comments" id="cm"><h3>댓글 <span id="ccount"></span></h3><div id="cbox"></div><div id="clist"><div class="loading">불러오는 중...</div></div></section>';
     bd.querySelector('.bcont').onclick = e => { const im = e.target.closest('figure.bimg img'); if (im) lightbox(ids, +im.dataset.k || 0); };
     const msg = $('#bmsg');
-    if ($('#bdel')) $('#bdel').onclick = async () => { if (!confirm('이 글을 삭제할까요?' + (ids.length ? '\n붙인 사진도 함께 지워집니다.' : ''))) return; try { await api('bdelete', { id }); go(); } catch (e) { say(msg, errOut(e)); } };
+    if ($('#bdel')) $('#bdel').onclick = async () => { if (!confirm('이 글을 삭제할까요?' + (bl.some(b => b.i || b.f || b.v) ? '\n붙인 사진·파일·동영상도 함께 지워집니다.' : ''))) return; try { await api('bdelete', { id }); go(); } catch (e) { say(msg, errOut(e)); } };
     if ($('#brep')) $('#brep').onclick = async () => {
       if (!confirm('이 글을 신고할까요?\n선정적이거나 욕설·비방 등 운영 원칙에 어긋나는 글만 신고해 주세요.')) return;
       try { const r = await api('breport', { id }); say(msg, r.hidden ? '신고가 접수되어 글이 숨겨졌습니다. 운영자가 확인합니다.' : '신고를 접수했습니다. 감사합니다.', 'ok'); $('#brep').disabled = true; $('#brep').textContent = '신고함'; }
@@ -180,25 +211,34 @@
     throw new Error('사진을 줄이지 못했습니다.');
   }
 
-  /* ---------- 밴드식 편집기: 글 칸과 사진 칸을 차례로 쌓음 ---------- */
+  /* ---------- 밴드식 편집기: 글 칸과 사진·파일·동영상·유튜브 칸을 차례로 쌓음 ---------- */
   function makeEditor(host, init, onChange) {
     const ed = document.createElement('div'); ed.className = 'bed'; host.appendChild(ed);
     let lastTa = null, lastPos = null;
     const queue = []; let busy = false;
     const autoH = ta => { ta.style.height = 'auto'; ta.style.height = Math.max(52, ta.scrollHeight + 2) + 'px'; };
     const mkTa = v => { const d = document.createElement('div'); d.className = 'bk txt'; const ta = document.createElement('textarea'); ta.className = 'bta'; ta.rows = 1; ta.value = v || ''; d.appendChild(ta); return d; };
-    const mkImg = o => { const d = document.createElement('div'); d.className = 'bk img'; d._o = o; o.node = d; paint(o); return d; };
+    const mkBlk = o => { const d = document.createElement('div'); d.className = 'bk ' + (o.type === 'img' ? 'img' : 'med ' + o.type); d._o = o; o.node = d; paint(o); return d; };
+    const isMed = d => d && !d.classList.contains('txt');
+    const ctl = o => '<div class="ic"><button type="button" data-a="up" aria-label="위로 옮기기" title="위로">↑</button><button type="button" data-a="dn" aria-label="아래로 옮기기" title="아래로">↓</button>' + (o.state === 'err' && o.type !== 'yt' ? '<button type="button" data-a="re" aria-label="다시 올리기" title="다시 올리기">↻</button>' : '') + '<button type="button" data-a="x" aria-label="빼기" title="빼기">×</button></div>';
     function paint(o) {
       const d = o.node; if (!d) return;
       d.classList.toggle('err', o.state === 'err');
-      d.innerHTML = '<img src="' + esc(o.src) + '" alt="첨부 사진 미리보기"' + (o.id && !o.local ? ' data-id="' + esc(o.id) + '" data-w="640" onerror="pgnImgErr(this)"' : '') + '><span class="no"></span>' +
-        '<div class="ic"><button type="button" data-a="up" aria-label="위로 옮기기" title="위로">↑</button><button type="button" data-a="dn" aria-label="아래로 옮기기" title="아래로">↓</button>' + (o.state === 'err' ? '<button type="button" data-a="re" aria-label="다시 올리기" title="다시 올리기">↻</button>' : '') + '<button type="button" data-a="x" aria-label="사진 빼기" title="빼기">×</button></div>' +
-        (o.state === 'up' ? '<div class="st">사진 올리는 중...</div>' : o.state === 'wait' ? '<div class="st">올릴 차례를 기다리는 중...</div>' : o.state === 'err' ? '<div class="st">' + esc(o.err || '올리지 못했습니다') + ' (↻ 다시 올리기)</div>' : '');
+      const what = o.type === 'img' ? '사진' : o.type === 'vid' ? '동영상' : '파일';
+      const st = o.state === 'up' ? what + ' 올리는 중...' + (o.pct != null ? ' ' + o.pct + '%' : '') : o.state === 'wait' ? '올릴 차례를 기다리는 중...' : o.state === 'err' ? (o.err || '올리지 못했습니다') + ' (↻ 다시 올리기)' : '';
+      if (o.type === 'img') {
+        d.innerHTML = '<img src="' + esc(o.src) + '" alt="첨부 사진 미리보기"' + (o.id && !o.local ? ' data-id="' + esc(o.id) + '" data-w="640" onerror="pgnImgErr(this)"' : '') + '><span class="no"></span>' + ctl(o) + (st ? '<div class="st">' + esc(st) + '</div>' : '');
+      } else if (o.type === 'yt') {
+        d.innerHTML = '<img class="pv" src="https://i.ytimg.com/vi/' + esc(o.y) + '/mqdefault.jpg" alt="">' + '<div class="mt"><b>' + YIC + ' 유튜브 영상</b><small>글 화면에서 바로 재생됩니다</small></div>' + ctl(o);
+      } else {
+        const pv = o.type === 'vid' ? (o.blob ? '<video class="pv" muted playsinline preload="metadata" src="' + o.blob + '#t=0.5"></video>' : '<span class="fic" style="background:#0b4d2c">' + VIC + '</span>') : fic(o.name);
+        d.innerHTML = pv + '<div class="mt"><b>' + esc(o.name || '') + '</b><small>' + (o.type === 'vid' ? '동영상 · ' : '첨부파일 · ') + fmtSize(o.size || 0) + '</small>' + (st ? '<span class="st">' + esc(st) + '</span>' : '') + (o.state === 'up' && o.pct != null ? '<div class="bar2"><i style="width:' + o.pct + '%"></i></div>' : '') + '</div>' + ctl(o);
+      }
       number();
     }
     function number() {
-      const imgs = [...ed.querySelectorAll('.bk.img')];
-      imgs.forEach((d, i) => { const n = d.querySelector('.no'); if (n) n.textContent = '사진 ' + (i + 1); const u = d.querySelector('[data-a=up]'), dn = d.querySelector('[data-a=dn]'); if (u) u.disabled = !d.previousElementSibling; if (dn) dn.disabled = !d.nextElementSibling || (d.nextElementSibling.classList.contains('txt') && !d.nextElementSibling.nextElementSibling && !d.nextElementSibling.querySelector('textarea').value.trim()); });
+      let k = 0;
+      [...ed.children].filter(isMed).forEach(d => { if (d.classList.contains('img')) { const n = d.querySelector('.no'); if (n) n.textContent = '사진 ' + (++k); } const u = d.querySelector('[data-a=up]'), dn = d.querySelector('[data-a=dn]'); if (u) u.disabled = !d.previousElementSibling; if (dn) dn.disabled = !d.nextElementSibling || (d.nextElementSibling.classList.contains('txt') && !d.nextElementSibling.nextElementSibling && !d.nextElementSibling.querySelector('textarea').value.trim()); });
     }
     function normalize() {
       let kids = [...ed.children];
@@ -212,57 +252,111 @@
       kids = [...ed.children];
       if (!kids.length || !kids[kids.length - 1].classList.contains('txt')) ed.appendChild(mkTa(''));   /* 맨 끝에는 늘 글 칸 */
       const tas = [...ed.querySelectorAll('textarea.bta')];
-      tas.forEach((ta, i) => { ta.placeholder = i === 0 ? (CFG.kind === '칼럼' ? '칼럼 내용을 쓰세요. 아래 [사진 추가]를 누르면 커서가 있는 자리에 사진이 들어갑니다.' : '내용을 쓰세요. 아래 [사진 추가]를 누르면 커서가 있는 자리에 사진이 들어갑니다.') : '여기에 글을 이어서 쓸 수 있습니다'; autoH(ta); });
+      const add = MEDIA ? '[사진 추가]·[동영상 추가]·[파일 첨부]·[유튜브 링크]' : '[사진 추가]';
+      tas.forEach((ta, i) => { ta.placeholder = i === 0 ? (CFG.kind === '칼럼' ? '칼럼 내용을 쓰세요. 아래 ' + add + '를 누르면 커서가 있는 자리에 들어갑니다.' : '내용을 쓰세요. 아래 ' + add + '를 누르면 커서가 있는 자리에 사진이 들어갑니다.') : '여기에 글을 이어서 쓸 수 있습니다'; autoH(ta); });
       number(); onChange && onChange();
+    }
+    /* 큰 파일·동영상: 서버가 발급한 Drive 이어올리기 주소로 8MB씩 직접 올림 */
+    async function upBig(o) {
+      const init = await api('bupinit', { type: o.type === 'vid' ? 'video' : 'file', name: o.name, size: o.file.size, mime: o.file.type || '' });
+      const size = o.file.size; let off = 0, res = null, tries = 0;
+      while (off < size) {
+        const end = Math.min(off + CHUNK, size);
+        let r;
+        try { r = await fetch(init.url, { method: 'PUT', headers: { 'Content-Range': 'bytes ' + off + '-' + (end - 1) + '/' + size }, body: o.file.slice(off, end) }); }
+        catch (e) {   /* 연결이 끊기면 어디까지 올라갔는지 물어보고 이어서 */
+          if (++tries > 4) throw new Error('연결이 끊겨 올리지 못했습니다.');
+          await new Promise(z => setTimeout(z, 1500 * tries));
+          try { const s = await fetch(init.url, { method: 'PUT', headers: { 'Content-Range': 'bytes */' + size } }); if (s.status === 308) { const rg = s.headers.get('Range'); off = rg ? +rg.split('-')[1] + 1 : 0; continue; } if (s.ok) { res = await s.json(); break; } } catch (e2) {}
+          continue;
+        }
+        if (r.status === 308) { const rg = r.headers.get('Range'); off = rg ? +rg.split('-')[1] + 1 : end; o.pct = Math.round(off / size * 100); paint(o); continue; }
+        if (r.ok) { res = await r.json(); break; }
+        throw new Error('올리지 못했습니다. (' + r.status + ')');
+      }
+      if (!res || !res.id) throw new Error('올리지 못했습니다.');
+      o.pct = 100; paint(o);
+      const d = await api('bupdone', { id: res.id });
+      o.id = d.id; o.name = d.name; o.size = d.size; o.file = null;
     }
     async function pump() {
       if (busy) return; busy = true;
       while (queue.length) {
         const o = queue.shift(); if (!o.node || !o.node.isConnected) continue;
-        o.state = 'up'; paint(o);
-        try { const r = await api('bimg', { data: o.data }); o.id = r.id; o.state = 'ok'; o.data = null; }
-        catch (e) { o.state = 'err'; o.err = e.message; }
+        o.state = 'up'; o.pct = o.type === 'img' ? null : 0; paint(o);
+        try {
+          if (o.type === 'img') { const r = await api('bimg', { data: o.data }); o.id = r.id; o.data = null; }
+          else await upBig(o);
+          o.state = 'ok';
+        } catch (e) { o.state = 'err'; o.err = e.message; }
         paint(o); onChange && onChange();
       }
       busy = false;
     }
-    const count = () => ed.querySelectorAll('.bk.img').length;
-    async function addFiles(files) {
-      const room = PHOTO_MAX - count(); let list = [...files];
-      if (!list.length) return '';
-      let note = '';
-      if (list.length > room) { note = '사진은 글 하나에 ' + PHOTO_MAX + '장까지 붙일 수 있어 ' + Math.max(0, room) + '장만 넣었습니다.'; list = list.slice(0, Math.max(0, room)); }
-      const objs = [];
-      for (const f of list) {
-        try { const data = await shrink(f); objs.push({ src: data, data, local: true, state: 'wait' }); }
-        catch (e) { note = (note ? note + ' ' : '') + (f.name ? f.name + ': ' : '') + e.message; }
-      }
-      if (!objs.length) return note;
-      /* 커서가 있던 글 칸을 커서 자리에서 나누고 그 사이에 사진을 넣음 (커서가 없으면 맨 끝) */
+    const all = () => [...ed.children].filter(isMed).map(d => d._o);
+    const count = t => all().filter(o => !t || (t === 'vid' ? (o.type === 'vid' || o.type === 'yt') : o.type === t)).length;
+    /* 커서가 있던 글 칸을 커서 자리에서 나누고 그 사이에 넣음 (커서가 없으면 맨 끝) */
+    function place(objs) {
       const ta = lastTa && ed.contains(lastTa) ? lastTa : null;
       let ref;
       if (ta) {
         const pos = lastPos == null ? ta.value.length : lastPos, before = ta.value.slice(0, pos).replace(/\s+$/, ''), rest = ta.value.slice(pos).replace(/^\s*\n/, '');
         ta.value = before; ref = ta.parentNode;
-        objs.forEach(o => { const n = mkImg(o); ref.after(n); ref = n; });
+        objs.forEach(o => { const n = mkBlk(o); ref.after(n); ref = n; });
         const nt = mkTa(rest); ref.after(nt); lastTa = nt.querySelector('textarea'); lastPos = 0;
-        if (!before && ta.parentNode.previousElementSibling) ta.parentNode.remove();   /* 사진 사이에 생긴 빈 글 칸은 정리 */
+        if (!before && ta.parentNode.previousElementSibling) ta.parentNode.remove();   /* 사이에 생긴 빈 글 칸은 정리 */
       } else {
         const last = ed.lastElementChild; ref = last && last.classList.contains('txt') && !last.querySelector('textarea').value.trim() ? last.previousElementSibling : ed.lastElementChild;
-        objs.forEach(o => { const n = mkImg(o); if (ref) ref.after(n); else ed.prepend(n); ref = n; });
+        objs.forEach(o => { const n = mkBlk(o); if (ref) ref.after(n); else ed.prepend(n); ref = n; });
       }
       normalize();
-      objs.forEach(o => queue.push(o)); pump();
+    }
+    async function addFiles(files) {
+      const room = PHOTO_MAX - count('img'); let list = [...files];
+      if (!list.length) return '';
+      let note = '';
+      if (list.length > room) { note = '사진은 글 하나에 ' + PHOTO_MAX + '장까지 붙일 수 있어 ' + Math.max(0, room) + '장만 넣었습니다.'; list = list.slice(0, Math.max(0, room)); }
+      const objs = [];
+      for (const f of list) {
+        try { const data = await shrink(f); objs.push({ type: 'img', src: data, data, local: true, state: 'wait' }); }
+        catch (e) { note = (note ? note + ' ' : '') + (f.name ? f.name + ': ' : '') + e.message; }
+      }
+      if (!objs.length) return note;
+      place(objs); objs.forEach(o => queue.push(o)); pump();
       return note;
+    }
+    function addBig(files, type) {
+      const isV = type === 'vid', exts = isV ? VIDEO_EXT : FILE_EXT, max = isV ? VIDEO_MAX : FILE_MAX, lim = isV ? VIDEO_N : FILE_N;
+      let room = lim - count(type), note = ''; const objs = [];
+      for (const f of [...files]) {
+        const e = extOf(f.name);
+        if (!exts.includes(e)) { note += f.name + ': ' + (isV ? 'mp4, mov, m4v, webm 동영상만 올릴 수 있습니다. ' : '올릴 수 없는 파일 형식입니다. '); continue; }
+        if (f.size > max) { note += f.name + ': ' + (isV ? '동영상은 ' + (max >> 20) + 'MB까지입니다. 더 큰 영상은 유튜브에 올린 뒤 [유튜브 링크]로 넣어 주세요. ' : '파일은 ' + (max >> 20) + 'MB까지입니다. '); continue; }
+        if (room <= 0) { note += (isV ? '동영상(유튜브 포함)은 ' : '파일은 ') + '글 하나에 ' + lim + '개까지입니다. '; break; }
+        room--; objs.push({ type, file: f, name: f.name, size: f.size, state: 'wait', blob: isV ? URL.createObjectURL(f) : '' });
+      }
+      if (objs.length) { place(objs); objs.forEach(o => queue.push(o)); pump(); }
+      return note.trim();
+    }
+    function addYt(url) {
+      const y = ytId(url); if (!y) return '유튜브 주소를 알아보지 못했습니다. (예: https://youtu.be/…, https://www.youtube.com/watch?v=…)';
+      if (count('vid') >= VIDEO_N) return '동영상(유튜브 포함)은 글 하나에 ' + VIDEO_N + '개까지입니다.';
+      place([{ type: 'yt', y, state: 'ok' }]); return '';
     }
     ed.addEventListener('input', e => { if (e.target.matches('textarea.bta')) { autoH(e.target); lastTa = e.target; lastPos = e.target.selectionStart; onChange && onChange(); } });
     const mark = e => { if (e.target.matches && e.target.matches('textarea.bta')) { lastTa = e.target; lastPos = e.target.selectionStart; } };
     ['focusin', 'click', 'keyup', 'select'].forEach(t => ed.addEventListener(t, mark));
     ed.addEventListener('focusout', mark);
+    if (MEDIA) ed.addEventListener('paste', e => {   /* 유튜브 주소만 붙여 넣으면 바로 영상 칸으로 */
+      const ta = e.target.closest && e.target.closest('textarea.bta'); if (!ta) return;
+      const s = (e.clipboardData && e.clipboardData.getData('text') || '').trim();
+      if (!/^\S+$/.test(s) || !ytId(s)) return;
+      e.preventDefault(); lastTa = ta; lastPos = ta.selectionStart; const n = addYt(s); if (n) alert(n);
+    });
     ed.addEventListener('click', e => {
       const b = e.target.closest('.ic button'); if (!b) return;
-      const d = b.closest('.bk.img'), o = d._o, a = b.dataset.a;
-      if (a === 'x') { if (o.state === 'ok' && !confirm('이 사진을 글에서 뺄까요?')) return; d.remove(); }
+      const d = b.closest('.bk'), o = d._o, a = b.dataset.a;
+      if (a === 'x') { if (o.state === 'ok' && !confirm('이 ' + (o.type === 'img' ? '사진' : o.type === 'file' ? '파일' : '동영상') + '을 글에서 뺄까요?')) return; d.remove(); }
       else if (a === 'up' && d.previousElementSibling) d.previousElementSibling.before(d);
       else if (a === 'dn' && d.nextElementSibling) d.nextElementSibling.after(d);
       else if (a === 're') { o.state = 'wait'; paint(o); queue.push(o); pump(); return; }
@@ -270,14 +364,20 @@
     });
     ed.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); host.closest('form') && host.closest('form').requestSubmit(); } });
     /* 처음 내용 */
-    (init || []).forEach(b => { if (b.i) ed.appendChild(mkImg({ id: b.i, src: IMGURL(b.i, 640), state: 'ok' })); else ed.appendChild(mkTa(b.t || '')); });
+    (init || []).forEach(b => {
+      if (b.i) ed.appendChild(mkBlk({ type: 'img', id: b.i, src: IMGURL(b.i, 640), state: 'ok' }));
+      else if (b.f) ed.appendChild(mkBlk({ type: 'file', id: b.f, name: b.n, size: b.s, state: 'ok' }));
+      else if (b.v) ed.appendChild(mkBlk({ type: 'vid', id: b.v, name: b.n, size: b.s, state: 'ok' }));
+      else if (b.y) ed.appendChild(mkBlk({ type: 'yt', y: b.y, state: 'ok' }));
+      else ed.appendChild(mkTa(b.t || ''));
+    });
     normalize();
     return {
-      addFiles, count,
+      addFiles, addBig, addYt, count,
       text: () => [...ed.querySelectorAll('textarea.bta')].map(t => t.value.trim()).filter(Boolean).join('\n\n'),
-      pending: () => [...ed.querySelectorAll('.bk.img')].some(d => d._o.state === 'up' || d._o.state === 'wait'),
-      failed: () => [...ed.querySelectorAll('.bk.img')].some(d => d._o.state === 'err'),
-      blocks: () => [...ed.children].map(d => d.classList.contains('img') ? { i: d._o.id } : { t: d.querySelector('textarea').value }).filter(b => b.i || (b.t && b.t.trim())),
+      pending: () => all().some(o => o.state === 'up' || o.state === 'wait'),
+      failed: () => all().some(o => o.state === 'err'),
+      blocks: () => [...ed.children].map(d => { if (!isMed(d)) return { t: d.querySelector('textarea').value }; const o = d._o; return o.type === 'img' ? { i: o.id } : o.type === 'file' ? { f: o.id } : o.type === 'vid' ? { v: o.id } : { y: o.y }; }).filter(b => b.i || b.f || b.v || b.y || (b.t && b.t.trim())),
       focus: () => { const t = ed.querySelector('textarea.bta'); if (t) t.focus(); }
     };
   }
@@ -292,16 +392,26 @@
       if (old.kind && old.kind !== CFG.kind && OTHER[old.kind]) { location.replace(OTHER[old.kind] + location.search); return; }
     }
     document.title = (editId ? '글 수정' : '글쓰기') + ' - ' + CFG.name;
+    const mediaBtns = MEDIA ? '<button type="button" class="bphoto" id="bvd">' + VIC + '동영상 추가</button><input type="file" id="bvfile" accept="video/*,.mp4,.mov,.m4v,.webm" hidden>' +
+      '<button type="button" class="bphoto" id="bat">' + FIC + '파일 첨부</button><input type="file" id="bafile" accept="' + FILE_EXT.map(e => '.' + e).join(',') + '" multiple hidden>' +
+      '<button type="button" class="bphoto" id="byt">' + YIC + '유튜브 링크</button>' : '';
+    const mediaHint = MEDIA ? '<span class="hint">동영상: mp4·mov·m4v·webm, 한 개 ' + (VIDEO_MAX >> 20) + 'MB까지(더 크면 유튜브에 올린 뒤 [유튜브 링크]), 동영상·유튜브 합쳐 글 하나에 ' + VIDEO_N + '개.<br>파일: pdf·hwp·hwpx·doc·docx·xls·xlsx·ppt·pptx·txt·csv·zip·jpg·png·gif, 한 개 ' + (FILE_MAX >> 20) + 'MB까지, 글 하나에 ' + FILE_N + '개. 실행 파일·웹페이지 파일 등은 올릴 수 없습니다.</span>' : '';
     bd.innerHTML = '<h2 class="sec">' + esc(CFG.name) + ' ' + (editId ? '글 수정' : '글쓰기') + '</h2>' + RULES +
       '<div class="card bpost"><form id="bf" autocomplete="off">' +
       '<label class="field"><span>제목</span><input id="bt" maxlength="80" required placeholder="제목 (80자 이내)"></label>' +
       '<div class="field"><span>내용</span><div id="bedh"></div>' +
-      '<div class="btools"><button type="button" class="bphoto" id="bph">' + CAM + '사진 추가</button><input type="file" id="bfile" accept="image/*" multiple hidden><span class="cnt" id="bc"></span>' +
-      '<span class="hint">사진은 한 글에 ' + PHOTO_MAX + '장까지, 자동으로 줄여서(긴 변 ' + LONG + 'px) 올라갑니다. 사진의 ↑ ↓ 로 순서를 바꾸고 × 로 뺄 수 있습니다.</span></div><div id="bpmsg"></div></div>' +
+      '<div class="btools"><button type="button" class="bphoto" id="bph">' + CAM + '사진 추가</button><input type="file" id="bfile" accept="image/*" multiple hidden>' + mediaBtns + '<span class="cnt" id="bc"></span>' +
+      '<span class="hint">사진은 한 글에 ' + PHOTO_MAX + '장까지, 자동으로 줄여서(긴 변 ' + LONG + 'px) 올라갑니다. ↑ ↓ 로 순서를 바꾸고 × 로 뺄 수 있습니다.</span>' + mediaHint + '</div>' +
+      (MEDIA ? '<div class="ytrow" id="ytrow" hidden><input id="yturl" inputmode="url" placeholder="유튜브 주소를 붙여 넣으세요 (예: https://youtu.be/…)"><button type="button" class="btn green" id="ytok">넣기</button><button type="button" class="btn gray" id="ytx">취소</button></div>' : '') +
+      '<div id="bpmsg"></div></div>' +
       '<div id="bmsg"></div><button class="btn green big" id="bgo" type="submit">' + (editId ? '수정 저장' : '등록') + '</button>' +
       '<p style="text-align:center;margin:10px 0 0"><a href="' + (editId ? CFG.page + '?id=' + esc(editId) : CFG.page) + '" style="color:var(--muted)">취소</a></p></form></div>';
     let dirty = false, E = null;
-    const upd = () => { if (!E) return; const n = E.text().length, c = E.count(); $('#bc').textContent = '글자 ' + n + ' / ' + TEXT_MAX + '자 · 사진 ' + c + ' / ' + PHOTO_MAX + '장'; $('#bph').disabled = c >= PHOTO_MAX; };
+    const upd = () => {
+      if (!E) return; const n = E.text().length, c = E.count('img');
+      $('#bc').textContent = '글자 ' + n + ' / ' + TEXT_MAX + '자 · 사진 ' + c + ' / ' + PHOTO_MAX + '장' + (MEDIA ? ' · 동영상 ' + E.count('vid') + ' / ' + VIDEO_N + ' · 파일 ' + E.count('file') + ' / ' + FILE_N : '');
+      $('#bph').disabled = c >= PHOTO_MAX; if (MEDIA) { $('#bvd').disabled = $('#byt').disabled = E.count('vid') >= VIDEO_N; $('#bat').disabled = E.count('file') >= FILE_N; }
+    };
     E = makeEditor($('#bedh'), old ? blocksOf(old) : [{ t: '' }], () => { dirty = true; upd(); });
     dirty = false; upd();
     if (old) $('#bt').value = old.title;
@@ -314,15 +424,25 @@
       if (note) say($('#bpmsg'), note, 'warn');
       upd();
     };
+    if (MEDIA) {
+      $('#bvd').onclick = () => $('#bvfile').click();
+      $('#bat').onclick = () => $('#bafile').click();
+      $('#bvfile').onchange = e => { const n = E.addBig(e.target.files || [], 'vid'); e.target.value = ''; say($('#bpmsg'), n, 'warn'); upd(); };
+      $('#bafile').onchange = e => { const n = E.addBig(e.target.files || [], 'file'); e.target.value = ''; say($('#bpmsg'), n, 'warn'); upd(); };
+      $('#byt').onclick = () => { $('#ytrow').hidden = false; $('#yturl').focus(); };
+      $('#ytx').onclick = () => { $('#ytrow').hidden = true; $('#yturl').value = ''; };
+      const ytGo = () => { const n = E.addYt($('#yturl').value); say($('#bpmsg'), n, 'warn'); if (!n) { $('#ytrow').hidden = true; $('#yturl').value = ''; } upd(); };
+      $('#ytok').onclick = ytGo; $('#yturl').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); ytGo(); } };
+    }
     addEventListener('beforeunload', ev => { if (dirty) { ev.preventDefault(); ev.returnValue = ''; } });
     $('#bf').onsubmit = async ev => {
       ev.preventDefault(); const b = $('#bgo'), m = $('#bmsg'); m.innerHTML = '';
       const tx = E.text();
       if (tx.length > TEXT_MAX) { say(m, '내용은 ' + TEXT_MAX + '자까지 쓸 수 있습니다. (지금 ' + tx.length + '자)'); return; }
       if (tx.length < 5 && !E.count()) { say(m, '내용을 5자 이상 입력해 주세요.'); return; }
-      b.disabled = true; b.textContent = '사진 올리는 중...';
-      for (let i = 0; E.pending() && i < 600; i++) await new Promise(r => setTimeout(r, 300));
-      if (E.failed()) { say(m, '올리지 못한 사진이 있습니다. 사진의 ↻ 로 다시 올리거나 × 로 빼 주세요.'); b.disabled = false; b.textContent = editId ? '수정 저장' : '등록'; return; }
+      b.disabled = true; b.textContent = '사진·파일 올리는 중...';
+      for (let i = 0; E.pending() && i < 4000; i++) await new Promise(r => setTimeout(r, 300));
+      if (E.failed()) { say(m, '올리지 못한 사진·파일·동영상이 있습니다. ↻ 로 다시 올리거나 × 로 빼 주세요.'); b.disabled = false; b.textContent = editId ? '수정 저장' : '등록'; return; }
       b.textContent = '확인 중...';
       try {
         const data = { title: $('#bt').value, text: tx, blocks: E.blocks(), kind: CFG.kind };
