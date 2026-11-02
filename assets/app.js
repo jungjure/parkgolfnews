@@ -895,6 +895,7 @@ function socialStart(provider, cid, next) {
   const st = provider + '.' + Math.random().toString(36).slice(2) + Date.now().toString(36);
   sessionStorage.setItem('pgn_oauth_state', st); sessionStorage.setItem('pgn_oauth_next', next || '');
   const q = 'response_type=code&client_id=' + encodeURIComponent(cid) + '&redirect_uri=' + encodeURIComponent(OAUTH_REDIRECT) + '&state=' + encodeURIComponent(st);
+  if (provider === 'google') { location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + q.replace('response_type=code', 'response_type=id_token') + '&scope=' + encodeURIComponent('openid profile') + '&nonce=' + encodeURIComponent(st) + '&prompt=select_account'; return; }   // 구글도 사이트 단추(Pretendard) → 구글 로그인 화면 → oauth.html#id_token
   location.href = provider === 'kakao' ? 'https://kauth.kakao.com/oauth/authorize?' + q : 'https://nid.naver.com/oauth2.0/authorize?' + q;
 }
 async function socialResult(r, next) {
@@ -916,22 +917,17 @@ function showNickForm(r, next) {
 async function renderSocial(el, next) {
   const c = await getConfig();
   if (!c.google && !c.kakao && !c.naver) { el.innerHTML = ''; return; }
+  if (!document.getElementById('sbtn-css')) document.head.insertAdjacentHTML('beforeend', '<style id="sbtn-css">.sbtn{display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit}.sbtn svg{flex:none}.sbtn.google{background:#fff;color:#1f1f1f;border:1px solid #747775}</style>');
+  const ic = {
+    kakao: '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#191600" d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.7l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.5.1 1 .1 1.5.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>',
+    naver: '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M16.3 12.8 7.4 0H0v24h7.7V11.2L16.6 24H24V0h-7.7z"/></svg>',
+    google: '<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.9 6.2C12.4 13.7 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.2C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.8l7.9-6.2z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.2-13.5-10l-7.9 6.2C6.6 42.6 14.6 48 24 48z"/></svg>'
+  };
   el.innerHTML = '<div class="or"><span>또는 간편하게</span></div>' +
-    (c.kakao ? '<button type="button" class="sbtn kakao" data-p="kakao">카카오로 시작하기</button>' : '') +
-    (c.naver ? '<button type="button" class="sbtn naver" data-p="naver">네이버로 시작하기</button>' : '') +
-    (c.google ? '<div id="gbtn" style="display:flex;justify-content:center;margin-top:8px"></div>' : '');
+    (c.kakao ? '<button type="button" class="sbtn kakao" data-p="kakao">' + ic.kakao + '카카오로 시작하기</button>' : '') +
+    (c.naver ? '<button type="button" class="sbtn naver" data-p="naver">' + ic.naver + '네이버로 시작하기</button>' : '') +
+    (c.google ? '<button type="button" class="sbtn google" data-p="google">' + ic.google + '구글로 시작하기</button>' : '');
   el.onclick = e => { const b = e.target.closest('[data-p]'); if (b) socialStart(b.dataset.p, c[b.dataset.p], next); };
-  if (c.google) {
-    const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
-    s.onload = () => {
-      google.accounts.id.initialize({ client_id: c.google, callback: async resp => {
-        try { socialResult(await api('social', { provider: 'google', credential: resp.credential }), next); }
-        catch (e) { alert(e.message); }
-      } });
-      google.accounts.id.renderButton($('#gbtn'), { theme: 'outline', size: 'large', text: 'continue_with', locale: 'ko', width: 280 });
-    };
-    document.head.appendChild(s);
-  }
 }
 
 /* 비밀번호 보기/숨기기 단추 */
