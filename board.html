@@ -44,11 +44,11 @@
 </style>
 </head>
 <body>
-<script src="assets/app.js?v=20261027c"></script>
+<script src="assets/app.js?v=20261102a"></script>
 <script>
 (async () => {
   await layout('board');
-  const me = Auth.get(), isAdmin = me.role === 'admin';
+  const me = Auth.get() || {}, isAdmin = me.role === 'admin', guest = !Auth.get();   /* 손님도 목록·글·댓글은 볼 수 있음 */
   document.querySelector('footer.site').insertAdjacentHTML('beforebegin', '<div class="wrap"><main class="bd" id="bd"></main></div>');
   const bd = $('#bd'), q = new URLSearchParams(location.search);
   const RULES = '<div class="rules"><b>자유게시판 이용 안내</b><br>회원끼리 파크골프 이야기, 질문, 후기, 모임 소식을 자유롭게 나누는 곳입니다. 아래 내용은 올릴 수 없으며 자동으로 차단되거나 신고·삭제될 수 있습니다.<br>&middot; 욕설·비방·혐오 표현, 선정적이거나 음란한 내용<br>&middot; 도박·불법 광고, 폭력·자해를 부추기는 내용, 개인정보 노출, 인터넷 주소(링크)<br>&middot; 회원 ' + 3 + '명이 신고하면 글이 자동으로 숨겨지고 운영자가 확인합니다.</div>';
@@ -89,7 +89,7 @@
     const btns = [];
     if (p.mine) btns.push('<a class="btn green" href="board.html?edit=' + esc(p.id) + '">수정</a>');
     if (p.mine || isAdmin) btns.push('<button class="btn red" id="bdel">삭제</button>');
-    if (!p.mine && !isAdmin && p.status === '정상') btns.push('<button class="btn gray" id="brep"' + (p.reported ? ' disabled' : '') + '>' + (p.reported ? '신고함' : '신고') + '</button>');
+    if (!guest && !p.mine && !isAdmin && p.status === '정상') btns.push('<button class="btn gray" id="brep"' + (p.reported ? ' disabled' : '') + '>' + (p.reported ? '신고함' : '신고') + '</button>');
     if (isAdmin) btns.push('<button class="btn gray" id="bhide">' + (p.status === '숨김' ? '숨김 해제' : '숨기기') + '</button>');
     bd.innerHTML = '<h2 class="sec">자유게시판</h2><article class="card bpost"><h1>' + esc(p.title) + (p.status === '숨김' ? ' <span class="tag hide">숨김</span>' : '') + '</h1>' +
       '<div class="bm">' + esc(p.nick) + ' · ' + esc(p.at) + (p.edited ? ' (수정 ' + esc(p.edited) + ')' : '') + (isAdmin && p.reports ? ' · 신고 ' + p.reports + '건' : '') + '</div>' +
@@ -108,7 +108,8 @@
   }
 
   async function loadComments(aid) {
-    $('#cbox').innerHTML = '<div class="cform"><textarea id="ctext" maxlength="1000" placeholder="댓글을 입력하세요 (1000자 이내, 욕설·선정적인 표현·링크는 올릴 수 없습니다)"></textarea><div class="bar"><small>' + esc(me.name) + '님으로 작성</small><button class="btn green" id="csend">댓글 등록</button></div><div id="cmsg"></div></div>';
+    const nx = encodeURIComponent('board.html?id=' + aid.slice(6));
+    $('#cbox').innerHTML = guest ? '<div class="cneed">댓글은 회원만 쓸 수 있습니다.<br><a class="btn green" href="login.html?next=' + nx + '">로그인</a><a class="btn green" href="signup.html?next=' + nx + '">회원가입</a></div>' : '<div class="cform"><textarea id="ctext" maxlength="1000" placeholder="댓글을 입력하세요 (1000자 이내, 욕설·선정적인 표현·링크는 올릴 수 없습니다)"></textarea><div class="bar"><small>' + esc(me.name) + '님으로 작성</small><button class="btn green" id="csend">댓글 등록</button></div><div id="cmsg"></div></div>';
     const draw = async () => {
       try {
         const r = await api('comments', { aid });
@@ -121,7 +122,7 @@
       const b = e.target.closest('button[data-id]'); if (!b || !confirm('이 댓글을 삭제할까요?')) return;
       try { await api('cdelete', { cid: b.dataset.id }); draw(); } catch (err) { alert(err.message); }
     };
-    $('#csend').onclick = async () => {
+    if (!guest) $('#csend').onclick = async () => {
       const send = $('#csend'), t = $('#ctext').value.trim(), m = $('#cmsg');
       if (!t) { say(m, '댓글 내용을 입력해 주세요.'); return; }
       send.disabled = true; send.textContent = '등록 중...'; m.innerHTML = '';
