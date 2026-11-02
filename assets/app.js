@@ -371,13 +371,63 @@ const TRK = (() => {
   return { pv, ev, flush, tag, off };
 })();
 
+/* ---------- 일정 하위 메뉴 (2026-11-03): 메뉴바에는 '오늘일정'만, 누르면 오늘일정 · 주간일정 · 월간일정 · 특정일 조회 ----------
+   - 일정 화면(today/week/schedule)에서는 하위 메뉴가 늘 보이고 지금 화면이 강조됨
+   - 다른 화면: PC는 헤더 아래 하위 메뉴바가 열리고 닫힘, 휴대폰은 메뉴 안에서 '오늘일정' 아래로 펼쳐짐
+   - 특정일 조회: 사이트가 직접 그리는 달력(assets/picker.js, Pretendard)으로 날짜를 고르면 today.html?d=YYYY-MM-DD */
+const SCHED_PAGES = ['today', 'week', 'schedule'];
+const SCHED_SUBS = [['today.html', '오늘일정', 'today'], ['week.html', '주간일정', 'week'], ['schedule.html', '월간일정', 'schedule']];
+function schedSubKey(active) {
+  if (active !== 'today') return active;
+  const d = new URLSearchParams(location.search).get('d') || '', t = today0();
+  const k = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+  return /^\d{4}-\d{2}-\d{2}$/.test(d) && d !== k ? 'pick' : 'today';
+}
+function schedSubHtml(cls, key, hide) {
+  const inner = SCHED_SUBS.map(s => '<a href="' + s[0] + '" data-k="' + s[2] + '" class="' + (key === s[2] ? 'on' : '') + '">' + s[1] + '</a>').join('') +
+    '<span class="pk' + (key === 'pick' ? ' on' : '') + '" data-k="pick"><input type="text" class="pgpick" readonly placeholder="특정일 조회" aria-label="특정일 조회: 날짜를 고르면 그날 일정을 보여 줍니다"></span>';
+  return cls === 'subnav' ? '<div class="subnav" id="pgn-sub"' + (hide ? ' hidden' : '') + '><div class="sw">' + inner + '</div></div>' : '<div class="subm">' + inner + '</div>';
+}
+function pgnSubOn(k) { document.querySelectorAll('.subnav [data-k], nav.main .subm [data-k]').forEach(el => el.classList.toggle('on', el.dataset.k === k)); }
+(function () {
+  const st = document.createElement('style');
+  st.textContent = 'header.site .subnav{border-top:1px solid var(--line);background:var(--g50)}' +
+    '.subnav .sw{max-width:905px;margin:0 auto;padding:7px 18px;display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}' +
+    '.subnav a,.subnav .pk input,nav.main .subm a,nav.main .subm .pk input{font-family:inherit;font-size:.95rem;font-weight:700;color:var(--g900);border-radius:999px;padding:6px 14px;line-height:1.4;white-space:nowrap}' +
+    '.subnav a:hover,.subnav a.on,nav.main .subm a.on{background:var(--g700);color:#fff}' +
+    '.subnav .pk input,nav.main .subm .pk input{border:2px solid var(--g700);background-color:#fff;cursor:pointer;width:calc(6.2em + 40px);outline:0}' +
+    '.subnav .pk input::placeholder,nav.main .subm .pk input::placeholder{color:var(--g900);opacity:1}' +
+    '.subnav .pk.on input,nav.main .subm .pk.on input{background-color:var(--g700)!important;background-image:none!important;padding-right:14px!important;width:calc(6.2em + 32px)}' +
+    '.subnav .pk.on input::placeholder,nav.main .subm .pk.on input::placeholder{color:#fff}' +
+    'nav.main .subm{display:none}' +
+    '@media(max-width:760px){.subnav .sw{padding:6px 8px;gap:4px;justify-content:space-between;flex-wrap:nowrap}.subnav a,.subnav .pk input{font-size:.88rem;padding:6px 9px}.subnav .pk input{width:calc(5.6em + 34px);padding-right:30px!important;background-position:right 8px center!important;background-size:16px 16px!important}.subnav .pk.on input{width:calc(5.6em + 18px);padding-right:9px!important}' +
+    'nav.main.subopen .subm{display:flex;flex-direction:column;gap:2px;margin:0 0 6px 14px;padding-left:12px;border-left:3px solid var(--g100)}nav.main .subm .pk input{width:calc(6.2em + 40px);margin:2px 0}nav.main a[data-sub]::after{content:" ▾";font-size:.8em}nav.main.subopen a[data-sub]::after{content:" ▴"}}';
+  document.head.appendChild(st);
+})();
+function schedSubPrep(active) {
+  const up = () => document.querySelectorAll('input.pgpick:not([data-pg])').forEach(el => { el.type = 'date'; window.PGPick.scan(el.parentNode); });
+  if (window.PGPick) up();
+  else if (!document.getElementById('pgn-picker')) { const s = document.createElement('script'); s.id = 'pgn-picker'; s.src = 'assets/picker.js?v=20261026a'; s.onload = up; document.head.appendChild(s); }
+  else document.getElementById('pgn-picker').addEventListener('load', up);
+  if (window._schedWired) return; window._schedWired = 1;
+  document.addEventListener('change', e => { const el = e.target; if (el && el.classList && el.classList.contains('pgpick') && /^\d{4}-\d{2}-\d{2}$/.test(el.value)) location.href = 'today.html?d=' + el.value; });
+  document.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('nav.main a[data-sub]'); if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    const mb = document.querySelector('.menu-btn'), mob = mb && getComputedStyle(mb).display !== 'none';
+    if (mob) { e.preventDefault(); a.closest('nav.main').classList.toggle('subopen'); return; }   // 휴대폰: 메뉴 안에서 펼치기
+    if (SCHED_PAGES.includes(active)) return;   // 일정 화면에서는 오늘일정으로 이동
+    e.preventDefault(); const b = document.getElementById('pgn-sub'); if (b) b.hidden = !b.hidden;   // PC: 헤더 아래 하위 메뉴바 열고 닫기
+  });
+}
+
 /* ---------- 공통 레이아웃 ---------- */
 async function layout(active, opts) {
   opts = opts || {};
   let S = settingsNow();   // 저장된 설정(없으면 기본값)으로 바로 그리고, 바뀐 게 있으면 나중에 갱신
   const me = Auth.get();
   const memberMode = me && me.role !== 'admin';   // 회원: 메뉴는 '자유게시판' 하나 (중복 방지)
-  const nav = [['today.html', '오늘일정', 'today'], ['schedule.html', '월간일정', 'schedule'], ['news.html', '뉴스', 'news'], ['board.html', '자유게시판', 'board'], ['join.html', '조인게시판', 'join']];
+  const nav = [['today.html', '오늘일정', 'today'], ['news.html', '뉴스', 'news'], ['column.html', '독자칼럼', 'column'], ['board.html', '자유게시판', 'board'], ['join.html', '조인게시판', 'join']];   // 오늘일정 = 일정 묶음 (누르면 아래에 오늘·주간·월간·특정일 조회 메뉴, 2026-11-03)
+  const isSched = SCHED_PAGES.includes(active), subK = schedSubKey(active);
   const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a><a href="stats.html" class="${active === 'stats' ? 'on' : ''}">통계</a>` : '') + `<a href="mypage.html" class="who ${active === 'mypage' ? 'on' : ''}" title="마이페이지">${esc(me.name)}님</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   const head = S => `
     <div class="topbar"><div class="wrap"><span>${esc(S.슬로건)}</span>
@@ -385,8 +435,8 @@ async function layout(active, opts) {
     <header class="site"><div class="wrap">
       <span class="brand"><a href="index.html" title="홈" style="display:flex;align-items:center"><img src="assets/logo.png" alt="홈"></a><a href="about.html" title="회사소개">${esc(S.사이트명)}</a></span>
       <button class="menu-btn" aria-label="메뉴" onclick="document.querySelector('nav.main').classList.toggle('open')">메뉴</button>
-      <nav class="main">${nav.map(n => `<a href="${n[0]}" class="${n[2] === active ? 'on' : ''}">${n[1]}</a>`).join('')}${authNav}</nav>
-    </div></header>
+      <nav class="main${isSched ? ' subopen' : ''}">${nav.map(n => n[2] === 'today' ? `<a href="${n[0]}" class="${isSched ? 'on' : ''}" data-sub="1" aria-haspopup="true">${n[1]}</a>${schedSubHtml('subm', subK)}` : `<a href="${n[0]}" class="${n[2] === active ? 'on' : ''}">${n[1]}</a>`).join('')}${authNav}</nav>
+    </div>${schedSubHtml('subnav', subK, !isSched)}</header>
     ${S.공지 ? `<div class="notice"><div class="wrap">공지 | ${esc(S.공지)}</div></div>` : ''}`;
   const foot = S => `
     <div class="wrap">
@@ -395,13 +445,14 @@ async function layout(active, opts) {
     </div>`;
   document.body.insertAdjacentHTML('afterbegin', '<div id="pgn-head" style="display:contents">' + head(S) + '</div>');
   document.body.insertAdjacentHTML('beforeend', '<footer class="site" id="pgn-foot">' + foot(S) + '</footer>');
-  refreshSettings(S2 => { if (JSON.stringify(S2) === JSON.stringify(S)) return; S = S2; $('#pgn-head').innerHTML = head(S); $('#pgn-foot').innerHTML = foot(S); admDraw(); });
+  schedSubPrep(active);
+  refreshSettings(S2 => { if (JSON.stringify(S2) === JSON.stringify(S)) return; S = S2; $('#pgn-head').innerHTML = head(S); $('#pgn-foot').innerHTML = foot(S); admDraw(); schedSubPrep(active); });
   startShare(active);   // 제목 오른쪽 공유 버튼
   pageComments(active);   // 페이지 맨 아래 댓글
   TRK.pv();             // 방문 통계
   startAdmBadge(active);   // 관리자: 새 개선요청·댓글 빨간 숫자
   if (me) startPing();
-  else if ((active === 'board' ? /[?&](write|edit)=/.test(location.search) : ['write', 'members', 'mypage', 'request', 'requests', 'noti'].includes(active)) && !opts.openList) { showLoginGate(true); return new Promise(() => {}); }   // 글쓰기 주소로 바로 들어오면: 로그인 전에는 진행 불가 (기사·자유게시판 목록·글 보기는 누구나 볼 수 있음)
+  else if ((active === 'board' || active === 'column' ? /[?&](write|edit)=/.test(location.search) : ['write', 'members', 'mypage', 'request', 'requests', 'noti'].includes(active)) && !opts.openList) { showLoginGate(true); return new Promise(() => {}); }   // 글쓰기 주소로 바로 들어오면: 로그인 전에는 진행 불가 (기사·자유게시판 목록·글 보기는 누구나 볼 수 있음)
   else watchClickGate();   // 그 밖의 화면(홈·일정·뉴스 목록 등): 스크롤은 자유, 눌러서 들어갈 때 로그인 안내
   return S;
 }
@@ -535,7 +586,7 @@ function showLoginGate(hard, next) {
   document.querySelector('#pgn-gate .x').onclick = close;
 }
 /* 비회원: 기사·일정 상세·지도·접수처·자유게시판 글은 로그인 없이 볼 수 있음. 글쓰기 등 회원 전용 화면으로 갈 때만 로그인 안내창 */
-const GATED = /^((write|members|mypage|request|requests|noti)\.html|board\.html\?(.*&)?(write|edit)=)/i;   // 자유게시판은 글쓰기·수정만 로그인
+const GATED = /^((write|members|mypage|request|requests|noti)\.html|(board|column)\.html\?(.*&)?(write|edit)=)/i;   // 자유게시판·독자칼럼은 글쓰기·수정만 로그인
 function gateTarget(t) {
   if (!t || !t.closest || t.closest('#pgn-gate')) return null;
   const a = t.closest('a[href]');

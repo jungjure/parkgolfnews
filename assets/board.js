@@ -1,0 +1,341 @@
+/* 자유게시판 · 독자칼럼 공용 화면 (2026-11-03)
+   - 밴드 글쓰기처럼 한 화면에서 글을 쓰고 사진을 여러 장 붙임 (글 사이에도 넣을 수 있음, 위·아래 이동, 삭제)
+   - 사진은 브라우저에서 긴 변 1280px JPEG로 줄인 뒤 한 장씩 회원 서버(bimg)로 올림 → 관리자 Google Drive 전용 폴더
+   - 읽기는 누구나, 쓰기·수정·삭제·댓글·신고는 로그인 회원 (서버에서도 같은 규칙)
+   - 글꼴은 따로 지정하지 않음(inherit = 사이트 기본 Pretendard) */
+(async () => {
+  const CFG = Object.assign({ kind: '자유', page: 'board.html', name: '자유게시판', active: 'board' }, window.PGN_BOARD || {});
+  const OTHER = { '자유': 'board.html', '칼럼': 'column.html' };
+  const PHOTO_MAX = 10, LONG = 1280, MAXB = 850 * 1024, TEXT_MAX = CFG.kind === '칼럼' ? 10000 : 3000;
+  const IMGURL = (id, w) => 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(id) + '=w' + (w || 1280);
+  const IMGALT = (id, w) => 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + (w || 1280);
+  window.pgnImgErr = img => { if (!img.dataset.alt) { img.dataset.alt = 1; img.src = IMGALT(img.dataset.id, img.dataset.w); } };
+  const imgTag = (id, w, extra) => '<img src="' + IMGURL(id, w) + '" data-id="' + esc(id) + '" data-w="' + (w || 1280) + '" loading="lazy" alt="첨부 사진" onerror="pgnImgErr(this)"' + (extra || '') + '>';
+  const CAM = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.6"/></svg>';
+
+  const st = document.createElement('style');
+  st.textContent =
+    '.bd{max-width:860px;margin:0 auto;padding:22px 0 10px}' +
+    '.bd .rules{background:var(--g50);border:1px solid var(--g100);border-radius:12px;padding:12px 16px;font-size:.88rem;line-height:1.7;color:#345;margin-bottom:14px}.bd .rules b{color:var(--g900)}' +
+    '.bd .tools{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}.bd .tools input{flex:1;min-width:160px;padding:10px 13px;border:2px solid var(--line);border-radius:10px;font-size:1rem;font-family:inherit}.bd .tools .btn{padding:9px 20px;white-space:nowrap}' +
+    '.bitem{display:flex;gap:12px;align-items:flex-start;padding:13px 16px;border-top:1px solid var(--line);color:inherit}.bitem:first-child{border-top:0}.bitem:hover{background:var(--g50)}' +
+    '.bitem .bx{flex:1;min-width:0}.bitem .bt{font-weight:800;font-size:1.02rem;word-break:break-all}' +
+    '.bitem .bex{font-size:.92rem;line-height:1.55;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}' +
+    '.bitem .bm{font-size:.85rem;color:var(--muted);margin-top:3px}.bitem .bf{display:flex;align-items:center;justify-content:space-between;gap:8px}.bitem .bf .cmb{margin-top:3px;flex:none}' +
+    '.bitem .bth{flex:none;width:88px;height:88px;border-radius:10px;overflow:hidden;background:var(--g50);position:relative}.bitem .bth img{width:100%;height:100%;object-fit:cover;display:block}' +
+    '.bitem .bth i{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.62);color:#fff;font-style:normal;font-size:.75rem;font-weight:700;border-radius:999px;padding:1px 7px}' +
+    '.bpost{padding:22px}.bpost h1{margin:0 0 6px;font-size:1.4rem;line-height:1.4;word-break:break-all}' +
+    '.bpost .bm{font-size:.9rem;color:var(--muted);padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:16px}' +
+    '.bpost .bcont{min-height:80px}.bpost .bbody{white-space:pre-wrap;word-break:break-word;line-height:1.8;font-size:1.03rem}' +
+    '.bpost .bbody+.bbody{margin-top:12px}.bpost figure.bimg{margin:14px 0;text-align:center}' +
+    '.bpost figure.bimg img{max-width:100%;height:auto;border-radius:10px;cursor:zoom-in;display:inline-block;background:var(--g50);min-height:60px}' +
+    '.bpost .bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}.bpost .bar .btn{padding:8px 18px;font-size:.95rem}' +
+    '.btn.red{background:#fff;color:var(--red);border-color:var(--red)}' +
+    '.bed{border:2px solid var(--line);border-radius:12px;padding:4px;background:#fff}.bed:focus-within{border-color:var(--g600)}' +
+    '.bed textarea.bta{display:block;width:100%;border:0;outline:0;resize:none;min-height:52px;padding:10px 11px;font-family:inherit;font-size:1.03rem;line-height:1.7;background:transparent;overflow:hidden;color:inherit}' +
+    '.bed .bk.img{position:relative;margin:6px 4px;border-radius:10px;overflow:hidden;background:var(--g50);text-align:center;min-height:90px}' +
+    '.bed .bk.img img{display:block;max-width:100%;max-height:300px;margin:0 auto}' +
+    '.bed .bk.img .ic{position:absolute;top:6px;right:6px;display:flex;gap:6px}' +
+    '.bed .bk.img .ic button{width:42px;height:42px;border-radius:50%;border:0;background:rgba(0,0,0,.62);color:#fff;font-family:inherit;font-size:1.15rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}' +
+    '.bed .bk.img .ic button:disabled{opacity:.35;cursor:default}.bed .bk.img .no{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.62);color:#fff;border-radius:999px;font-size:.8rem;font-weight:700;padding:2px 9px}' +
+    '.bed .bk.img .st{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);color:#fff;font-size:.88rem;padding:6px}.bed .bk.img.err .st{background:rgba(200,30,30,.88)}' +
+    '.btools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 2px}' +
+    '.bphoto{display:inline-flex;align-items:center;gap:7px;border:2px solid var(--g700);background:#fff;color:var(--g900);border-radius:999px;padding:9px 18px;font-family:inherit;font-weight:800;font-size:1rem;cursor:pointer;line-height:1.3}.bphoto:hover{background:var(--g50)}.bphoto:disabled{opacity:.45;cursor:default}' +
+    '.btools .cnt{font-size:.88rem;color:var(--muted)}.btools .hint{flex-basis:100%;font-size:.82rem;color:var(--muted);line-height:1.5}' +
+    '#blb{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;display:flex;align-items:center;justify-content:center}#blb img{max-width:100vw;max-height:100vh;object-fit:contain}' +
+    '#blb button{position:absolute;border:0;background:rgba(255,255,255,.18);color:#fff;font-family:inherit;font-size:1.8rem;width:50px;height:50px;border-radius:50%;cursor:pointer;line-height:1;padding:0}' +
+    '#blb .x{top:12px;right:12px}#blb .p{left:10px;top:calc(50% - 25px)}#blb .n{right:10px;top:calc(50% - 25px)}#blb .c{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:#fff;font-size:.95rem}';
+  document.head.appendChild(st);
+
+  await layout(CFG.active);
+  const me = Auth.get() || {}, isAdmin = me.role === 'admin', guest = !Auth.get();   /* 손님도 목록·글·댓글은 볼 수 있음 */
+  document.querySelector('footer.site').insertAdjacentHTML('beforebegin', '<div class="wrap"><main class="bd" id="bd"></main></div>');
+  const bd = $('#bd'), q = new URLSearchParams(location.search);
+  const RULES = (CFG.kind === '칼럼'
+    ? '<div class="rules"><b>독자칼럼 이용 안내</b><br>파크골프에 관한 생각, 경험, 제안, 여행·구장 이야기를 자유롭게 써 주세요. 글 사이사이에 사진을 여러 장 붙일 수 있습니다.<br>'
+    : '<div class="rules"><b>자유게시판 이용 안내</b><br>회원끼리 파크골프 이야기, 질문, 후기, 모임 소식을 자유롭게 나누는 곳입니다. 사진도 여러 장 붙일 수 있습니다.<br>') +
+    '아래 내용은 올릴 수 없으며 자동으로 차단되거나 신고·삭제될 수 있습니다.<br>&middot; 욕설·비방·혐오 표현, 선정적이거나 음란한 내용<br>&middot; 도박·불법 광고, 폭력·자해를 부추기는 내용, 개인정보 노출(다른 사람 얼굴·전화번호·차량번호가 보이는 사진 포함), 인터넷 주소(링크)<br>&middot; 회원 3명이 신고하면 글이 자동으로 숨겨지고 운영자가 확인합니다.</div>';
+  const go = p => { location.href = CFG.page + (p ? '?' + p : ''); };
+  const say = (el, t, k) => { el.innerHTML = t ? '<div class="msg ' + (k || 'err') + '">' + esc(t) + '</div>' : ''; };
+  const errOut = e => { if (!Auth.get() && (q.get('write') || q.get('edit'))) { location.replace('login.html?next=' + encodeURIComponent(loginNext())); } return e.message; };
+  const blocksOf = p => (p.blocks && p.blocks.length) ? p.blocks : [{ t: p.text || '' }];
+
+  /* ---------- 목록 ---------- */
+  async function showList() {
+    document.title = CFG.name + ' - 파크골프뉴스';
+    bd.innerHTML = '<h2 class="sec">' + esc(CFG.name) + '</h2>' + RULES +
+      '<div class="tools"><input id="bs" placeholder="제목·글쓴이 검색"><a class="btn green" href="' + CFG.page + '?write=1">글쓰기</a></div><div class="card" id="blist"><div class="loading">불러오는 중...</div></div><div class="pager" id="bpg"></div>';
+    let all = [], page = 1, kw = '';
+    const PER = 15;
+    const draw = () => {
+      const k = kw.trim().toLowerCase();
+      const f = k ? all.filter(x => x.title.toLowerCase().includes(k) || x.nick.toLowerCase().includes(k)) : all;
+      const pages = Math.max(1, Math.ceil(f.length / PER)); if (page > pages) page = pages;
+      { const n1 = f.length; window.PGN_SHARE = () => new URLSearchParams(location.search).get('id') ? '' : '파크골프뉴스 ' + CFG.name + ' 총 ' + n1 + '건입니다.'; }   /* 공유 문구 */
+      $('#blist').innerHTML = f.length ? f.slice((page - 1) * PER, page * PER).map(x =>
+        '<a class="bitem" href="' + CFG.page + '?id=' + esc(x.id) + '"><div class="bx"><div class="bt">' + esc(x.title) + (x.status === '숨김' ? ' <span class="tag hide">숨김</span>' : '') + (isAdmin && x.reports ? ' <span class="tag 접수">신고 ' + x.reports + '</span>' : '') + '</div>' +
+        (x.ex ? '<div class="bex">' + esc(x.ex) + '</div>' : '') +
+        '<div class="bf"><div class="bm">' + esc(x.nick) + ' · ' + esc(x.at.slice(5)) + (x.pc ? ' · 사진 ' + x.pc + '장' : '') + '</div><button type="button" class="cmb" data-cid="board:' + esc(x.id) + '" data-title="' + esc(x.title) + '" data-href="' + CFG.page + '?id=' + esc(x.id) + '" aria-label="댓글 보기·쓰기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>댓글 <b>' + (x.cm || 0) + '</b></button></div></div>' +
+        (x.th ? '<div class="bth">' + imgTag(x.th, 240) + (x.pc > 1 ? '<i>+' + (x.pc - 1) + '</i>' : '') + '</div>' : '') + '</a>').join('')
+        : '<div class="empty">' + (k ? '검색 결과가 없습니다.' : '아직 글이 없습니다. 첫 글을 남겨 보세요.') + '</div>';
+      $('#bpg').innerHTML = pages > 1 ? Array.from({ length: pages }, (_, i) => '<button class="btn ' + (i + 1 === page ? 'green' : 'gray') + '" data-p="' + (i + 1) + '" style="padding:6px 14px">' + (i + 1) + '</button>').join('') : '';
+    };
+    $('#bpg').onclick = e => { const b = e.target.closest('[data-p]'); if (b) { page = +b.dataset.p; draw(); window.scrollTo(0, 0); } };
+    $('#bs').oninput = e => { kw = e.target.value; page = 1; draw(); };
+    try {
+      all = (await api('blist', { kind: CFG.kind })).items.filter(x => !x.kind || x.kind === CFG.kind);
+      CMC.counts = Object.assign(CMC.counts || {}, Object.fromEntries(all.map(x => ['board:' + x.id, x.cm || 0]))); CMC.p = CMC.p || Promise.resolve(); draw();   /* 댓글 수는 목록에서 받은 값 사용 */
+    } catch (e) { $('#blist').innerHTML = '<div class="empty">목록을 불러오지 못했습니다.<br><small>' + esc(errOut(e)) + '</small></div>'; }
+  }
+
+  /* ---------- 사진 크게 보기 ---------- */
+  function lightbox(ids, k) {
+    const old = document.getElementById('blb'); if (old) old.remove();
+    const m = document.createElement('div'); m.id = 'blb'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-label', '사진 크게 보기');
+    const draw = () => { m.innerHTML = imgTag(ids[k], 1600, '') + '<button type="button" class="x" aria-label="닫기">×</button>' + (ids.length > 1 ? '<button type="button" class="p" aria-label="이전 사진">‹</button><button type="button" class="n" aria-label="다음 사진">›</button><div class="c">' + (k + 1) + ' / ' + ids.length + '</div>' : ''); };
+    const close = () => { m.remove(); document.removeEventListener('keydown', key); };
+    const key = e => { if (e.key === 'Escape') close(); else if (e.key === 'ArrowLeft' && ids.length > 1) { k = (k + ids.length - 1) % ids.length; draw(); } else if (e.key === 'ArrowRight' && ids.length > 1) { k = (k + 1) % ids.length; draw(); } };
+    m.onclick = e => {
+      if (e.target.closest('.p')) { k = (k + ids.length - 1) % ids.length; draw(); return; }
+      if (e.target.closest('.n')) { k = (k + 1) % ids.length; draw(); return; }
+      close();
+    };
+    let sx = null; m.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
+    m.addEventListener('touchend', e => { if (sx == null || ids.length < 2) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 50) { k = (k + (dx < 0 ? 1 : ids.length - 1)) % ids.length; draw(); } });
+    document.addEventListener('keydown', key);
+    draw(); document.body.appendChild(m);
+  }
+
+  /* ---------- 글 보기 ---------- */
+  async function showView(id) {
+    bd.innerHTML = '<div class="loading">불러오는 중...</div>';
+    let p;
+    try { p = (await api('bget', { id })).item; }
+    catch (e) { bd.innerHTML = '<div class="empty">' + esc(errOut(e)) + '<br><br><a class="btn green" href="' + CFG.page + '">목록으로</a></div>'; return; }
+    if (p.kind && p.kind !== CFG.kind && OTHER[p.kind]) { location.replace(OTHER[p.kind] + location.search); return; }   /* 다른 게시판 글이면 그 게시판으로 */
+    document.title = p.title + ' - ' + CFG.name;
+    const btns = [];
+    if (p.mine) btns.push('<a class="btn green" href="' + CFG.page + '?edit=' + esc(p.id) + '">수정</a>');
+    if (p.mine || isAdmin) btns.push('<button class="btn red" id="bdel">삭제</button>');
+    if (!guest && !p.mine && !isAdmin && p.status === '정상') btns.push('<button class="btn gray" id="brep"' + (p.reported ? ' disabled' : '') + '>' + (p.reported ? '신고함' : '신고') + '</button>');
+    if (isAdmin) btns.push('<button class="btn gray" id="bhide">' + (p.status === '숨김' ? '숨김 해제' : '숨기기') + '</button>');
+    const bl = blocksOf(p), ids = bl.filter(b => b.i).map(b => b.i);
+    const body = bl.map(b => b.i ? '<figure class="bimg">' + imgTag(b.i, 1280, ' data-k="' + ids.indexOf(b.i) + '"') + '</figure>' : '<div class="bbody">' + esc(b.t || '') + '</div>').join('');
+    bd.innerHTML = '<h2 class="sec">' + esc(CFG.name) + '</h2><article class="card bpost"><h1>' + esc(p.title) + (p.status === '숨김' ? ' <span class="tag hide">숨김</span>' : '') + '</h1>' +
+      '<div class="bm">' + esc(p.nick) + ' · ' + esc(p.at) + (p.edited ? ' (수정 ' + esc(p.edited) + ')' : '') + (isAdmin && p.reports ? ' · 신고 ' + p.reports + '건' : '') + '</div>' +
+      (p.status === '숨김' ? '<div class="msg warn">' + (p.mine ? '신고가 쌓여 다른 회원에게는 보이지 않는 글입니다. 운영자가 확인 중입니다.' : '신고가 쌓여 숨겨진 글입니다.') + '</div>' : '') +
+      '<div class="bcont">' + body + '</div><div id="bmsg"></div><div class="bar">' + btns.join('') + '<a class="btn gray" href="' + CFG.page + '">목록</a></div></article>' +
+      '<section class="card comments" id="cm"><h3>댓글 <span id="ccount"></span></h3><div id="cbox"></div><div id="clist"><div class="loading">불러오는 중...</div></div></section>';
+    bd.querySelector('.bcont').onclick = e => { const im = e.target.closest('figure.bimg img'); if (im) lightbox(ids, +im.dataset.k || 0); };
+    const msg = $('#bmsg');
+    if ($('#bdel')) $('#bdel').onclick = async () => { if (!confirm('이 글을 삭제할까요?' + (ids.length ? '\n붙인 사진도 함께 지워집니다.' : ''))) return; try { await api('bdelete', { id }); go(); } catch (e) { say(msg, errOut(e)); } };
+    if ($('#brep')) $('#brep').onclick = async () => {
+      if (!confirm('이 글을 신고할까요?\n선정적이거나 욕설·비방 등 운영 원칙에 어긋나는 글만 신고해 주세요.')) return;
+      try { const r = await api('breport', { id }); say(msg, r.hidden ? '신고가 접수되어 글이 숨겨졌습니다. 운영자가 확인합니다.' : '신고를 접수했습니다. 감사합니다.', 'ok'); $('#brep').disabled = true; $('#brep').textContent = '신고함'; }
+      catch (e) { say(msg, errOut(e)); }
+    };
+    if ($('#bhide')) $('#bhide').onclick = async () => { try { await api('bset', { id, status: p.status === '숨김' ? '정상' : '숨김' }); showView(id); } catch (e) { say(msg, errOut(e)); } };
+    loadComments('board:' + id);
+  }
+
+  async function loadComments(aid) {
+    const nx = encodeURIComponent(CFG.page + '?id=' + aid.slice(6));
+    $('#cbox').innerHTML = guest ? '<div class="cneed">댓글은 회원만 쓸 수 있습니다.<br><a class="btn green" href="login.html?next=' + nx + '">로그인</a><a class="btn green" href="signup.html?next=' + nx + '">회원가입</a></div>' : '<div class="cform"><textarea id="ctext" maxlength="1000" placeholder="댓글을 입력하세요 (1000자 이내, 욕설·선정적인 표현·링크는 올릴 수 없습니다)"></textarea><div class="bar"><small>' + esc(me.name) + '님으로 작성</small><button class="btn green" id="csend">댓글 등록</button></div><div id="cmsg"></div></div>';
+    const draw = async () => {
+      try {
+        const r = await api('comments', { aid });
+        $('#ccount').textContent = r.items.length ? '(' + r.items.length + ')' : '';
+        $('#clist').innerHTML = r.items.length ? r.items.map(c => '<div class="citem"><div class="ch"><b>' + esc(c.nick) + '</b><span>' + esc(c.at) + '</span>' + (c.mine ? '<button data-id="' + esc(c.id) + '">삭제</button>' : '') + '</div><div class="ct">' + esc(c.text) + '</div></div>').join('') : '<div class="empty" style="padding:18px">첫 댓글을 남겨 보세요.</div>';
+      } catch (e) { $('#clist').innerHTML = '<div class="empty" style="padding:18px">댓글을 불러오지 못했습니다.<br><small>' + esc(e.message) + '</small></div>'; }
+    };
+    await draw();
+    $('#clist').onclick = async e => {
+      const b = e.target.closest('button[data-id]'); if (!b || !confirm('이 댓글을 삭제할까요?')) return;
+      try { await api('cdelete', { cid: b.dataset.id }); draw(); } catch (err) { alert(err.message); }
+    };
+    if (!guest) $('#csend').onclick = async () => {
+      const send = $('#csend'), t = $('#ctext').value.trim(), m = $('#cmsg');
+      if (!t) { say(m, '댓글 내용을 입력해 주세요.'); return; }
+      send.disabled = true; send.textContent = '등록 중...'; m.innerHTML = '';
+      try { await api('cpost', { aid, text: t }); $('#ctext').value = ''; await draw(); }
+      catch (err) { say(m, errOut(err)); }
+      send.disabled = false; send.textContent = '댓글 등록';
+    };
+  }
+
+  /* ---------- 사진 줄이기: 긴 변 1280px, JPEG, 850KB 이하 ---------- */
+  async function shrink(file) {
+    if (!/^image\//.test(file.type || 'image/')) throw new Error('사진 파일만 올릴 수 있습니다.');
+    if (file.size > 40 * 1024 * 1024) throw new Error('사진 파일이 너무 큽니다 (40MB 이하).');
+    let src, w0, h0;
+    try { src = await createImageBitmap(file, { imageOrientation: 'from-image' }); w0 = src.width; h0 = src.height; }
+    catch (e) {
+      src = await new Promise((res, rej) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('이 사진은 열 수 없습니다. (JPG·PNG 사진을 골라 주세요)')); im.src = u; });
+      w0 = src.naturalWidth; h0 = src.naturalHeight;
+    }
+    const s = Math.min(1, LONG / Math.max(w0, h0)), w = Math.max(1, Math.round(w0 * s)), h = Math.max(1, Math.round(h0 * s));
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(src, 0, 0, w, h);
+    for (const qq of [0.82, 0.72, 0.62, 0.5]) { const url = c.toDataURL('image/jpeg', qq); if (Math.floor((url.length - 23) * 3 / 4) <= MAXB) return url; }
+    throw new Error('사진을 줄이지 못했습니다.');
+  }
+
+  /* ---------- 밴드식 편집기: 글 칸과 사진 칸을 차례로 쌓음 ---------- */
+  function makeEditor(host, init, onChange) {
+    const ed = document.createElement('div'); ed.className = 'bed'; host.appendChild(ed);
+    let lastTa = null, lastPos = null;
+    const queue = []; let busy = false;
+    const autoH = ta => { ta.style.height = 'auto'; ta.style.height = Math.max(52, ta.scrollHeight + 2) + 'px'; };
+    const mkTa = v => { const d = document.createElement('div'); d.className = 'bk txt'; const ta = document.createElement('textarea'); ta.className = 'bta'; ta.rows = 2; ta.value = v || ''; d.appendChild(ta); return d; };
+    const mkImg = o => { const d = document.createElement('div'); d.className = 'bk img'; d._o = o; o.node = d; paint(o); return d; };
+    function paint(o) {
+      const d = o.node; if (!d) return;
+      d.classList.toggle('err', o.state === 'err');
+      d.innerHTML = '<img src="' + esc(o.src) + '" alt="첨부 사진 미리보기"' + (o.id && !o.local ? ' data-id="' + esc(o.id) + '" data-w="640" onerror="pgnImgErr(this)"' : '') + '><span class="no"></span>' +
+        '<div class="ic"><button type="button" data-a="up" aria-label="위로 옮기기" title="위로">↑</button><button type="button" data-a="dn" aria-label="아래로 옮기기" title="아래로">↓</button>' + (o.state === 'err' ? '<button type="button" data-a="re" aria-label="다시 올리기" title="다시 올리기">↻</button>' : '') + '<button type="button" data-a="x" aria-label="사진 빼기" title="빼기">×</button></div>' +
+        (o.state === 'up' ? '<div class="st">사진 올리는 중...</div>' : o.state === 'wait' ? '<div class="st">올릴 차례를 기다리는 중...</div>' : o.state === 'err' ? '<div class="st">' + esc(o.err || '올리지 못했습니다') + ' (↻ 다시 올리기)</div>' : '');
+      number();
+    }
+    function number() {
+      const imgs = [...ed.querySelectorAll('.bk.img')];
+      imgs.forEach((d, i) => { const n = d.querySelector('.no'); if (n) n.textContent = '사진 ' + (i + 1); const u = d.querySelector('[data-a=up]'), dn = d.querySelector('[data-a=dn]'); if (u) u.disabled = !d.previousElementSibling; if (dn) dn.disabled = !d.nextElementSibling || (d.nextElementSibling.classList.contains('txt') && !d.nextElementSibling.nextElementSibling && !d.nextElementSibling.querySelector('textarea').value.trim()); });
+    }
+    function normalize() {
+      let kids = [...ed.children];
+      for (let i = kids.length - 1; i > 0; i--) {   /* 붙어 있는 글 칸은 하나로 */
+        if (kids[i].classList.contains('txt') && kids[i - 1].classList.contains('txt')) {
+          const a = kids[i - 1].querySelector('textarea'), b = kids[i].querySelector('textarea');
+          a.value = [a.value.replace(/\s+$/, ''), b.value.replace(/^\s+/, '')].filter(Boolean).join('\n'); if (lastTa === b) { lastTa = a; lastPos = a.value.length; }
+          kids[i].remove();
+        }
+      }
+      kids = [...ed.children];
+      if (!kids.length || !kids[kids.length - 1].classList.contains('txt')) ed.appendChild(mkTa(''));   /* 맨 끝에는 늘 글 칸 */
+      const tas = [...ed.querySelectorAll('textarea.bta')];
+      tas.forEach((ta, i) => { ta.placeholder = i === 0 ? (CFG.kind === '칼럼' ? '칼럼 내용을 쓰세요. 아래 [사진 추가]를 누르면 커서가 있는 자리에 사진이 들어갑니다.' : '내용을 쓰세요. 아래 [사진 추가]를 누르면 커서가 있는 자리에 사진이 들어갑니다.') : '여기에 글을 이어서 쓸 수 있습니다'; autoH(ta); });
+      number(); onChange && onChange();
+    }
+    async function pump() {
+      if (busy) return; busy = true;
+      while (queue.length) {
+        const o = queue.shift(); if (!o.node || !o.node.isConnected) continue;
+        o.state = 'up'; paint(o);
+        try { const r = await api('bimg', { data: o.data }); o.id = r.id; o.state = 'ok'; o.data = null; }
+        catch (e) { o.state = 'err'; o.err = e.message; }
+        paint(o); onChange && onChange();
+      }
+      busy = false;
+    }
+    const count = () => ed.querySelectorAll('.bk.img').length;
+    async function addFiles(files) {
+      const room = PHOTO_MAX - count(); let list = [...files];
+      if (!list.length) return '';
+      let note = '';
+      if (list.length > room) { note = '사진은 글 하나에 ' + PHOTO_MAX + '장까지 붙일 수 있어 ' + Math.max(0, room) + '장만 넣었습니다.'; list = list.slice(0, Math.max(0, room)); }
+      const objs = [];
+      for (const f of list) {
+        try { const data = await shrink(f); objs.push({ src: data, data, local: true, state: 'wait' }); }
+        catch (e) { note = (note ? note + ' ' : '') + (f.name ? f.name + ': ' : '') + e.message; }
+      }
+      if (!objs.length) return note;
+      /* 커서가 있던 글 칸을 커서 자리에서 나누고 그 사이에 사진을 넣음 (커서가 없으면 맨 끝) */
+      const ta = lastTa && ed.contains(lastTa) ? lastTa : null;
+      let ref;
+      if (ta) {
+        const pos = lastPos == null ? ta.value.length : lastPos, before = ta.value.slice(0, pos).replace(/\s+$/, ''), rest = ta.value.slice(pos).replace(/^\s*\n/, '');
+        ta.value = before; ref = ta.parentNode;
+        objs.forEach(o => { const n = mkImg(o); ref.after(n); ref = n; });
+        const nt = mkTa(rest); ref.after(nt); lastTa = nt.querySelector('textarea'); lastPos = 0;
+        if (!before && ta.parentNode.previousElementSibling) ta.parentNode.remove();   /* 사진 사이에 생긴 빈 글 칸은 정리 */
+      } else {
+        const last = ed.lastElementChild; ref = last && last.classList.contains('txt') && !last.querySelector('textarea').value.trim() ? last.previousElementSibling : ed.lastElementChild;
+        objs.forEach(o => { const n = mkImg(o); if (ref) ref.after(n); else ed.prepend(n); ref = n; });
+      }
+      normalize();
+      objs.forEach(o => queue.push(o)); pump();
+      return note;
+    }
+    ed.addEventListener('input', e => { if (e.target.matches('textarea.bta')) { autoH(e.target); lastTa = e.target; lastPos = e.target.selectionStart; onChange && onChange(); } });
+    const mark = e => { if (e.target.matches && e.target.matches('textarea.bta')) { lastTa = e.target; lastPos = e.target.selectionStart; } };
+    ['focusin', 'click', 'keyup', 'select'].forEach(t => ed.addEventListener(t, mark));
+    ed.addEventListener('focusout', mark);
+    ed.addEventListener('click', e => {
+      const b = e.target.closest('.ic button'); if (!b) return;
+      const d = b.closest('.bk.img'), o = d._o, a = b.dataset.a;
+      if (a === 'x') { if (o.state === 'ok' && !confirm('이 사진을 글에서 뺄까요?')) return; d.remove(); }
+      else if (a === 'up' && d.previousElementSibling) d.previousElementSibling.before(d);
+      else if (a === 'dn' && d.nextElementSibling) d.nextElementSibling.after(d);
+      else if (a === 're') { o.state = 'wait'; paint(o); queue.push(o); pump(); return; }
+      normalize(); d.isConnected && d.scrollIntoView({ block: 'nearest' });
+    });
+    ed.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); host.closest('form') && host.closest('form').requestSubmit(); } });
+    /* 처음 내용 */
+    (init || []).forEach(b => { if (b.i) ed.appendChild(mkImg({ id: b.i, src: IMGURL(b.i, 640), state: 'ok' })); else ed.appendChild(mkTa(b.t || '')); });
+    normalize();
+    return {
+      addFiles, count,
+      text: () => [...ed.querySelectorAll('textarea.bta')].map(t => t.value.trim()).filter(Boolean).join('\n\n'),
+      pending: () => [...ed.querySelectorAll('.bk.img')].some(d => d._o.state === 'up' || d._o.state === 'wait'),
+      failed: () => [...ed.querySelectorAll('.bk.img')].some(d => d._o.state === 'err'),
+      blocks: () => [...ed.children].map(d => d.classList.contains('img') ? { i: d._o.id } : { t: d.querySelector('textarea').value }).filter(b => b.i || (b.t && b.t.trim())),
+      focus: () => { const t = ed.querySelector('textarea.bta'); if (t) t.focus(); }
+    };
+  }
+
+  /* ---------- 글쓰기 / 수정 ---------- */
+  async function showForm(editId) {
+    let old = null;
+    if (editId) {
+      bd.innerHTML = '<div class="loading">불러오는 중...</div>';
+      try { old = (await api('bget', { id: editId })).item; if (!old.mine) throw new Error('본인이 쓴 글만 고칠 수 있습니다.'); }
+      catch (e) { bd.innerHTML = '<div class="empty">' + esc(errOut(e)) + '<br><br><a class="btn green" href="' + CFG.page + '">목록으로</a></div>'; return; }
+      if (old.kind && old.kind !== CFG.kind && OTHER[old.kind]) { location.replace(OTHER[old.kind] + location.search); return; }
+    }
+    document.title = (editId ? '글 수정' : '글쓰기') + ' - ' + CFG.name;
+    bd.innerHTML = '<h2 class="sec">' + esc(CFG.name) + ' ' + (editId ? '글 수정' : '글쓰기') + '</h2>' + RULES +
+      '<div class="card bpost"><form id="bf" autocomplete="off">' +
+      '<label class="field"><span>제목</span><input id="bt" maxlength="80" required placeholder="제목 (80자 이내)"></label>' +
+      '<div class="field"><span>내용</span><div id="bedh"></div>' +
+      '<div class="btools"><button type="button" class="bphoto" id="bph">' + CAM + '사진 추가</button><input type="file" id="bfile" accept="image/*" multiple hidden><span class="cnt" id="bc"></span>' +
+      '<span class="hint">사진은 한 글에 ' + PHOTO_MAX + '장까지, 자동으로 줄여서(긴 변 ' + LONG + 'px) 올라갑니다. 사진의 ↑ ↓ 로 순서를 바꾸고 × 로 뺄 수 있습니다.</span></div><div id="bpmsg"></div></div>' +
+      '<div id="bmsg"></div><button class="btn green big" id="bgo" type="submit">' + (editId ? '수정 저장' : '등록') + '</button>' +
+      '<p style="text-align:center;margin:10px 0 0"><a href="' + (editId ? CFG.page + '?id=' + esc(editId) : CFG.page) + '" style="color:var(--muted)">취소</a></p></form></div>';
+    let dirty = false;
+    const upd = () => { const n = E.text().length, c = E.count(); $('#bc').textContent = '글자 ' + n + ' / ' + TEXT_MAX + '자 · 사진 ' + c + ' / ' + PHOTO_MAX + '장'; $('#bph').disabled = c >= PHOTO_MAX; };
+    const E = makeEditor($('#bedh'), old ? blocksOf(old) : [{ t: '' }], () => { dirty = true; upd(); });
+    dirty = false; upd();
+    if (old) $('#bt').value = old.title;
+    $('#bt').oninput = () => { dirty = true; };
+    $('#bph').onclick = () => $('#bfile').click();
+    $('#bfile').onchange = async e => {
+      const fs = e.target.files; if (!fs || !fs.length) return;
+      const b = $('#bph'); b.disabled = true; say($('#bpmsg'), '');
+      const note = await E.addFiles(fs); e.target.value = '';
+      if (note) say($('#bpmsg'), note, 'warn');
+      upd();
+    };
+    addEventListener('beforeunload', ev => { if (dirty) { ev.preventDefault(); ev.returnValue = ''; } });
+    $('#bf').onsubmit = async ev => {
+      ev.preventDefault(); const b = $('#bgo'), m = $('#bmsg'); m.innerHTML = '';
+      const tx = E.text();
+      if (tx.length > TEXT_MAX) { say(m, '내용은 ' + TEXT_MAX + '자까지 쓸 수 있습니다. (지금 ' + tx.length + '자)'); return; }
+      if (tx.length < 5 && !E.count()) { say(m, '내용을 5자 이상 입력해 주세요.'); return; }
+      b.disabled = true; b.textContent = '사진 올리는 중...';
+      for (let i = 0; E.pending() && i < 600; i++) await new Promise(r => setTimeout(r, 300));
+      if (E.failed()) { say(m, '올리지 못한 사진이 있습니다. 사진의 ↻ 로 다시 올리거나 × 로 빼 주세요.'); b.disabled = false; b.textContent = editId ? '수정 저장' : '등록'; return; }
+      b.textContent = '확인 중...';
+      try {
+        const data = { title: $('#bt').value, text: tx, blocks: E.blocks(), kind: CFG.kind };
+        if (editId) { await api('bupdate', { id: editId, ...data }); dirty = false; go(); }
+        else { await api('bpost', data); dirty = false; go(); }   /* 등록·수정 뒤에는 예전처럼 목록으로 */
+        return;
+      } catch (e) { say(m, errOut(e)); }
+      b.disabled = false; b.textContent = editId ? '수정 저장' : '등록';
+    };
+  }
+
+  if (q.get('id')) showView(q.get('id'));
+  else if (q.get('edit')) showForm(q.get('edit'));
+  else if (q.get('write')) showForm('');
+  else showList();
+})();
