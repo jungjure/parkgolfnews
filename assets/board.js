@@ -80,7 +80,7 @@
   document.querySelector('footer.site').insertAdjacentHTML('beforebegin', '<div class="wrap"><main class="bd" id="bd"></main></div>');
   const bd = $('#bd'), q = new URLSearchParams(location.search);
   const RULES = (CFG.kind === '칼럼'
-    ? '<div class="rules"><b>독자칼럼 이용 안내</b><br>파크골프에 관한 생각, 경험, 제안, 여행·구장 이야기를 자유롭게 써 주세요. 글 사이사이에 사진을 여러 장 붙일 수 있습니다.<br>'
+    ? '<div class="rules"><b>독자칼럼 이용 안내</b><br>파크골프에 관한 생각, 경험, 제안, 여행·구장 이야기를 자유롭게 써 주세요. 글 사이사이에 사진을 여러 장 붙일 수 있습니다.' + (MEDIA ? ' 동영상(직접 올리기 또는 유튜브 링크)과 문서 파일도 넣을 수 있습니다.' : '') + '<br>'
     : '<div class="rules"><b>자유게시판 이용 안내</b><br>회원끼리 파크골프 이야기, 질문, 후기, 모임 소식을 자유롭게 나누는 곳입니다. 사진도 여러 장 붙일 수 있습니다.<br>') +
     '아래 내용은 올릴 수 없으며 자동으로 차단되거나 신고·삭제될 수 있습니다.<br>&middot; 욕설·비방·혐오 표현, 선정적이거나 음란한 내용<br>&middot; 도박·불법 광고, 폭력·자해를 부추기는 내용, 개인정보 노출(다른 사람 얼굴·전화번호·차량번호가 보이는 사진 포함), 인터넷 주소(링크)<br>&middot; 회원 3명이 신고하면 글이 자동으로 숨겨지고 운영자가 확인합니다.</div>';
   const go = p => { location.href = CFG.page + (p ? '?' + p : ''); };
