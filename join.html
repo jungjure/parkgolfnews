@@ -152,7 +152,11 @@
     $('#fQ').oninput = e => { st.q = e.target.value.trim(); draw(); };
     $('#fDone').onchange = e => { st.hideDone = e.target.checked; draw(); };
     try {
-      data = await api('jlist');
+      /* 빠른 목록 (11/4): 이 기기에 저장한 목록 -> 홈페이지 data/join.json 을 먼저 보여 주고, 서버 목록(내 글·신청 수 포함)이 오면 바꿔 그림 */
+      let jfresh = false;
+      try { const c = JSON.parse(localStorage.getItem('pgn_jl') || 'null'); if (c && c.items) { data = c; draw(); } } catch (e) {}
+      fetch('data/join.json?t=' + Math.floor(Date.now() / 6e4)).then(r => r.ok ? r.json() : null).then(j => { if (!j || !j.items || jfresh) return; data = j; draw(); try { localStorage.setItem('pgn_jl', JSON.stringify(j)); } catch (e) {} }).catch(() => {});
+      data = await api('jlist'); jfresh = true;
       if (data.admin) {
         $('#adm').innerHTML = '<div class="jadm"><b>관리자</b><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="fRep">신고된 글만</label><span>선택한 글:</span><button class="jbig sm w" data-b="숨김">숨김</button><button class="jbig sm w" data-b="정상">정상으로</button><button class="jbig sm red" data-b="삭제">삭제</button><span id="admMsg"></span></div>';
         $('#fRep').onchange = e => { st.rep = e.target.checked; draw(); };
@@ -165,7 +169,7 @@
         };
       }
       draw();
-    } catch (e) { say($('#msg'), e.message); $('#list').innerHTML = ''; }
+    } catch (e) { say($('#msg'), e.message); if (!data.items.length) $('#list').innerHTML = ''; }
   }
 
   /* ---------- 상세 ---------- */
