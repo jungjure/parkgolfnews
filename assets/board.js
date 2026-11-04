@@ -82,17 +82,34 @@
   const RULES = (CFG.kind === '칼럼'
     ? '<div class="rules"><b>독자칼럼 이용 안내</b><br>파크골프에 관한 생각, 경험, 제안, 여행·구장 이야기를 자유롭게 써 주세요. 글 사이사이에 사진을 여러 장 붙일 수 있습니다.' + (MEDIA ? ' 동영상(직접 올리기 또는 유튜브 링크)과 문서 파일도 넣을 수 있습니다.' : '') + '<br>'
     : '<div class="rules"><b>자유게시판 이용 안내</b><br>회원끼리 파크골프 이야기, 질문, 후기, 모임 소식을 자유롭게 나누는 곳입니다. 사진도 여러 장 붙일 수 있습니다.<br>') +
-    '아래 내용은 올릴 수 없으며 자동으로 차단되거나 신고·삭제될 수 있습니다.<br>&middot; 욕설·비방·혐오 표현, 선정적이거나 음란한 내용<br>&middot; 도박·불법 광고, 폭력·자해를 부추기는 내용, 개인정보 노출(다른 사람 얼굴·전화번호·차량번호가 보이는 사진 포함), 인터넷 주소(링크)<br>&middot; 회원 3명이 신고하면 글이 자동으로 숨겨지고 운영자가 확인합니다.</div>';
+    (CFG.kind === '칼럼' ? '&middot; <b>독자칼럼은 운영자가 승인한 회원만 쓸 수 있습니다.</b> 처음이시면 로그인 후 [칼럼 쓰기 신청]을 눌러 주세요. 읽기와 댓글은 누구나(댓글은 회원) 할 수 있습니다.<br>' : '') + '아래 내용은 올릴 수 없으며 자동으로 차단되거나 신고·삭제될 수 있습니다.<br>&middot; 욕설·비방·혐오 표현, 선정적이거나 음란한 내용<br>&middot; 도박·불법 광고, 폭력·자해를 부추기는 내용, 개인정보 노출(다른 사람 얼굴·전화번호·차량번호가 보이는 사진 포함), 인터넷 주소(링크)<br>&middot; 회원 3명이 신고하면 글이 자동으로 숨겨지고 운영자가 확인합니다.</div>';
   const go = p => { location.href = CFG.page + (p ? '?' + p : ''); };
   const say = (el, t, k) => { el.innerHTML = t ? '<div class="msg ' + (k || 'err') + '">' + esc(t) + '</div>' : ''; };
   const errOut = e => { if (!Auth.get() && (q.get('write') || q.get('edit'))) { location.replace('login.html?next=' + encodeURIComponent(loginNext())); } return e.message; };
+  /* 독자칼럼 쓰기 승인 (2026-11-04): 승인 회원·관리자만 글쓰기. 아니면 [칼럼 쓰기 신청] (개선요청 '칼럼 신청'으로 운영자에게 전달) */
+  const NEED_OK = CFG.kind === '칼럼';
+  let canP = null;
+  const canWrite = () => { if (!NEED_OK || isAdmin) return Promise.resolve({ can: true }); if (guest) return Promise.resolve({ can: false, guest: true }); if (!canP) canP = api('bcan').catch(() => ({ can: false })); return canP; };
+  const applyBox = (el, st) => {
+    if (st.pending) { el.innerHTML = '<div class="msg ok">칼럼 쓰기 신청이 접수되어 운영자가 확인 중입니다. 승인되면 다음 접속 때 알려 드립니다.</div>'; return; }
+    el.innerHTML = '<div class="card bpost capply"><b>독자칼럼은 승인된 회원만 쓸 수 있습니다.</b><p style="margin:6px 0 10px">어떤 칼럼을 쓰고 싶은지 간단히 적어 신청해 주세요. 운영자가 확인 후 승인합니다.</p>' +
+      '<textarea id="caText" maxlength="1000" style="width:100%;min-height:110px;padding:11px 13px;border:2px solid var(--line);border-radius:10px;font-size:1rem;font-family:inherit" placeholder="예) 동호회 활동과 구장 탐방기를 연재하고 싶습니다."></textarea>' +
+      '<div id="caMsg"></div><button type="button" class="btn green" id="caGo" style="margin-top:8px">칼럼 쓰기 신청</button></div>';
+    $('#caGo').onclick = async () => {
+      const t = $('#caText').value.trim(), b = $('#caGo');
+      if (t.length < 5) { say($('#caMsg'), '신청 내용을 5자 이상 적어 주세요.'); return; }
+      b.disabled = true; b.textContent = '보내는 중...';
+      try { await api('reqpost', { cat: '칼럼 신청', title: '독자칼럼 쓰기 신청', text: t }); canP = null; applyBox(el, { pending: true }); }
+      catch (e) { say($('#caMsg'), errOut(e)); b.disabled = false; b.textContent = '칼럼 쓰기 신청'; }
+    };
+  };
   const blocksOf = p => (p.blocks && p.blocks.length) ? p.blocks : [{ t: p.text || '' }];
 
   /* ---------- 목록 ---------- */
   async function showList() {
     document.title = CFG.name + ' - 파크골프뉴스';
     bd.innerHTML = '<h2 class="sec">' + esc(CFG.name) + '</h2>' + RULES +
-      '<div class="tools"><input id="bs" placeholder="제목·글쓴이 검색"><a class="btn green" href="' + CFG.page + '?write=1">글쓰기</a></div><div class="card" id="blist"><div class="loading">불러오는 중...</div></div><div class="pager" id="bpg"></div>';
+      '<div class="tools"><input id="bs" placeholder="제목·글쓴이 검색"><a class="btn green" id="bw" href="' + CFG.page + '?write=1">글쓰기</a></div><div id="capw"></div><div class="card" id="blist"><div class="loading">불러오는 중...</div></div><div class="pager" id="bpg"></div>';
     let all = [], page = 1, kw = '';
     const PER = 15;
     const draw = () => {
@@ -110,6 +127,7 @@
     };
     $('#bpg').onclick = e => { const b = e.target.closest('[data-p]'); if (b) { page = +b.dataset.p; draw(); window.scrollTo(0, 0); } };
     $('#bs').oninput = e => { kw = e.target.value; page = 1; draw(); };
+    if (NEED_OK && !guest && !isAdmin) canWrite().then(st => { if (st.can) return; const w = $('#bw'); if (!w) return; w.textContent = st.pending ? '신청 확인 중' : '칼럼 쓰기 신청'; w.removeAttribute('href'); w.style.cursor = 'pointer'; w.onclick = () => { applyBox($('#capw'), st); $('#capw').scrollIntoView({ block: 'center' }); }; });
     try {
       all = (await api('blist', { kind: CFG.kind })).items.filter(x => !x.kind || x.kind === CFG.kind);
       CMC.counts = Object.assign(CMC.counts || {}, Object.fromEntries(all.map(x => ['board:' + x.id, x.cm || 0]))); CMC.p = CMC.p || Promise.resolve(); draw();   /* 댓글 수는 목록에서 받은 값 사용 */
@@ -259,7 +277,7 @@
     }
     /* 큰 파일·동영상: 서버가 발급한 Drive 이어올리기 주소로 8MB씩 직접 올림 */
     async function upBig(o) {
-      const init = await api('bupinit', { type: o.type === 'vid' ? 'video' : 'file', name: o.name, size: o.file.size, mime: o.file.type || '' });
+      const init = await api('bupinit', { type: o.type === 'vid' ? 'video' : 'file', name: o.name, size: o.file.size, mime: o.file.type || '', kind: CFG.kind });
       const size = o.file.size; let off = 0, res = null, tries = 0;
       while (off < size) {
         const end = Math.min(off + CHUNK, size);
@@ -391,6 +409,10 @@
       try { old = (await api('bget', { id: editId })).item; if (!old.mine) throw new Error('본인이 쓴 글만 고칠 수 있습니다.'); }
       catch (e) { bd.innerHTML = '<div class="empty">' + esc(errOut(e)) + '<br><br><a class="btn green" href="' + CFG.page + '">목록으로</a></div>'; return; }
       if (old.kind && old.kind !== CFG.kind && OTHER[old.kind]) { location.replace(OTHER[old.kind] + location.search); return; }
+    }
+    if (NEED_OK && !isAdmin) {
+      const st = await canWrite();
+      if (!st.can) { document.title = '칼럼 쓰기 신청 - ' + CFG.name; bd.innerHTML = '<h2 class="sec">' + esc(CFG.name) + '</h2>' + RULES + '<div id="capw"></div><p style="text-align:center"><a href="' + CFG.page + '" style="color:var(--muted)">목록으로</a></p>'; applyBox($('#capw'), st); return; }
     }
     document.title = (editId ? '글 수정' : '글쓰기') + ' - ' + CFG.name;
     const mediaBtns = MEDIA ? '<button type="button" class="bphoto" id="bvd">' + VIC + '동영상 추가</button><input type="file" id="bvfile" accept="video/*,.mp4,.mov,.m4v,.webm" hidden>' +
