@@ -6,6 +6,7 @@
 (async () => {
   const CFG = Object.assign({ kind: '자유', page: 'board.html', name: '자유게시판', active: 'board' }, window.PGN_BOARD || {});
   const OTHER = { '자유': 'board.html', '칼럼': 'column.html' };
+  const PGS = {}, pgnStatic = n => PGS[n] || (PGS[n] = fetch('data/' + n + '.json?t=' + Math.floor(Date.now() / 6e4)).then(r => r.ok ? r.json() : null).catch(() => null));   /* 홈페이지에 미리 만들어 둔 목록 파일 (서버보다 훨씬 빠름) */
   const PHOTO_MAX = 10, LONG = 1280, MAXB = 850 * 1024, TEXT_MAX = CFG.kind === '칼럼' ? 10000 : 3000;
   /* 파일 첨부·동영상·유튜브 (2026-11-03): window.PGN_BOARD 에 media: true 를 넣은 게시판에서만 켜짐 (지금은 독자칼럼만) */
   const MEDIA = !!CFG.media, FILE_MAX = 20 * 1024 * 1024, VIDEO_MAX = 100 * 1024 * 1024, FILE_N = 5, VIDEO_N = 3, CHUNK = 8 * 1024 * 1024;
@@ -128,10 +129,14 @@
     $('#bpg').onclick = e => { const b = e.target.closest('[data-p]'); if (b) { page = +b.dataset.p; draw(); window.scrollTo(0, 0); } };
     $('#bs').oninput = e => { kw = e.target.value; page = 1; draw(); };
     if (NEED_OK && !guest && !isAdmin) canWrite().then(st => { if (st.can) return; const w = $('#bw'); if (!w) return; w.textContent = st.pending ? '신청 확인 중' : '칼럼 쓰기 신청'; w.removeAttribute('href'); w.style.cursor = 'pointer'; w.onclick = () => { applyBox($('#capw'), st); $('#capw').scrollIntoView({ block: 'center' }); }; });
+    /* 빠른 목록 (11/4): 이 기기에 저장한 목록 -> 홈페이지 data/board.json (0.1초) 을 먼저 보여 주고, 서버 목록이 오면 바꿔 그림 */
+    const useList = (items, keep) => { all = (items || []).filter(x => !x.kind || x.kind === CFG.kind); CMC.counts = Object.assign(CMC.counts || {}, Object.fromEntries(all.map(x => ['board:' + x.id, x.cm || 0]))); CMC.p = CMC.p || Promise.resolve(); draw(); };
+    const lk = 'pgn_bl_' + CFG.kind; let shown = false, fresh = false;
+    try { const c = JSON.parse(localStorage.getItem(lk) || 'null'); if (c && c.length) { useList(c); shown = true; } } catch (e) {}
+    pgnStatic('board').then(j => { const it = j && j[CFG.kind]; if (!it || fresh) return; useList(it); shown = true; try { localStorage.setItem(lk, JSON.stringify(it)); } catch (e) {} }).catch(() => {});
     try {
-      all = (await api('blist', { kind: CFG.kind })).items.filter(x => !x.kind || x.kind === CFG.kind);
-      CMC.counts = Object.assign(CMC.counts || {}, Object.fromEntries(all.map(x => ['board:' + x.id, x.cm || 0]))); CMC.p = CMC.p || Promise.resolve(); draw();   /* 댓글 수는 목록에서 받은 값 사용 */
-    } catch (e) { $('#blist').innerHTML = '<div class="empty">목록을 불러오지 못했습니다.<br><small>' + esc(errOut(e)) + '</small></div>'; }
+      const r = await api('blist', { kind: CFG.kind }); fresh = true; useList(r.items);   /* 댓글 수는 목록에서 받은 값 사용 */
+    } catch (e) { if (!shown) $('#blist').innerHTML = '<div class="empty">목록을 불러오지 못했습니다.<br><small>' + esc(errOut(e)) + '</small></div>'; }
   }
 
   /* ---------- 사진 크게 보기 ---------- */
@@ -155,9 +160,16 @@
   /* ---------- 글 보기 ---------- */
   async function showView(id) {
     bd.innerHTML = '<div class="loading">불러오는 중...</div>';
-    let p;
-    try { p = (await api('bget', { id })).item; }
-    catch (e) { bd.innerHTML = '<div class="empty">' + esc(errOut(e)) + '<br><br><a class="btn green" href="' + CFG.page + '">목록으로</a></div>'; return; }
+    /* 빠른 글 보기 (11/4): 홈페이지 data/bpost.json 에 있으면 바로 그림. 로그인 회원은 서버 값으로 내 글·신고 여부를 확인해 다르면 다시 그림 */
+    let p = await pgnStatic('bpost').then(j => j && j[id]).catch(() => null);
+    if (p && !guest) { const s0 = p; api('bget', { id }).then(r => { const q = r.item; if (q.mine || q.reported || isAdmin || q.status !== s0.status || q.edited !== s0.edited || q.title !== s0.title || q.text !== s0.text || JSON.stringify(q.blocks) !== JSON.stringify(s0.blocks)) viewWith(q, id); }).catch(() => {}); }
+    if (!p) {
+      try { p = (await api('bget', { id })).item; }
+      catch (e) { bd.innerHTML = '<div class="empty">' + esc(errOut(e)) + '<br><br><a class="btn green" href="' + CFG.page + '">목록으로</a></div>'; return; }
+    }
+    viewWith(p, id);
+  }
+  function viewWith(p, id) {
     if (p.kind && p.kind !== CFG.kind && OTHER[p.kind]) { location.replace(OTHER[p.kind] + location.search); return; }   /* 다른 게시판 글이면 그 게시판으로 */
     document.title = p.title + ' - ' + CFG.name;
     const btns = [];
