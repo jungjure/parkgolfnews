@@ -445,7 +445,6 @@ async function layout(active, opts) {
   const isSched = SCHED_PAGES.includes(active), subK = schedSubKey(active);
   const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a><a href="stats.html" class="${active === 'stats' ? 'on' : ''}">통계</a>` : '') + `<a href="mypage.html" class="who ${active === 'mypage' ? 'on' : ''}" title="마이페이지">${esc(me.name)}님</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   const head = S => `
-    <div class="topbar"><div class="wrap" style="justify-content:flex-end"><span>${esc(S.전화)}</span></div></div>
     <div class="mast"><a href="index.html" title="홈"><img src="assets/logo.png" alt=""><span class="nm">${esc(S.사이트명)}</span></a><div class="sl">${esc(S.슬로건)}</div></div>
     <header class="site"><div class="wrap">
       <span class="brand"><a href="index.html" title="홈" style="display:flex;align-items:center"><img src="assets/logo.png" alt="홈"></a><a href="about.html" title="회사소개">${esc(S.사이트명)}</a></span>
