@@ -5,17 +5,129 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>파크골프뉴스 - 전국 파크골프 대회 일정과 뉴스</title>
 <meta name="description" content="파크골프뉴스는 전국 파크골프 대회 일정, 접수 안내, 협회 소식과 뉴스를 매일 전합니다.">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<meta property="og:site_name" content="파크골프뉴스">
 <meta property="og:title" content="파크골프뉴스">
 <meta property="og:description" content="전국 파크골프 대회 일정, 접수 안내, 뉴스를 매일 전합니다.">
 <meta property="og:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
 <meta property="og:url" content="https://parkgolfnews.org/">
 <meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
 <link rel="icon" href="assets/logo.png">
-<!-- 첫 화면은 항상 오늘일정 페이지로 (PC·모바일 공통) -->
-<script>try { if (document.referrer) sessionStorage.setItem('pgn_ref0', document.referrer); } catch (e) {} location.replace('today.html' + location.search + location.hash);</script>
-<meta http-equiv="refresh" content="0; url=today.html">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<meta name="theme-color" content="#0b4d32">
+<script>try { if (document.referrer) sessionStorage.setItem('pgn_ref0', document.referrer); } catch (e) {}</script>
+<link rel="stylesheet" href="assets/style.css?v=20261022b">
+<style>
+/* 신문사형 첫 화면 (2026-11-05). 글꼴은 style.css의 Pretendard를 그대로 씀 */
+#front{max-width:1180px;margin:0 auto;padding:0 18px;color:#111}
+#front a{color:inherit;text-decoration:none}
+#front a:hover .hl,#front a.hl:hover{text-decoration:underline}
+.tick{border-bottom:1px solid #111}
+.tick .tw0{max-width:1180px;margin:0 auto;padding:0 18px;display:flex;align-items:center;height:44px;gap:14px;overflow:hidden}
+.tick b{background:#c8102e;color:#fff;font-size:.85rem;padding:3px 10px;flex:none}
+.tick .tw{overflow:hidden;white-space:nowrap;flex:1;font-size:1rem}
+.tick .tw span{display:inline-block;animation:pgt 45s linear infinite}
+.tick .tw span:hover{animation-play-state:paused}
+.tick .tw a{margin-right:48px;color:#111}
+@keyframes pgt{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+#front .main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:32px;padding-top:24px}
+#front .lead img{width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block;background:#eee}
+#front .lead .hl{font-size:2.1rem;font-weight:800;line-height:1.3;letter-spacing:-1px;margin:16px 0 10px}
+#front .lead p{font-size:1.05rem;color:#444;line-height:1.65;margin:0}
+#front .subs{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px;padding-top:20px;border-top:1px solid #ddd}
+#front .subs img{width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top;display:block;background:#eee}
+#front .subs .hl{font-size:1.15rem;font-weight:700;line-height:1.4;margin-top:10px}
+#front h3{font-size:1.25rem;font-weight:800;border-top:3px solid #111;padding-top:10px;margin:0 0 6px;display:flex;justify-content:space-between;align-items:baseline}
+#front h3 a.more{font-size:.85rem;font-weight:500;color:#777}
+#front .rank{list-style:none;margin:0;padding:0}
+#front .rank li{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #eee;font-size:1rem;line-height:1.45}
+#front .rank li i{font-style:normal;font-weight:900;color:#0b4d32;width:18px;flex:none}
+#front .dt{color:#999;font-size:.8rem;margin-left:auto;flex:none;padding-left:8px}
+#front .today{background:#f5f8f6;border:1px solid #dfe8e2;padding:16px;margin-top:22px}
+#front .today h3{border:0;padding:0}
+#front .today .c{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 10px}
+#front .today .c a{background:#0b4d32;color:#fff;font-size:.88rem;padding:3px 9px;border-radius:2px}
+#front .today ul{margin:0;padding-left:18px;font-size:.95rem;line-height:1.6}
+#front .today .go{display:block;text-align:center;margin-top:12px;border:1px solid #0b4d32;color:#0b4d32;font-weight:700;padding:8px}
+#front .sec{margin-top:40px}
+#front .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:12px}
+#front .cards img{width:100%;aspect-ratio:4/3;object-fit:cover;object-position:top;display:block;background:#eee}
+#front .cards .hl{font-size:1.05rem;font-weight:700;line-height:1.4;margin-top:9px}
+#front .cards .dt{display:block;margin:4px 0 0;padding:0}
+#front .two{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+#front .list{list-style:none;margin:0;padding:0}
+#front .list li{padding:11px 0;border-bottom:1px solid #eee;font-size:1rem;display:flex;gap:10px}
+@media(max-width:900px){#front .main,#front .two{grid-template-columns:1fr}#front .cards{grid-template-columns:1fr 1fr;gap:14px}#front .lead .hl{font-size:1.55rem}}
+</style>
 </head>
 <body>
-<p style="font-family:sans-serif;text-align:center;margin-top:40px"><a href="today.html">오늘일정으로 이동</a></p>
+<div class="tick" id="tick" hidden><div class="tw0"><b>최신</b><div class="tw"><span id="tickin"></span></div></div></div>
+<div id="front"><div class="loading" style="padding:40px 0">불러오는 중...</div></div>
+<script src="assets/app.js?v=20261105a"></script>
+<script>
+(async () => {
+  await layout('home');
+  document.querySelector('header.site').after(document.getElementById('tick'));
+  const e = s => esc(s == null ? '' : String(s));
+  const url = n => 'article.html?id=' + encodeURIComponent(n.id);
+  const img = n => n.images && n.images[0] ? thumbUrl(n.images[0]) : '';
+  const md = d => { const t = new Date(d); return isNaN(t) ? '' : (t.getMonth() + 1) + '.' + t.getDate(); };
+  const same = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  const li = (n, i) => `<li>${i != null ? `<i>${i + 1}</i>` : ''}<a class="hl" href="${url(n)}">${e(n.title)}</a><span class="dt">${md(n.date)}</span></li>`;
+  const card = n => `<a href="${url(n)}"><img src="${e(img(n))}" alt="" loading="lazy" decoding="async"><div class="hl">${e(n.title)}</div><span class="dt">${md(n.date)}</span></a>`;
+  let evs = [];
+  const draw = async () => {
+    const all = (await getNews()).slice().sort((a, b) => (new Date(b.date) - new Date(a.date)) || (b.idx - a.idx));
+    const now = new Date();
+    const news = all.filter(n => n.cat === '뉴스');
+    const food = all.filter(n => n.cat === '맛집' && img(n));
+    const sched = all.filter(n => n.cat === '오늘일정');
+    /* 머리기사: 오늘 날짜 일정 기사(사진 있는 것), 없으면 사진 있는 최신 기사 */
+    const todayS = sched.find(n => same(new Date(n.date), now) && img(n));
+    const lead = todayS || all.find(n => img(n)) || all[0];
+    if (!lead) { $('#front').innerHTML = '<div class="empty">기사가 없습니다.</div>'; return; }
+    const used = new Set([lead.id]);
+    const subs = food.filter(n => !used.has(n.id)).slice(0, 2); subs.forEach(n => used.add(n.id));
+    const top = news.slice(0, 6);
+    const leadTitle = /^\d{4}-\d{2}-\d{2} 파크골프일정$/.test(lead.title) ? (() => { const t = new Date(lead.date); return (t.getMonth() + 1) + '월 ' + t.getDate() + '일(' + '일월화수목금토'[t.getDay()] + ') 전국 파크골프 일정'; })() : lead.title;
+    /* 오늘의 경기일정: 오늘일정 화면과 같은 기준 */
+    const k = ymd(now);
+    const order = { '대회': 0, '접수': 1, '연습일': 2 };
+    const td = evs.filter(x => ymd(x.start) <= k && ymd(x.end) >= k).sort((a, b) => ((order[a.type] ?? 9) - (order[b.type] ?? 9)) || (a.start - b.start));
+    const cnt = {}; td.forEach(x => { const c = isTrial(x) ? '시범운영' : x.type; cnt[c] = (cnt[c] || 0) + 1; });
+    if (cnt['시범운영']) { const v = cnt['시범운영']; delete cnt['시범운영']; cnt['시범운영'] = v; }
+    const evList = td.slice().sort((a, b) => (isTrial(a) - isTrial(b)) || ((order[a.type] ?? 9) - (order[b.type] ?? 9)) || (a.start - b.start)).slice(0, 6);
+    const tk = news.slice(0, 6).map(n => `<a href="${url(n)}">${e(n.title)}</a>`).join('');
+    if (tk) { $('#tickin').innerHTML = tk + tk; $('#tick').hidden = false; }
+    $('#front').innerHTML = `
+    <div class="main">
+     <div>
+      <a class="lead" href="${url(lead)}">${img(lead) ? `<img src="${e(img(lead))}" alt="">` : ''}<div class="hl">${e(leadTitle)}</div><p>${e(lead.summary)}</p></a>
+      ${subs.length ? `<div class="subs">${subs.map(n => `<a href="${url(n)}"><img src="${e(img(n))}" alt="" loading="lazy" decoding="async"><div class="hl">${e(n.title)}</div></a>`).join('')}</div>` : ''}
+     </div>
+     <aside>
+      <h3>주요 뉴스 <a class="more" href="news.html">더보기 ›</a></h3>
+      <ul class="rank">${top.map((n, i) => li(n, i)).join('')}</ul>
+      <div class="today"><h3>오늘의 경기일정</h3>
+       <div class="c">${Object.entries(cnt).map(([c, v]) => `<a href="today.html?type=${encodeURIComponent(c)}">${e(c)} ${v}건</a>`).join('')}</div>
+       <ul>${evList.length ? evList.map(x => `<li>${e(x.name)}</li>`).join('') : '<li>오늘 등록된 일정이 없습니다.</li>'}</ul>
+       <a class="go" href="today.html">오늘일정 전체 보기</a></div>
+     </aside>
+    </div>
+    <section class="sec"><h3>구장 주변 맛집 <a class="more" href="news.html">더보기 ›</a></h3><div class="cards">${food.filter(n => !used.has(n.id)).slice(0, 4).map(card).join('')}</div></section>
+    <section class="sec two">
+     <div><h3>뉴스 <a class="more" href="news.html">더보기 ›</a></h3><ul class="list">${news.slice(6, 14).map(n => li(n)).join('')}</ul></div>
+     <div><h3>지난 일정 기사 <a class="more" href="news.html">더보기 ›</a></h3><ul class="list">${sched.slice(0, 8).map(n => li(n)).join('')}</ul></div>
+    </section>`;
+  };
+  try { evs = await getSchedule(); } catch (x) {}
+  try { await draw(); } catch (x) { showError($('#front'), x); }
+  addEventListener('pgn-data', async () => { try { evs = await getSchedule(); await draw(); } catch (x) {} });
+})();
+</script>
 </body>
 </html>
