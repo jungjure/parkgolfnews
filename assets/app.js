@@ -401,23 +401,29 @@ function pgnSubOn(k) { document.querySelectorAll('.subnav [data-k], nav.main .su
     '.subnav .pk.on input::placeholder,nav.main .subm .pk.on input::placeholder{color:#fff}' +
     'nav.main .subm{display:none}' +
     '@media(max-width:760px){.subnav .sw{padding:6px 8px;gap:4px;justify-content:space-between;flex-wrap:nowrap}.subnav a,.subnav .pk input{font-size:.88rem;padding:6px 9px}.subnav .pk input{width:calc(5.6em + 34px);padding-right:30px!important;background-position:right 8px center!important;background-size:16px 16px!important}.subnav .pk.on input{width:calc(5.6em + 18px);padding-right:9px!important}' +
-    'nav.main.subopen .subm{display:flex;flex-direction:column;gap:2px;margin:0 0 6px 14px;padding-left:12px;border-left:3px solid var(--g100)}nav.main .subm .pk input{width:calc(6.2em + 40px);margin:2px 0}nav.main a[data-sub]::after{content:" ▾";font-size:.8em}nav.main.subopen a[data-sub]::after{content:" ▴"}}';
+    'nav.main.subopen .subm{display:flex;flex-direction:column;gap:2px;margin:0 0 6px 14px;padding-left:12px;border-left:3px solid var(--g100)}nav.main .subm .pk input{width:calc(6.2em + 40px);margin:2px 0}}';
   document.head.appendChild(st);
 })();
+/* 2026-11-05: PC에서 하위 메뉴(오늘·주간·월간·특정일)를 상단 '오늘일정' 메뉴 바로 밑에서 시작하도록 맞춤 */
+function pgnSubAlign() {
+  const a = document.querySelector('nav.main a[data-sub]'), bar = document.getElementById('pgn-sub'), sw = bar && bar.querySelector('.sw'), mb = document.querySelector('.menu-btn');
+  if (!a || !sw) return;
+  if (bar.hidden || (mb && getComputedStyle(mb).display !== 'none')) { sw.removeAttribute('style'); return; }   // 휴대폰은 기존 모양 유지
+  const left = Math.max(8, Math.round(a.getBoundingClientRect().left - bar.getBoundingClientRect().left));
+  sw.style.cssText = 'max-width:none;margin:0;justify-content:flex-start;padding-left:' + left + 'px';
+}
 function schedSubPrep(active) {
+  pgnSubAlign();
   const up = () => document.querySelectorAll('input.pgpick:not([data-pg])').forEach(el => { el.type = 'date'; window.PGPick.scan(el.parentNode); });
   if (window.PGPick) up();
   else if (!document.getElementById('pgn-picker')) { const s = document.createElement('script'); s.id = 'pgn-picker'; s.src = 'assets/picker.js?v=20261026a'; s.onload = up; document.head.appendChild(s); }
   else document.getElementById('pgn-picker').addEventListener('load', up);
   if (window._schedWired) return; window._schedWired = 1;
   document.addEventListener('change', e => { const el = e.target; if (el && el.classList && el.classList.contains('pgpick') && /^\d{4}-\d{2}-\d{2}$/.test(el.value)) location.href = 'today.html?d=' + el.value; });
-  document.addEventListener('click', e => {
-    const a = e.target.closest && e.target.closest('nav.main a[data-sub]'); if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
-    const mb = document.querySelector('.menu-btn'), mob = mb && getComputedStyle(mb).display !== 'none';
-    if (mob) { e.preventDefault(); a.closest('nav.main').classList.toggle('subopen'); return; }   // 휴대폰: 메뉴 안에서 펼치기
-    if (SCHED_PAGES.includes(active)) return;   // 일정 화면에서는 오늘일정으로 이동
-    e.preventDefault(); const b = document.getElementById('pgn-sub'); if (b) b.hidden = !b.hidden;   // PC: 헤더 아래 하위 메뉴바 열고 닫기
-  });
+  // 2026-11-05: '오늘일정'을 누르면 PC·휴대폰 모두 오늘일정 화면으로 바로 이동 (펼치기 동작 없앰)
+  window.addEventListener('resize', pgnSubAlign);
+  window.addEventListener('load', pgnSubAlign);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(pgnSubAlign);
 }
 
 
