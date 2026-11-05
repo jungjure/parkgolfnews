@@ -413,8 +413,24 @@ function pgnSubAlign() {
   const left = Math.max(8, Math.round(a.getBoundingClientRect().left - bar.getBoundingClientRect().left));
   sw.style.cssText = 'max-width:none;margin:0;justify-content:flex-start;padding-left:' + left + 'px';
 }
+/* 2026-11-05: PC에서 메뉴 '홈' 왼쪽 끝과 '로그아웃'(또는 마지막 메뉴) 오른쪽 끝을 아래 기사(본문) 폭에 맞춤 */
+function pgnNavAlign() {
+  const nav = document.querySelector('nav.main'), mb = document.querySelector('.menu-btn');
+  if (!nav) return;
+  const links = [...nav.querySelectorAll(':scope > a:not(.auth)')];
+  const reset = () => { nav.style.cssText = ''; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = ''; }); };
+  const c = document.querySelector('#front > .main') || document.querySelector('main h2.sec') || document.querySelector('main > .wrap') || document.querySelector('main');
+  if (!c || (mb && getComputedStyle(mb).display !== 'none')) { reset(); return; }   // 휴대폰은 기존 모양
+  const r = c.getBoundingClientRect(); if (r.width < 300) { reset(); return; }
+  reset();
+  let pad = 12; const need = () => [...nav.children].reduce((s, e) => s + (e.offsetWidth ? e.getBoundingClientRect().width + (parseFloat(getComputedStyle(e).marginLeft) || 0) : 0), 0);
+  while (need() > r.width && pad > 4) { pad--; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = pad + 'px'; }); }
+  nav.style.cssText = 'margin:0;flex:none;justify-content:space-between;width:' + r.width + 'px;position:relative';
+  nav.style.left = (r.left - nav.getBoundingClientRect().left) + 'px';
+}
+function pgnAlignAll() { pgnSubAlign(); pgnNavAlign(); }
 function schedSubPrep(active) {
-  pgnSubAlign();
+  pgnAlignAll(); [300, 1000, 2500].forEach(t => setTimeout(pgnAlignAll, t));
   const up = () => document.querySelectorAll('input.pgpick:not([data-pg])').forEach(el => { el.type = 'date'; window.PGPick.scan(el.parentNode); });
   if (window.PGPick) up();
   else if (!document.getElementById('pgn-picker')) { const s = document.createElement('script'); s.id = 'pgn-picker'; s.src = 'assets/picker.js?v=20261026a'; s.onload = up; document.head.appendChild(s); }
@@ -422,9 +438,9 @@ function schedSubPrep(active) {
   if (window._schedWired) return; window._schedWired = 1;
   document.addEventListener('change', e => { const el = e.target; if (el && el.classList && el.classList.contains('pgpick') && /^\d{4}-\d{2}-\d{2}$/.test(el.value)) location.href = 'today.html?d=' + el.value; });
   // 2026-11-05: '오늘일정'을 누르면 PC·휴대폰 모두 오늘일정 화면으로 바로 이동 (펼치기 동작 없앰)
-  window.addEventListener('resize', pgnSubAlign);
-  window.addEventListener('load', pgnSubAlign);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(pgnSubAlign);
+  window.addEventListener('resize', pgnAlignAll);
+  window.addEventListener('load', pgnAlignAll);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(pgnAlignAll);
 }
 
 
