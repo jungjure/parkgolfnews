@@ -445,14 +445,13 @@ async function layout(active, opts) {
   const isSched = SCHED_PAGES.includes(active), subK = schedSubKey(active);
   const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a><a href="stats.html" class="${active === 'stats' ? 'on' : ''}">통계</a>` : '') + `<a href="mypage.html" class="who ${active === 'mypage' ? 'on' : ''}" title="마이페이지">${esc(me.name)}님</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   const head = S => `
-    <div class="topbar"><div class="wrap"><span>${pgnDateLine()}</span>
-    <span><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a> · ${esc(S.전화)}</span></div></div>
+    <div class="topbar"><div class="wrap" style="justify-content:flex-end"><span>${esc(S.전화)}</span></div></div>
     <div class="mast"><a href="index.html" title="홈"><img src="assets/logo.png" alt=""><span class="nm">${esc(S.사이트명)}</span></a><div class="sl">${esc(S.슬로건)}</div></div>
     <header class="site"><div class="wrap">
       <span class="brand"><a href="index.html" title="홈" style="display:flex;align-items:center"><img src="assets/logo.png" alt="홈"></a><a href="about.html" title="회사소개">${esc(S.사이트명)}</a></span>
       <button class="menu-btn" aria-label="메뉴" onclick="document.querySelector('nav.main').classList.toggle('open')">메뉴</button>
       <nav class="main${isSched ? ' subopen' : ''}">${nav.map(n => n[2] === 'today' ? `<a href="${n[0]}" class="${isSched ? 'on' : ''}" data-sub="1" aria-haspopup="true">${n[1]}</a>${schedSubHtml('subm', subK)}` : `<a href="${n[0]}" class="${n[2] === active ? 'on' : ''}">${n[1]}</a>`).join('')}${authNav}</nav>
-    </div>${schedSubHtml('subnav', subK, !isSched)}</header>
+    </div><div class="menu-info" aria-label="날짜 및 연락처"><time>${pgnDateLine()}</time><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a><a href="tel:${esc(S.전화.replace(/[^0-9+]/g, ''))}">${esc(S.전화)}</a></div>${schedSubHtml('subnav', subK, !isSched)}</header>
     ${S.공지 ? `<div class="notice"><div class="wrap">공지 | ${esc(S.공지)}</div></div>` : ''}`;
   const foot = S => `
     <div class="wrap">
@@ -1315,3 +1314,5 @@ window.addEventListener('message', ev => {
   else if (d.pgnAcct && d.pgnAcct.no) pgnAcctBox(String(d.pgnAcct.bank || ''), String(d.pgnAcct.no));
 });
 if (document.body) pgnLinkCore(document, false); else document.addEventListener('DOMContentLoaded', () => pgnLinkCore(document, false));
+
+(function(){const s=document.createElement("style");s.textContent=".menu-info{max-width:1180px;margin:0 auto;padding:8px 18px 11px;display:flex;justify-content:center;align-items:center;gap:10px 24px;flex-wrap:wrap;color:#fff;font-size:.9rem;border-top:1px solid #ffffff30}.menu-info a{color:#fff;text-decoration:none}.menu-info a:hover{text-decoration:underline}.menu-info a:focus-visible{outline:2px solid #fff;outline-offset:4px}@media(max-width:760px){.menu-info{font-size:.85rem;gap:8px 16px;padding:10px 12px}.menu-info time{flex-basis:100%;text-align:center}}";document.head.appendChild(s);})();
