@@ -413,20 +413,24 @@ function pgnSubAlign() {
   const left = Math.max(8, Math.round(a.getBoundingClientRect().left - bar.getBoundingClientRect().left));
   sw.style.cssText = 'max-width:none;margin:0;justify-content:flex-start;padding-left:' + left + 'px';
 }
-/* 2026-11-05: PC에서 메뉴 '홈' 왼쪽 끝과 '로그아웃'(또는 마지막 메뉴) 오른쪽 끝을 아래 기사(본문) 폭에 맞춤 */
+/* 2026-11-05: PC에서 메뉴 '홈'~'로그아웃'(마지막 메뉴) 폭을 항상 869px(본문·행사지도 폭)로 고정하고, 본문과 같은 위치에 맞춤 */
+const PGN_W = 869;
 function pgnNavAlign() {
-  const nav = document.querySelector('nav.main'), mb = document.querySelector('.menu-btn');
+  const nav = document.querySelector('nav.main'), mb = document.querySelector('.menu-btn'), mi = document.querySelector('.menu-info');
   if (!nav) return;
   const links = [...nav.querySelectorAll(':scope > a:not(.auth)')];
-  const reset = () => { nav.style.cssText = ''; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = ''; }); };
-  const c = document.querySelector('#front > .main') || document.querySelector('main h2.sec') || document.querySelector('main > .wrap') || document.querySelector('main');
-  if (!c || (mb && getComputedStyle(mb).display !== 'none')) { reset(); return; }   // 휴대폰은 기존 모양
-  const r = c.getBoundingClientRect(); if (r.width < 300) { reset(); return; }
+  const reset = () => { nav.style.cssText = ''; if (mi) mi.style.cssText = ''; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = ''; }); };
   reset();
+  if (mb && getComputedStyle(mb).display !== 'none') return;   // 휴대폰은 기존 모양
+  const W = Math.min(PGN_W, nav.parentElement.clientWidth - 36);
   let pad = 12; const need = () => [...nav.children].reduce((s, e) => s + (e.offsetWidth ? e.getBoundingClientRect().width + (parseFloat(getComputedStyle(e).marginLeft) || 0) : 0), 0);
-  while (need() > r.width && pad > 4) { pad--; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = pad + 'px'; }); }
-  nav.style.cssText = 'margin:0;flex:none;justify-content:space-between;width:' + r.width + 'px;position:relative';
-  nav.style.left = (r.left - nav.getBoundingClientRect().left) + 'px';
+  while (need() > W && pad > 4) { pad--; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = pad + 'px'; }); }
+  nav.style.cssText = 'margin:0 auto;flex:none;justify-content:space-between;width:' + W + 'px;position:relative';
+  const c = document.querySelector('#front > .main') || document.querySelector('main h2.sec') || document.querySelector('main');
+  const r = c && c.getBoundingClientRect();
+  const dx = r && Math.abs(r.width - W) < 4 ? r.left - nav.getBoundingClientRect().left : 0;
+  nav.style.left = dx + 'px';
+  if (mi) { mi.style.cssText = 'max-width:' + W + 'px;padding-left:0;padding-right:0;position:relative'; mi.style.left = (nav.getBoundingClientRect().left - mi.getBoundingClientRect().left) + 'px'; }   // 메뉴 밑 날짜 줄(가는 선)도 같은 폭
 }
 function pgnAlignAll() { pgnSubAlign(); pgnNavAlign(); }
 function schedSubPrep(active) {
