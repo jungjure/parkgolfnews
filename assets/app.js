@@ -420,18 +420,34 @@ function schedSubPrep(active) {
   });
 }
 
+
+/* ---------- 신문사형 머리·바닥 (2026-11-05): 날짜 줄 + 가운데 제호 + 녹색 메뉴 띠 ---------- */
+function pgnDateLine() { const d = new Date(); return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + '일월화수목금토'[d.getDay()] + '요일'; }
+(function () {
+  const st = document.createElement('style'); st.id = 'pgn-press-css';
+  st.textContent = '.topbar{background:#fff;color:#555;border-bottom:1px solid #e5e5e5;font-size:.85rem}.topbar a{color:#555}.topbar .wrap{max-width:1180px}' +
+    '.mast{text-align:center;padding:22px 18px 16px;background:#fff}.mast>a{display:inline-flex;align-items:center;gap:16px;color:#0b4d32}' +
+    '.mast img{height:124px;width:auto;display:block}.mast .nm{font-size:52px;font-weight:900;letter-spacing:-2px;line-height:1.1}.mast .sl{font-size:.95rem;color:#666;margin-top:8px}' +
+    'header.site{background:#0b4d32;border-top:3px solid #111;border-bottom:0}header.site .brand{display:none}' +
+    '@media(min-width:761px){header.site .wrap{max-width:1180px;justify-content:center;min-height:52px}nav.main{margin:0 auto}nav.main a{color:#fff;border-radius:0;font-size:1.05rem;padding:13px 12px}nav.main a:hover,nav.main a.on{background:#083a26;color:#fff}nav.main a.auth{border:1px solid rgba(255,255,255,.7);border-radius:4px;padding:5px 12px;align-self:center;margin-left:8px}nav.main a.auth:hover,nav.main a.auth.on{background:#fff;color:#0b4d32}nav.main .who{color:#fff;padding:13px 10px}}' +
+    '@media(max-width:760px){.mast{padding:14px 12px 10px}.mast>a{gap:10px}.mast img{height:84px}.mast .nm{font-size:34px;letter-spacing:-1px}.mast .sl{font-size:.85rem}header.site .wrap{min-height:50px}.menu-btn{background:#fff;color:#0b4d32}}' +
+    'footer.site{background:#222;color:#bbb}footer.site .wrap{max-width:1180px}';
+  document.head.appendChild(st);
+})();
+
 /* ---------- 공통 레이아웃 ---------- */
 async function layout(active, opts) {
   opts = opts || {};
   let S = settingsNow();   // 저장된 설정(없으면 기본값)으로 바로 그리고, 바뀐 게 있으면 나중에 갱신
   const me = Auth.get();
   const memberMode = me && me.role !== 'admin';   // 회원: 메뉴는 '자유게시판' 하나 (중복 방지)
-  const nav = [['today.html', '오늘일정', 'today'], ['news.html', '뉴스', 'news'], ['column.html', '독자칼럼', 'column'], ['board.html', '자유게시판', 'board'], ['join.html', '조인게시판', 'join']];   // 오늘일정 = 일정 묶음 (누르면 아래에 오늘·주간·월간·특정일 조회 메뉴, 2026-11-03)
+  const nav = [['index.html', '홈', 'home'], ['today.html', '오늘일정', 'today'], ['news.html', '뉴스', 'news'], ['column.html', '독자칼럼', 'column'], ['board.html', '자유게시판', 'board'], ['join.html', '조인게시판', 'join']];   // 오늘일정 = 일정 묶음 (누르면 아래에 오늘·주간·월간·특정일 조회 메뉴, 2026-11-03)
   const isSched = SCHED_PAGES.includes(active), subK = schedSubKey(active);
   const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a><a href="stats.html" class="${active === 'stats' ? 'on' : ''}">통계</a>` : '') + `<a href="mypage.html" class="who ${active === 'mypage' ? 'on' : ''}" title="마이페이지">${esc(me.name)}님</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   const head = S => `
-    <div class="topbar"><div class="wrap"><span>${esc(S.슬로건)}</span>
+    <div class="topbar"><div class="wrap"><span>${pgnDateLine()}</span>
     <span><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a> · ${esc(S.전화)}</span></div></div>
+    <div class="mast"><a href="index.html" title="홈"><img src="assets/logo.png" alt=""><span class="nm">${esc(S.사이트명)}</span></a><div class="sl">${esc(S.슬로건)}</div></div>
     <header class="site"><div class="wrap">
       <span class="brand"><a href="index.html" title="홈" style="display:flex;align-items:center"><img src="assets/logo.png" alt="홈"></a><a href="about.html" title="회사소개">${esc(S.사이트명)}</a></span>
       <button class="menu-btn" aria-label="메뉴" onclick="document.querySelector('nav.main').classList.toggle('open')">메뉴</button>
