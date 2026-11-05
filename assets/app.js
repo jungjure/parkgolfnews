@@ -400,6 +400,7 @@ function pgnSubOn(k) { document.querySelectorAll('.subnav [data-k], nav.main .su
     '.subnav .pk.on input,nav.main .subm .pk.on input{background-color:var(--g700)!important;background-image:none!important;padding-right:14px!important;width:calc(6.2em + 32px)}' +
     '.subnav .pk.on input::placeholder,nav.main .subm .pk.on input::placeholder{color:#fff}' +
     'nav.main .subm{display:none}' +
+    '@media(min-width:761px){nav.main>a.on:not(.auth){box-shadow:inset 0 -4px 0 #fff}}' +   // 2026-11-05: 지금 보고 있는 메뉴를 흰 밑줄로 분명하게 표시
     '@media(max-width:760px){.subnav .sw{padding:6px 8px;gap:4px;justify-content:space-between;flex-wrap:nowrap}.subnav a,.subnav .pk input{font-size:.88rem;padding:6px 9px}.subnav .pk input{width:calc(5.6em + 34px);padding-right:30px!important;background-position:right 8px center!important;background-size:16px 16px!important}.subnav .pk.on input{width:calc(5.6em + 18px);padding-right:9px!important}' +
     'nav.main.subopen .subm{display:flex;flex-direction:column;gap:2px;margin:0 0 6px 14px;padding-left:12px;border-left:3px solid var(--g100)}nav.main .subm .pk input{width:calc(6.2em + 40px);margin:2px 0}}';
   document.head.appendChild(st);
