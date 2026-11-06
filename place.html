@@ -47,9 +47,11 @@ h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 12px}
   var ua=navigator.userAgent||'', android=/Android/i.test(ua), ios=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   var mobile=android||ios;
   var nav=document.getElementById('nav');
-  var qs='appSchemeName=nmap'+(id?'&id='+id:'')+'&lat='+lat+'&lng='+lng+'&name='+en+'&appname='+app;
-  var mWeb=id?('https://m.place.naver.com/place/'+id+'/location'):('https://m.map.naver.com/search2/search.naver?query='+en);
-  var pcWeb=id?('https://map.naver.com/p/entry/place/'+id):('https://map.naver.com/p/search/'+en);
+  /* 2026-11-07(2): 네이버 장소 번호(id)가 없는 구장은 이름 검색이 '업체 없음'이 되어 현재 위치만 보였음 -> 좌표로 정확한 자리에 핀을 꽂아 엶 */
+  var hasLL=!isNaN(lat)&&!isNaN(lng);
+  var qs=id?('appSchemeName=nmap&id='+id+'&lat='+lat+'&lng='+lng+'&name='+en+'&appname='+app):('lat='+lat+'&lng='+lng+'&name='+en+'&appname='+app);
+  var mWeb=id?('https://m.place.naver.com/place/'+id+'/location'):(hasLL?('https://m.map.naver.com/map.naver?lat='+lat+'&lng='+lng+'&dlevel=12&pinTitle='+en+'&pinType=site'):('https://m.map.naver.com/search2/search.naver?query='+en));
+  var pcWeb=id?('https://map.naver.com/p/entry/place/'+id):(hasLL?('https://map.naver.com/p/search/'+lat+','+lng):('https://map.naver.com/p/search/'+en));
   var webUrl=mobile?mWeb:pcWeb;
   if(!mobile){ nav.textContent='네이버 지도에서 보기'; nav.href=pcWeb; }
   else {
