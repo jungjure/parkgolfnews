@@ -462,6 +462,27 @@ function pgnDateLine() { const d = new Date(); return d.getFullYear() + '년 ' +
   document.head.appendChild(st);
 })();
 
+/* ---------- 창 속 페이지 방지 (2026-11-06) ----------
+   1) 기사·가입 화면에 끼워 넣은 뉴스레터(iframe) 안의 링크를 누르면 바깥 페이지 전체가 그 주소로 이동 (같은 창)
+   2) 우리 홈페이지 페이지(app.js를 쓰는 화면)가 다른 화면의 창 안에서 열리면 바깥 전체 화면으로 꺼냄 */
+(function () {
+  try { if (window.top !== window.self && window.top.location.host === location.host) window.top.location.replace(location.href); } catch (e) {}
+  function hook(f) {
+    let w, d;
+    try { w = f.contentWindow; d = f.contentDocument; if (!w || !d || w.location.host !== location.host) return; } catch (e) { return; }   // 다른 사이트(유튜브·드라이브) 창은 건드리지 않음
+    if (d.querySelector('script[src*="assets/app.js"]')) { location.href = w.location.href; return; }   // 2) 창 안에 우리 페이지가 열렸으면 바깥으로
+    if (d._pgnHook) return; d._pgnHook = 1;
+    d.addEventListener('click', ev => {   // 1) 창 안 링크는 바깥 페이지에서 열기
+      if (ev.defaultPrevented || ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
+      const a = ev.target && ev.target.closest && ev.target.closest('a[href]'); if (!a) return;
+      const h = a.getAttribute('href') || ''; if (!h || h.charAt(0) === '#' || /^javascript:/i.test(h)) return;
+      ev.preventDefault(); location.href = a.href;
+    });
+  }
+  document.addEventListener('load', e => { const f = e.target; if (f && f.tagName === 'IFRAME') hook(f); }, true);
+  addEventListener('DOMContentLoaded', () => document.querySelectorAll('iframe').forEach(f => { try { if (f.contentDocument && f.contentDocument.readyState === 'complete') hook(f); } catch (e) {} }));
+})();
+
 /* ---------- 공통 레이아웃 ---------- */
 async function layout(active, opts) {
   opts = opts || {};
