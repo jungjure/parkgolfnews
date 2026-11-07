@@ -760,6 +760,7 @@ function showEv(i) {
 function mapQ(e) {
   const s = String(e.place || '');
   if (/홈페이지|온라인|네이버\s*폼|구글\s*폼|어플|대리점|총판|밴드|카페|이메일|메일|전화|문자|www\.|https?:|일괄|미정|추후/.test(s)) return '';
+  if (/태국|일본|오키나와|후쿠오카|구마모토|파타야|나콘사완|베트남|필리핀|라오스|대만|해외|항\s*출발|출발\s*$/.test(s)) return ''; /* 해외 투어·출발 항구는 경기장이 아니어서 글자만 (2026-11-07) */
   const ADDR = /[가-힣\d]+(로|길|리|동|가)\s*(산\s*)?\d+(\s*[-~]\s*\d+)?/;
   const tidy = a => a.replace(/(번지)?\s*일원|번지|\s+내$/g, '').replace(/(\d)\s*~\s*(\d)/g, '$1-$2').replace(/^(대한민국|\d+)\s+/, '').replace(/\s+/g, ' ').trim();
   const par = (s.match(/\(([^)]*)\)/) || [])[1] || '';
@@ -785,9 +786,26 @@ function mapQ(e) {
   if (!/[가-힣](시|군|구)(\s|$)/.test(name)) { const r = String(e.region || '').trim(); if (loc && !name.includes(loc)) name = loc + ' ' + name; else if (!loc && r && !name.includes(r)) name = r + ' ' + name; }
   return name;
 }
+/* 네이버 검색으로 위치가 안 나오는 구장(캘린더 주소 오류·네이버 미등록 이름): 네이버 장소 번호 또는 좌표로 바로 연다 (2026-11-07)
+   PC: 장소 번호 있으면 map.naver.com/p/entry/place/번호, 없으면 map.naver.com/p/search/위도,경도 (핀)
+   휴대폰: 우리 장소 페이지 place.html (지도 + 네이버 지도 앱/웹 버튼) */
+const PLACE_FIX = [
+  [/순창군.*(섬진강|풍산면\s*오공리\s*524)/, { n: '유등섬진강파크골프장', id: '2140160094', lat: 35.3729697, lng: 127.1959173 }],
+  [/부귀파크골프장|부귀면\s*(당곡|두남)리\s*731/, { n: '부귀파크골프장', id: '1840377636', lat: 35.8448985, lng: 127.4212161 }],
+  [/용암생활체육공원/, { n: '화천파크골프장 (용암생활체육공원)', id: '1860978430', lat: 38.0940550, lng: 127.6985858 }],
+  [/화천군?\s*장미(파크골프장|구장)/, { n: '장미파크골프장', lat: 38.0828629, lng: 127.6906235 }],
+  [/화천군?\s*사내(파크골프장|구장)/, { n: '사내파크골프장', id: '2055215907', lat: 38.0669245, lng: 127.5230783 }],
+  [/충북보건과학대/, { n: '충북보건과학대학교', id: '11591453', lat: 36.7016738, lng: 127.5515784 }]
+];
+function mapUrl(q) {
+  const f = (PLACE_FIX.find(x => x[0].test(q)) || [])[1];
+  if (!f) return 'https://map.naver.com/p/search/' + encodeURIComponent(q);
+  if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) return '/place.html?n=' + encodeURIComponent(f.n) + '&lat=' + f.lat + '&lng=' + f.lng + (f.id ? '&id=' + f.id : '');
+  return f.id ? 'https://map.naver.com/p/entry/place/' + f.id : 'https://map.naver.com/p/search/' + f.lat + ',' + f.lng;
+}
 function mapLink(e) {
   const q = mapQ(e); if (!q) return esc(e.place);
-  return '<a class="pgmap" href="https://map.naver.com/p/search/' + encodeURIComponent(q) + '" title="네이버지도에서 위치 보기">' + esc(e.place) + '</a>';
+  return '<a class="pgmap" href="' + mapUrl(q) + '" title="네이버지도에서 위치 보기">' + esc(e.place) + '</a>';
 }
 function openMap(u) {
   const sw = screen.availWidth || 1280, sh = screen.availHeight || 800;
