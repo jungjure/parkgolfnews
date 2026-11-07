@@ -47,7 +47,7 @@
       <h1>${esc(n.title)}</h1>
       <div class="meta">${fmtDate(n.date)}${n.writer ? ' · ' + esc(n.writer) : ' · 파크골프뉴스'}</div>
       <div class="content">${n.images.map(u => `<img src="${esc(u)}" alt="${esc(n.title)}" loading="lazy">`).join('')}${renderBody(n)}</div>
-      ${n.link ? `<div class="src">${n.source ? esc(n.source) + ' · ' : '관련 링크 · '}<a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(n.link)}</a></div>` : ''}
+      ${n.link && !/band\.us/i.test(n.link) ? `<div class="src">${n.source ? esc(n.source) + ' · ' : '관련 링크 · '}<a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(n.link)}</a></div>` : ''}
       <div class="share">
         <button class="btn" style="background:#FEE500;color:#191919;border-color:#FEE500" onclick="shareKakao()">카카오톡 공유</button>
         <button class="btn" style="background:#00C73C;color:#fff;border-color:#00C73C" onclick="shareBand()">밴드 공유</button>
