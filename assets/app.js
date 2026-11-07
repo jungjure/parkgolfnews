@@ -231,11 +231,18 @@ window.addEventListener('message', ev => {
   const d = ev.data; if (!d || !d.pgnFrame) return;
   const f = document.getElementById(d.pgnFrame); if (f && d.h) f.style.height = (d.h + 4) + 'px';
 });
+/* 기사 본문의 밴드 주소 안내 줄("파크골프뉴스 밴드 : band.us/...", 주소만 있는 줄)은 홈페이지에서 보이지 않게 (2026-11-07) */
+function noBandUrl(s) {
+  return String(s || '')
+    .replace(/<(p|div|span|li|h\d)\b[^>]*>\s*(파크골프뉴스\s*)?(네이버\s*)?밴드\s*[:：]?\s*(<a\b[^>]*>)?\s*(https?:\/\/)?(www\.)?band\.us\/[^<\s]*\s*(<\/a>)?\s*<\/\1>/gi, '')
+    .replace(/^[^\n<>]*밴드\s*[:：]\s*(https?:\/\/)?(www\.)?band\.us\/\S*[ \t]*$/gim, '')
+    .replace(/^[ \t]*(https?:\/\/)?(www\.)?band\.us\/\S+[ \t]*$/gim, '');
+}
 function renderBody(n) {
   let out = '';
   if (n.embed) out += '<iframe class="artifact" src="' + esc(n.embed) + '" loading="lazy" allowfullscreen sandbox="allow-scripts allow-popups allow-same-origin allow-forms" style="width:100%;height:760px;border:0;display:block;margin:14px 0"></iframe>';
-  const b = n.body || '';
-  if (!HTML_RE.test(b)) return out + paragraphs(b || n.summary);
+  const b = noBandUrl(n.body || '');
+  if (!HTML_RE.test(b)) return out + paragraphs(b || noBandUrl(n.summary));
   if (/<(script|style|html|body)|<!doctype/i.test(b)) return out + iframeHTML(b, 'af' + (++_fid));
   return out + sanitizeFragment(b);
 }
