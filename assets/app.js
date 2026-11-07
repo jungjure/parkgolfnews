@@ -505,7 +505,7 @@ async function layout(active, opts) {
       <span class="brand"><a href="index.html" title="홈" style="display:flex;align-items:center"><img src="assets/logo.png" alt="홈"></a><a href="about.html" title="회사소개">${esc(S.사이트명)}</a></span>
       <button class="menu-btn" aria-label="메뉴" onclick="document.querySelector('nav.main').classList.toggle('open')">메뉴</button>
       <nav class="main${isSched ? ' subopen' : ''}">${nav.map(n => n[2] === 'today' ? `<a href="${n[0]}" class="${isSched ? 'on' : ''}" data-sub="1" aria-haspopup="true">${n[1]}</a>${schedSubHtml('subm', subK)}` : `<a href="${n[0]}" class="${n[2] === active ? 'on' : ''}">${n[1]}</a>`).join('')}${authNav}</nav>
-    </div><div class="menu-info" aria-label="날짜 및 연락처"><time>${pgnDateLine()}</time><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a><a href="tel:${esc(S.전화.replace(/[^0-9+]/g, ''))}">${esc(S.전화)}</a></div>${schedSubHtml('subnav', subK, !isSched)}</header>
+    </div><div class="menu-info" aria-label="날짜 및 연락처"><time>${pgnDateLine()}</time><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a><a href="tel:${esc(S.전화.replace(/[^0-9+]/g, ''))}">${esc(S.전화)}</a><form class="msearch" action="search.html" method="get" role="search"><input type="search" name="q" placeholder="기사 검색" aria-label="기사 검색어" maxlength="40" value="${/search\.html$/.test(location.pathname) ? esc(new URLSearchParams(location.search).get('q') || '') : ''}"><button type="submit" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></form></div>${schedSubHtml('subnav', subK, !isSched)}</header>
     ${S.공지 ? `<div class="notice"><div class="wrap">공지 | ${esc(S.공지)}</div></div>` : ''}`;
   const foot = S => `
     <div class="wrap">
@@ -1388,3 +1388,15 @@ window.addEventListener('message', ev => {
 if (document.body) pgnLinkCore(document, false); else document.addEventListener('DOMContentLoaded', () => pgnLinkCore(document, false));
 
 (function(){const s=document.createElement("style");s.textContent=".menu-info{max-width:1180px;margin:0 auto;padding:8px 18px 11px;display:flex;justify-content:center;align-items:center;gap:10px 24px;flex-wrap:wrap;color:#fff;font-size:.9rem;border-top:1px solid #ffffff30}.menu-info a{color:#fff;text-decoration:none}.menu-info a:hover{text-decoration:underline}.menu-info a:focus-visible{outline:2px solid #fff;outline-offset:4px}@media(max-width:760px){.menu-info{font-size:.85rem;gap:8px 16px;padding:10px 12px}.menu-info time{flex-basis:100%;text-align:center}}";document.head.appendChild(s);})();
+
+/* 2026-11-07: 머리 부분 전화번호 옆 기사 검색창 -> search.html (제목·본문 전체 검색 결과 목록) */
+(function () {
+  const st = document.createElement('style');
+  st.textContent = '.menu-info .msearch{display:inline-flex;align-items:center;height:30px;margin:0;background:#fff;border-radius:999px;overflow:hidden}' +
+    '.menu-info .msearch input{width:150px;min-width:0;height:100%;margin:0;padding:0 2px 0 13px;border:0;border-radius:0;outline:0;box-shadow:none;background:transparent;color:#111;font:inherit;font-size:.85rem}' +
+    '.menu-info .msearch input::placeholder{color:#777}' +
+    '.menu-info .msearch button{display:flex;align-items:center;justify-content:center;width:34px;height:100%;margin:0;padding:0;border:0;background:transparent;color:var(--g700);cursor:pointer;font:inherit}' +
+    '.menu-info .msearch:focus-within{box-shadow:0 0 0 2px #ffffffaa}' +
+    '@media(max-width:760px){.menu-info .msearch input{width:118px}}';
+  document.head.appendChild(st);
+})();
