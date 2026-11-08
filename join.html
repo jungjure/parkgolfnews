@@ -80,6 +80,17 @@
 .jcard .ck{width:22px;height:22px;margin-right:6px;vertical-align:middle}
 @media(max-width:600px){.jform .two{grid-template-columns:1fr}.jd th{width:88px}.jcard .main{font-size:1.15rem}}
 .jcf{display:flex;justify-content:flex-end}.jcf .cmb{margin-top:6px}
+/* 글 상세 머리 (2026-11-08) */
+.jd .top{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.jd .top .shr{margin-left:auto}
+.jhd{display:flex;align-items:center;gap:12px;margin:10px 0 6px}
+.jh1{flex:1;min-width:0;color:var(--g900);font-weight:800;line-height:1.4}
+.jh1 .jw{display:block;font-size:1.2rem}
+.jh1 .jpl{display:block;font-size:1.45rem;word-break:keep-all;overflow-wrap:anywhere}
+.jleft{flex:0 0 auto;min-width:84px;text-align:center;color:var(--red);border:2px solid var(--red);border-radius:12px;padding:7px 12px;font-weight:800;font-size:.95rem;line-height:1.25;background:#fff5f4;white-space:nowrap}
+.jleft b{display:block;font-size:1.75rem;line-height:1.1}
+.jleft.done{color:#777;border-color:#bbb;background:#f3f3f3;font-size:1.1rem}
+@media(max-width:600px){.jh1 .jw{font-size:1.08rem}.jh1 .jpl{font-size:1.28rem}.jleft{min-width:76px;padding:6px 10px}}
 /* 정산 탭 (2026-11-07) */
 .jtabs{display:flex;gap:6px;margin:0 0 10px;border-bottom:2px solid var(--g100)}
 .jtabs button{border:0;background:none;padding:11px 20px;font-size:1.05rem;font-weight:800;font-family:inherit;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
@@ -209,8 +220,9 @@
     document.title = whenTxt(it) + ' ' + it.place + ' - 조인게시판';
     const row = (k, v) => v ? '<tr><th>' + k + '</th><td>' + v + '</td></tr>' : '';
     let h = '<p style="margin:0 0 8px"><a href="join.html">← 조인게시판 목록</a></p><div class="card jd">'
-      + '<div class="top"><span class="jt ' + catCls(it.cat) + '">' + esc(it.cat) + '</span> <span class="jt ' + stCls(it.state) + '">' + esc(it.state) + '</span>' + (it.st === '숨김' ? ' <span class="jt hid">숨김(신고 접수)</span>' : '') + '</div>'
-      + '<h1>' + esc(whenTxt(it)) + ' · ' + esc(it.place) + ' · <span style="color:var(--red)">' + esc(leftTxt(it)) + '</span></h1>'
+      /* 2026-11-08: 분류·상태 줄 오른쪽 끝에 공유, 제목은 날짜(1줄)·구장(2줄), 남은 자리는 오른쪽 상자에 크게 */
+      + '<div class="top"><span class="jt ' + catCls(it.cat) + '">' + esc(it.cat) + '</span> <span class="jt ' + stCls(it.state) + '">' + esc(it.state) + '</span>' + (it.st === '숨김' ? ' <span class="jt hid">숨김(신고 접수)</span>' : '') + '<span class="shr"><button type="button" class="shr-btn" aria-haspopup="true" aria-label="공유하기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>공유</button><div class="shr-menu" hidden><button type="button" class="shr-k">카카오톡 공유</button><button type="button" class="shr-b">밴드 공유</button></div></span></div>'
+      + '<div class="jhd"><div class="jh1" role="heading" aria-level="1"><span class="jw">' + esc(whenTxt(it)) + '</span><span class="jpl">' + esc(it.place) + '</span></div><div class="jleft' + (it.state === '마감' ? ' done' : '') + '">' + esc(leftTxt(it)).replace(/^(\d+)자리 남음$/, '<b>$1</b>자리 남음').replace(/^(\d+)명 조인 희망$/, '<b>$1</b>명 조인 희망') + '</div></div>'
       + '<div class="meta">' + esc(it.nick) + ' · ' + esc(it.at) + (it.edited ? ' (수정 ' + esc(it.edited) + ')' : '') + '</div><table>'
       + row('지역', esc(it.sido + (it.sgg ? ' ' + it.sgg : ''))) + row('구장', esc(it.place)) + row('날짜·시간', esc(whenTxt(it))) + row('홀 수', esc(it.holes))
       + row('인원', it.cat === '조인 희망' ? esc(it.cur + '명이 조인 희망') : esc('현재 ' + it.cur + '명 · ' + it.need + '명 모집 · 수락 ' + it.acc + '명')) + row('실력', esc(it.level)) + row('성별', esc(it.gender)) + row('연령대', esc(it.age))
