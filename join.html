@@ -80,6 +80,33 @@
 .jcard .ck{width:22px;height:22px;margin-right:6px;vertical-align:middle}
 @media(max-width:600px){.jform .two{grid-template-columns:1fr}.jd th{width:88px}.jcard .main{font-size:1.15rem}}
 .jcf{display:flex;justify-content:flex-end}.jcf .cmb{margin-top:6px}
+/* 정산 탭 (2026-11-07) */
+.jtabs{display:flex;gap:6px;margin:0 0 10px;border-bottom:2px solid var(--g100)}
+.jtabs button{border:0;background:none;padding:11px 20px;font-size:1.05rem;font-weight:800;font-family:inherit;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.jtabs button.on{color:var(--g900);border-bottom-color:var(--g700)}
+.jset h3{margin:18px 0 8px;font-size:1.1rem;color:var(--g900)}.jset h3 small{color:var(--muted);font-weight:700;font-size:.9rem;margin-left:4px}
+.jset h4{margin:14px 0 6px;font-size:1rem;color:var(--g900)}
+.jset .jsh{background:var(--g50);border:1px solid var(--g100);border-radius:10px;padding:10px 14px;font-size:.93rem;line-height:1.7;margin:0 0 6px}
+.jset .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.jset select,.jset input{padding:10px 12px;border:2px solid var(--line);border-radius:10px;font-size:1rem;font-family:inherit;background:#fff;color:var(--ink)}
+.jset #sp{flex:1;min-width:150px}
+.jsp{display:flex;gap:6px;flex-wrap:wrap}
+.jpc{display:inline-flex;align-items:center;gap:2px;background:var(--g50);border:1px solid var(--g100);border-radius:999px;padding:5px 6px 5px 12px;font-weight:700}
+.jpc button{border:0;background:none;font-size:1.1rem;line-height:1;cursor:pointer;color:var(--muted);padding:0 6px;font-family:inherit}
+.jsi{border:1px solid var(--line);border-radius:12px;padding:6px 12px 10px;margin:8px 0}
+.jsi .jsm{flex:1;min-width:110px}.jsi .jsa{width:130px;text-align:right}
+.jsl{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.95rem}
+.jsx{border:0;background:none;font-size:1.3rem;color:var(--red);cursor:pointer;margin-left:auto;padding:4px 8px;font-family:inherit}
+.jsw{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:.9rem}.jsw>span{color:var(--muted);font-weight:700;margin-right:2px}
+.jsc{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 10px;font-size:.88rem;cursor:pointer;font-family:inherit;color:#999}
+.jsc.on{background:var(--g700);border-color:var(--g700);color:#fff}
+.jsr table{width:100%;border-collapse:collapse;font-size:.98rem}.jsr th,.jsr td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right}.jsr th:first-child,.jsr td:first-child{text-align:left}
+.jsr th{width:auto;background:var(--g50)}
+.jst{font-size:1.05rem;margin:4px 0 8px}.jst b{color:var(--g700);font-size:1.15rem}
+.jsp1{color:var(--g700);font-weight:800}.jsm1{color:var(--red);font-weight:800}
+.jstr{list-style:none;padding:0;margin:0}.jstr li{padding:8px 0;border-bottom:1px dashed var(--line);font-size:1.02rem}.jstr li span{float:right;font-weight:800;color:var(--red)}
+.jswarn{color:var(--red);font-size:.92rem}
+@media(max-width:600px){.jsi .jsa{width:110px}.jtabs button{padding:10px 14px}}
 </style>
 </head>
 <body>
@@ -189,7 +216,10 @@
       + row('인원', it.cat === '조인 희망' ? esc(it.cur + '명이 조인 희망') : esc('현재 ' + it.cur + '명 · ' + it.need + '명 모집 · 수락 ' + it.acc + '명')) + row('실력', esc(it.level)) + row('성별', esc(it.gender)) + row('연령대', esc(it.age))
       + row('비용', esc(it.cost)) + row('카풀', esc(it.carpool)) + row('구장 예약', esc(it.resv)) + row('연락 방법', esc(it.contact)) + '</table>'
       + (it.text ? '<div class="txt">' + esc(it.text) + '</div>' : '') + '</div><div id="act"></div>';
+    /* 2026-11-07: 글 상세에 '모집 정보 | 정산' 탭 */
+    h = h.replace('<div class="card jd">', '<div class="jtabs" role="tablist"><button type="button" role="tab" data-tab="info" class="on" aria-selected="true">모집 정보</button><button type="button" role="tab" data-tab="set" aria-selected="false">정산</button></div><div id="tInfo"><div class="card jd">') + '</div><div id="tSet" hidden></div>';
     jn.innerHTML = h;
+    setupSettle(it, id);
     jn.insertAdjacentHTML('beforeend', '<section class="card comments" id="jcm" style="margin-top:18px"></section>');   /* 이 글의 댓글 (목록의 댓글 버튼과 같은 댓글) */
     cmBox($('#jcm'), 'join:' + id, { title: '댓글', next: 'join.html?id=' + id });
     const act = $('#act'); let a = '';
@@ -214,6 +244,104 @@
       if (e.target.id === 'cancel') { if (confirm('신청을 취소할까요?')) return run(() => api('jcancel', { id })); }
       if (e.target.id === 'rep') { const w = $('#rw').value; if (!w) { say($('#msg'), '신고 사유를 골라 주세요.'); return; } if (confirm('이 글을 신고할까요? (' + w + ')')) return run(() => api('jreport', { id, why: w }), '신고가 접수되었습니다. 3명 이상 신고하면 글이 숨겨지고 운영자가 확인합니다.'); }
     };
+  }
+
+  /* ---------- 정산 탭 (2026-11-07) ----------
+     함께 친 분들의 비용(그린피·식사·유류비 등)을 항목별로 넣으면 1인 부담과 누가 누구에게 얼마를 보내면 되는지 계산.
+     입력 내용은 이 기기(localStorage)에 저장, '댓글로 남기기'를 누르면 이 글 댓글로 공유 (서버 변경 없음) */
+  function setupSettle(it, id) {
+    const box = $('#tSet'), info = $('#tInfo'), KEY = 'pgn_jset_' + id;
+    const CATS = ['그린피', '카트·장비', '식사', '음료·간식', '유류비(카풀)', '톨비·주차', '숙박', '기타'];
+    const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
+    const num = v => Math.max(0, Math.round(Number(String(v || '').replace(/[^0-9]/g, '')) || 0));
+    const defPeople = () => {
+      const p = [it.nick || '작성자'];
+      for (let j = 2; j <= (+it.cur || 1); j++) p.push((it.nick || '작성자') + ' 일행' + (j - 1));
+      (it.applicants || []).filter(x => x.s === '수락').forEach(x => { p.push(x.k); for (let j = 2; j <= (+x.n || 1); j++) p.push(x.k + ' 일행' + (j - 1)); });
+      (it.together || []).forEach(k => p.push(k));
+      return [...new Set(p.map(s => String(s).trim()).filter(Boolean))];
+    };
+    let S; try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { S = null; }
+    if (!S || !Array.isArray(S.people) || !Array.isArray(S.items)) S = { people: defPeople(), items: [] };
+    if (!S.items.length) S.items.push({ cat: '그린피', memo: '', amt: 0, payer: S.people[0] || '', who: null });
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+    const calc = () => {
+      const P = S.people, paid = {}, owe = {}; P.forEach(n => { paid[n] = 0; owe[n] = 0; });
+      let total = 0; const used = [];
+      S.items.forEach(x => {
+        const a = num(x.amt); if (!a) return;
+        const who = (x.who && x.who.length ? x.who : P).filter(n => P.includes(n)); if (!who.length) return;
+        total += a; used.push({ x, a, who });
+        if (P.includes(x.payer)) paid[x.payer] += a;
+        const base = Math.floor(a / who.length); let rest = a - base * who.length;
+        who.forEach(n => { owe[n] += base + (rest > 0 ? 1 : 0); rest--; });
+      });
+      const bal = P.map(n => ({ n, d: paid[n] - owe[n] }));
+      const cr = bal.filter(b => b.d > 0).map(b => ({ ...b })).sort((a, b) => b.d - a.d), db = bal.filter(b => b.d < 0).map(b => ({ n: b.n, d: -b.d })).sort((a, b) => b.d - a.d), tr = [];
+      let i = 0, j = 0;
+      while (i < db.length && j < cr.length) { const m = Math.min(db[i].d, cr[j].d); if (m > 0) tr.push({ f: db[i].n, t: cr[j].n, a: m }); db[i].d -= m; cr[j].d -= m; if (!db[i].d) i++; if (!cr[j].d) j++; }
+      const unpaid = S.items.some(x => num(x.amt) && !P.includes(x.payer));
+      return { total, paid, owe, tr, used, unpaid };
+    };
+    const text = () => {
+      const r = calc(), P = S.people;
+      let t = '[정산] ' + whenTxt(it) + ' · ' + it.place + '\n참가 ' + P.length + '명 · 총 ' + won(r.total) + '\n';
+      r.used.forEach(u => { t += '- ' + u.x.cat + (u.x.memo ? '(' + u.x.memo + ')' : '') + ' ' + won(u.a) + ' · ' + (u.x.payer || '미정') + ' 냄 · ' + (u.who.length === P.length ? '모두' : u.who.join(', ')) + '\n'; });
+      t += '1인 부담: ' + P.map(n => n + ' ' + won(r.owe[n])).join(', ') + '\n';
+      t += r.tr.length ? '보낼 돈\n' + r.tr.map(x => '- ' + x.f + ' → ' + x.t + ' ' + won(x.a)).join('\n') : '보낼 돈 없음 (모두 정산 완료)';
+      return t.length > 990 ? t.slice(0, 985) + '…' : t;
+    };
+    const draw = () => {
+      const P = S.people, r = calc();
+      const opt = (list, v) => list.map(o => '<option' + (o === v ? ' selected' : '') + '>' + esc(o) + '</option>').join('');
+      box.innerHTML = '<div class="card jd jset">'
+        + '<p class="jsh">함께 친 분들의 비용을 항목별로 넣으면 한 사람이 낼 돈과 누가 누구에게 얼마를 보내면 되는지 계산합니다. 입력한 내용은 이 기기에만 저장되고, <b>댓글로 남기기</b>를 누르면 이 글 댓글로 함께 볼 수 있습니다.</p>'
+        + '<h3>참가자 <small>' + P.length + '명</small></h3><div class="jsp">' + P.map((n, k) => '<span class="jpc">' + esc(n) + '<button type="button" data-delp="' + k + '" aria-label="' + esc(n) + ' 빼기">×</button></span>').join('')
+        + '</div><div class="row"><input id="sp" maxlength="20" placeholder="참가자 이름 추가"><button type="button" class="jbig sm w" id="spAdd">추가</button><button type="button" class="jbig sm w" id="spDef">신청자로 다시 채우기</button></div>'
+        + '<h3>지출 항목</h3>' + S.items.map((x, k) => '<div class="jsi" data-k="' + k + '"><div class="row">'
+          + '<select data-f="cat" aria-label="항목">' + opt(CATS.includes(x.cat) ? CATS : [x.cat, ...CATS], x.cat) + '</select>'
+          + '<input data-f="memo" maxlength="20" placeholder="내용(선택)" value="' + esc(x.memo || '') + '" class="jsm">'
+          + '<input data-f="amt" inputmode="numeric" placeholder="금액(원)" value="' + (num(x.amt) ? num(x.amt).toLocaleString('ko-KR') : '') + '" class="jsa" aria-label="금액">'
+          + '<label class="jsl">낸 사람 <select data-f="payer">' + (P.includes(x.payer) ? '' : '<option value="" selected>고르기</option>') + opt(P, x.payer) + '</select></label>'
+          + '<button type="button" class="jsx" data-deli="' + k + '" aria-label="이 항목 지우기">×</button></div>'
+          + '<div class="jsw"><span>나눌 사람</span>' + P.map(n => { const on = !x.who || !x.who.length || x.who.includes(n); return '<button type="button" class="jsc' + (on ? ' on' : '') + '" data-who="' + esc(n) + '">' + esc(n) + '</button>'; }).join('') + '</div></div>').join('')
+        + '<div class="row"><button type="button" class="jbig sm w" id="siAdd">+ 항목 추가</button></div>'
+        + '<h3>정산 결과</h3>'
+        + (r.total ? '<div class="jsr"><div class="jst">총 <b>' + won(r.total) + '</b> · ' + P.length + '명 · 1인 평균 ' + won(r.total / Math.max(1, P.length)) + '</div>'
+          + '<table><tr><th>이름</th><th>낸 돈</th><th>부담</th><th>차액</th></tr>' + P.map(n => { const d = r.paid[n] - r.owe[n]; return '<tr><td>' + esc(n) + '</td><td>' + won(r.paid[n]) + '</td><td>' + won(r.owe[n]) + '</td><td class="' + (d > 0 ? 'jsp1' : d < 0 ? 'jsm1' : '') + '">' + (d > 0 ? '받을 돈 ' + won(d) : d < 0 ? '보낼 돈 ' + won(-d) : '0원') + '</td></tr>'; }).join('') + '</table>'
+          + '<h4>보낼 돈</h4>' + (r.tr.length ? '<ul class="jstr">' + r.tr.map(x => '<li><b>' + esc(x.f) + '</b> → <b>' + esc(x.t) + '</b> <span>' + won(x.a) + '</span></li>').join('') + '</ul>' : '<p>보낼 돈이 없습니다.</p>')
+          + (r.unpaid ? '<p class="jswarn">낸 사람을 고르지 않은 항목이 있습니다. 낸 사람을 고르면 보낼 돈이 맞게 계산됩니다.</p>' : '') + '</div>'
+          : '<p style="color:var(--muted)">금액을 넣으면 여기에 결과가 나옵니다.</p>')
+        + '<div class="row" style="margin-top:14px"><button type="button" class="jbig sm" id="sCopy">결과 복사</button><button type="button" class="jbig sm w" id="sCm">댓글로 남기기</button><button type="button" class="jbig sm red" id="sReset">처음부터</button></div><div class="jmsg" id="sMsg"></div></div>';
+    };
+    const say2 = t => { const m = $('#sMsg'); if (m) m.textContent = t; };
+    box.addEventListener('input', e => {
+      const f = e.target.dataset.f, row = e.target.closest('.jsi'); if (!f || !row) return;
+      const x = S.items[+row.dataset.k];
+      if (f === 'amt') { x.amt = num(e.target.value); save(); const c = e.target.selectionStart, L = e.target.value.length; e.target.value = x.amt ? x.amt.toLocaleString('ko-KR') : ''; try { const p = Math.max(0, c + e.target.value.length - L); e.target.setSelectionRange(p, p); } catch (z) {} redrawResult(); return; }
+      if (f === 'memo') { x.memo = e.target.value; save(); return; }
+    });
+    box.addEventListener('change', e => {
+      const f = e.target.dataset.f, row = e.target.closest('.jsi'); if (!f || !row || f === 'amt' || f === 'memo') return;
+      S.items[+row.dataset.k][f] = e.target.value; save(); draw();
+    });
+    const redrawResult = () => { const y = scrollY, a = document.activeElement, k = a && a.closest('.jsi') ? a.closest('.jsi').dataset.k : null, ff = a && a.dataset ? a.dataset.f : null, pos = a && a.selectionStart; draw(); if (k != null && ff) { const el = box.querySelector('.jsi[data-k="' + k + '"] [data-f="' + ff + '"]'); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (z) {} } } scrollTo(0, y); };
+    box.addEventListener('click', async e => {
+      const t = e.target;
+      if (t.dataset.delp != null) { const n = S.people[+t.dataset.delp]; S.people.splice(+t.dataset.delp, 1); S.items.forEach(x => { if (x.who) x.who = x.who.filter(w => w !== n); if (x.payer === n) x.payer = ''; }); save(); draw(); return; }
+      if (t.id === 'spAdd') { const v = ($('#sp').value || '').trim().slice(0, 20); if (!v) return; if (S.people.includes(v)) { say2('이미 있는 이름입니다.'); return; } S.people.push(v); S.items.forEach(x => { if (x.who && x.who.length) x.who.push(v); }); save(); draw(); $('#sp') && $('#sp').focus(); return; }
+      if (t.id === 'spDef') { defPeople().forEach(n => { if (!S.people.includes(n)) S.people.push(n); }); save(); draw(); return; }
+      if (t.id === 'siAdd') { S.items.push({ cat: '식사', memo: '', amt: 0, payer: S.people[0] || '', who: null }); save(); draw(); return; }
+      if (t.dataset.deli != null) { S.items.splice(+t.dataset.deli, 1); if (!S.items.length) S.items.push({ cat: '그린피', memo: '', amt: 0, payer: S.people[0] || '', who: null }); save(); draw(); return; }
+      if (t.dataset.who != null) { const x = S.items[+t.closest('.jsi').dataset.k], n = t.dataset.who; let w = x.who && x.who.length ? x.who.slice() : S.people.slice(); w = w.includes(n) ? w.filter(v => v !== n) : [...w, n]; if (!w.length) { say2('나눌 사람이 한 명은 있어야 합니다.'); return; } x.who = w.length === S.people.length ? null : w; save(); draw(); return; }
+      if (t.id === 'sCopy') { if (!calc().total) { say2('먼저 금액을 넣어 주세요.'); return; } const ok = await (async () => { try { await navigator.clipboard.writeText(text()); return true; } catch (z) { try { copyText(text()); return true; } catch (y) { return false; } } })(); say2(ok ? '정산 결과를 복사했습니다. 카카오톡이나 문자에 붙여 넣으세요.' : '복사하지 못했습니다.'); return; }
+      if (t.id === 'sCm') { if (!calc().total) { say2('먼저 금액을 넣어 주세요.'); return; } if (!Auth.get()) { say2('댓글은 로그인한 회원만 남길 수 있습니다.'); return; } if (!confirm('정산 결과를 이 글 댓글로 남길까요?')) return; t.disabled = true; try { await api('cpost', { aid: 'join:' + id, text: text() }); say2('댓글로 남겼습니다. 아래 댓글에서 볼 수 있습니다.'); const cm = $('#jcm'); if (cm) cmBox(cm, 'join:' + id, { title: '댓글', next: 'join.html?id=' + id }); } catch (z) { say2(z.message); } t.disabled = false; return; }
+      if (t.id === 'sReset') { if (!confirm('입력한 정산 내용을 모두 지우고 처음부터 할까요?')) return; localStorage.removeItem(KEY); S = { people: defPeople(), items: [{ cat: '그린피', memo: '', amt: 0, payer: '', who: null }] }; S.items[0].payer = S.people[0] || ''; save(); draw(); return; }
+    });
+    const tabs = jn.querySelector('.jtabs');
+    const show = k => { tabs.querySelectorAll('[data-tab]').forEach(b => { const on = b.dataset.tab === k; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }); info.hidden = k !== 'info'; box.hidden = k !== 'set'; if (k === 'set') draw(); history.replaceState(null, '', 'join.html?id=' + encodeURIComponent(id) + (k === 'set' ? '#정산' : '')); };
+    tabs.onclick = e => { const b = e.target.closest('[data-tab]'); if (b) show(b.dataset.tab); };
+    if (decodeURIComponent(location.hash) === '#정산') show('set');
   }
 
   /* ---------- 글쓰기 / 수정 ---------- */
