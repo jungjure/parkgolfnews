@@ -25,7 +25,13 @@
     + '.pgp .ft button{padding:8px 12px;font-weight:700;color:#1b7a3a}.pgp .ft button:hover{background:#eef7f0}'
     + '.pgp .tl{font-size:13px;font-weight:800;color:#666;margin:4px 2px 6px}'
     + '.pgp .tg{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:8px}'
-    + '.pgp .tg button{height:36px;font-weight:600;background:#f6f8f6}.pgp .tg button:hover{background:#e3f1e7}.pgp .tg button.on{background:#1b7a3a;color:#fff}';
+    + '.pgp .tg button{height:36px;font-weight:600;background:#f6f8f6}.pgp .tg button:hover{background:#e3f1e7}.pgp .tg button.on{background:#1b7a3a;color:#fff}'
+    /* 2026-11-08: 시간 직접 입력 (분 단위 아무 시각이나) */
+    + '.pgp .ti{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-weight:700;font-size:15px}'
+    + '.pgp .ti input,.pgp .ti select{height:38px;border:2px solid #cfe3d5;border-radius:9px;font-size:16px;text-align:center;padding:0 4px;background:#fff;color:#1a1a1a;user-select:text}'
+    + '.pgp .ti input{width:50px}.pgp .ti select{width:66px;cursor:pointer}.pgp .ti input:focus,.pgp .ti select:focus{outline:0;border-color:#1b7a3a}'
+    + '.pgp .ti button[data-a=set]{margin-left:auto;background:#1b7a3a;color:#fff;font-weight:800;padding:9px 14px}.pgp .ti button[data-a=set]:hover{background:#155f2d}'
+    + '.pgp .te{color:#d33;font-size:13px;min-height:16px;margin:4px 2px 0}';
   var st = document.createElement('style'); st.textContent = css; (document.head || document.documentElement).appendChild(st);
 
   var p2 = function (n) { return String(n).padStart(2, '0'); };
@@ -44,7 +50,7 @@
   }
   function make(el) {
     close(); cur = el; pop = document.createElement('div'); pop.className = 'pgp'; pop.setAttribute('role', 'dialog');
-    pop.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    pop.addEventListener('mousedown', function (e) { if (!/^(INPUT|SELECT|OPTION)$/.test(e.target.tagName)) e.preventDefault(); });   /* 직접 입력 칸은 눌러서 쓸 수 있게 */
     document.body.appendChild(pop);
   }
 
@@ -90,11 +96,24 @@
       }
       h += '</div><div class="tl">분' + (hh ? ' (' + lab(hh) + '시)' : '') + '</div><div class="tg">';
       for (var j = 0; j < 60; j += mStep) h += '<button type="button" data-m="' + p2(j) + '"' + (p2(j) === mm ? ' class="on"' : '') + '>' + p2(j) + '분</button>';
+      var hn = hh ? Number(hh) : '', h12 = hh === '' ? '' : (hn % 12 || 12);
+      h += '</div><div class="tl">직접 입력 <span style="font-weight:600">(분 단위 아무 시각이나)</span></div><div class="ti"><select data-ap aria-label="오전 오후"><option' + (hh !== '' && hn < 12 ? ' selected' : '') + '>오전</option><option' + (hh !== '' && hn >= 12 ? ' selected' : '') + '>오후</option></select><input data-ih inputmode="numeric" maxlength="2" placeholder="시" aria-label="시" value="' + h12 + '">시<input data-im inputmode="numeric" maxlength="2" placeholder="분" aria-label="분" value="' + (mm || '') + '">분<button type="button" data-a="set">적용</button></div><div class="te"></div>';
       h += '</div><div class="ft"><span></span><button type="button" data-a="close">닫기</button></div>';
       pop.innerHTML = h; place(el);
     }
+    function setTyped() {
+      var ap = pop.querySelector('[data-ap]').value, hs = pop.querySelector('[data-ih]').value.replace(/[^0-9]/g, ''), ms = pop.querySelector('[data-im]').value.replace(/[^0-9]/g, ''), er = pop.querySelector('.te');
+      var H = Number(hs), M = ms === '' ? 0 : Number(ms);
+      if (hs === '' || H < 0 || H > 23) { er.textContent = '시는 1~12 사이 숫자로 넣어 주세요.'; pop.querySelector('[data-ih]').focus(); return; }
+      if (M < 0 || M > 59) { er.textContent = '분은 0~59 사이 숫자로 넣어 주세요.'; pop.querySelector('[data-im]').focus(); return; }
+      if (H <= 12) { if (ap === '오전') H = H % 12; else H = H % 12 + 12; }   /* 13~23을 넣으면 그대로 24시간제로 */
+      put(el, p2(H) + ':' + p2(M)); close(); el.focus();
+    }
+    pop.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.closest && e.target.closest('.ti')) { e.preventDefault(); setTyped(); } });
+    pop.addEventListener('input', function (e) { if (e.target.dataset && (e.target.dataset.ih != null || e.target.dataset.im != null)) { e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 2); pop.querySelector('.te').textContent = ''; } });
     pop.addEventListener('click', function (e) {
       var b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.a === 'set') { setTyped(); return; }
       if (b.dataset.h) { hh = b.dataset.h; if (!mm) mm = '00'; put(el, hh + ':' + mm); draw(); return; }
       if (b.dataset.m) { mm = b.dataset.m; if (!hh) hh = '08'; put(el, hh + ':' + mm); close(); el.focus(); return; }
       if (b.dataset.a === 'close') close();
@@ -122,7 +141,7 @@
   }
   document.addEventListener('mousedown', function (e) { if (pop && !pop.contains(e.target) && e.target !== cur) close(); }, true);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
-  window.addEventListener('resize', close);
+  window.addEventListener('resize', function () { if (pop && cur && pop.contains(document.activeElement)) place(cur); else close(); });   /* 휴대폰에서 직접 입력 중 자판이 올라와도 닫히지 않게 */
   new MutationObserver(function (list) {
     list.forEach(function (r) { r.addedNodes.forEach(scan); });
     if (cur && !document.body.contains(cur)) close();
