@@ -1458,7 +1458,7 @@ if (document.body) pgnLinkCore(document, false); else document.addEventListener(
     if (noLinks) pvb.querySelector('iframe').addEventListener('load', e => { try { e.target.contentDocument.addEventListener('click', ev => { if (ev.target.closest && ev.target.closest('a')) ev.preventDefault(); }, true); } catch (x) {} });
   }
   window.pgnNlView = o => { const b = open('오늘의 뉴스레터 견양', ''); preview(b, o && o.noLinks); };
-  const intro = '<p>파크골프뉴스 뉴스레터로 대회·접수 일정과 파크골프 소식을 받아 보세요. 받는 방법을 고를 수 있습니다. 아래에서 오늘 뉴스레터 견양을 미리 보실 수 있습니다.</p>';
+  const intro = '<p>파크골프 뉴스레터로 대회·접수 일정과 파크골프 소식을 받아 보세요. 받는 방법을 고를 수 있습니다. 아래에서 오늘 뉴스레터 견양을 미리 보실 수 있습니다.</p>';
   const chHtml = (e, k, emailTxt, phoneTxt) => '<div class="nlm-ch">'
     + '<label class="' + (e ? 'on' : '') + '"><input type="checkbox" data-ch="email"' + (e ? ' checked' : '') + '><span>이메일로 받기<small>' + emailTxt + '</small></span></label>'
     + '<label class="' + (k ? 'on' : '') + '"><input type="checkbox" data-ch="kakao"' + (k ? ' checked' : '') + '><span>카카오톡으로 받기<small>' + phoneTxt + '</small></span></label></div>';
