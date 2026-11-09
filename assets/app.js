@@ -505,7 +505,7 @@ async function layout(active, opts) {
       <span class="brand"><a href="index.html" title="홈" style="display:flex;align-items:center"><img src="assets/logo.png" alt="홈"></a><a href="about.html" title="회사소개">${esc(S.사이트명)}</a></span>
       <button class="menu-btn" aria-label="메뉴" onclick="document.querySelector('nav.main').classList.toggle('open')">메뉴</button>
       <nav class="main${isSched ? ' subopen' : ''}">${nav.map(n => n[2] === 'today' ? `<a href="${n[0]}" class="${isSched ? 'on' : ''}" data-sub="1" aria-haspopup="true">${n[1]}</a>${schedSubHtml('subm', subK)}` : `<a href="${n[0]}" class="${n[2] === active ? 'on' : ''}">${n[1]}</a>`).join('')}${authNav}</nav>
-    </div><div class="menu-info" aria-label="날짜 및 연락처"><time>${pgnDateLine()}</time><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a><a href="tel:${esc(S.전화.replace(/[^0-9+]/g, ''))}">${esc(S.전화)}</a><form class="msearch" action="search.html" method="get" role="search"><input type="search" name="q" placeholder="기사 검색" aria-label="기사 검색어" maxlength="40" value="${/search\.html$/.test(location.pathname) ? esc(new URLSearchParams(location.search).get('q') || '') : ''}"><button type="submit" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></form></div>${schedSubHtml('subnav', subK, !isSched)}</header>
+    </div><div class="menu-info" aria-label="날짜 및 연락처"><time>${pgnDateLine()}</time><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a><a href="tel:${esc(S.전화.replace(/[^0-9+]/g, ''))}">${esc(S.전화)}</a><form class="msearch" action="search.html" method="get" role="search"><input type="search" name="q" placeholder="기사 검색" aria-label="기사 검색어" maxlength="40" value="${/search\.html$/.test(location.pathname) ? esc(new URLSearchParams(location.search).get('q') || '') : ''}"><button type="submit" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></form><span class="mnl"><button type="button" class="mnl-b" data-nl="sub">뉴스레터 받기</button><button type="button" class="mnl-b mnl-v" data-nl="view">견양보기</button></span></div>${schedSubHtml('subnav', subK, !isSched)}</header>
     ${S.공지 ? `<div class="notice"><div class="wrap">공지 | ${esc(S.공지)}</div></div>` : ''}`;
   const foot = S => `
     <div class="wrap">
@@ -1399,4 +1399,85 @@ if (document.body) pgnLinkCore(document, false); else document.addEventListener(
     '.menu-info .msearch:focus-within{box-shadow:0 0 0 2px #ffffffaa}' +
     '@media(max-width:760px){.menu-info .msearch input{width:118px}}';
   document.head.appendChild(st);
+})();
+
+
+/* ---------- 2026-11-09: 머리 부분 기사 검색 오른쪽 '뉴스레터 받기' + '견양보기'(오늘 날짜 뉴스레터) ----------
+   뉴스레터 받기: 손님은 회원가입(뉴스레터 받기 체크된 상태)·로그인 안내, 회원은 등록 이메일로 받기 켜기/끄기 (서버 menl, 회원 16열)
+   견양보기: 뉴스 탭의 뉴스레터 글 중 오늘 날짜 호(없으면 가장 최근 호)를 이 화면 위 창으로 보여 줌 */
+(function () {
+  const st = document.createElement('style');
+  st.textContent = '.menu-info .mnl{display:inline-flex;gap:6px;align-items:center}' +
+    '.menu-info .mnl-b{height:30px;margin:0;padding:0 14px;border:1px solid #fff;border-radius:999px;background:#fff;color:var(--g700);font:inherit;font-size:.85rem;font-weight:800;cursor:pointer;white-space:nowrap}' +
+    '.menu-info .mnl-v{background:transparent;color:#fff}.menu-info .mnl-b:hover{opacity:.88}.menu-info .mnl-b:focus-visible{outline:2px solid #fff;outline-offset:3px}' +
+    '.nlm{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:14px}' +
+    '.nlm-box{background:#fff;border-radius:14px;width:100%;max-width:480px;max-height:94vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);color:var(--ink,#222)}' +
+    '.nlm-box.wide{max-width:760px;height:94vh}' +
+    '.nlm-hd{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:2px solid var(--g100,#e3efe7)}.nlm-hd b{flex:1;font-size:1.05rem;color:var(--g900,#0d3b26)}' +
+    '.nlm-x{border:0;background:none;font:inherit;font-size:1.5rem;line-height:1;cursor:pointer;color:#666;padding:2px 6px}' +
+    '.nlm-bd{padding:16px 18px 18px;line-height:1.7;font-size:.98rem;overflow:auto}.nlm-bd p{margin:0 0 10px}.nlm-bd small{color:var(--muted,#777);font-size:.85rem}' +
+    '.nlm-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}' +
+    '.nlm-btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 18px;border-radius:10px;border:2px solid var(--g700,#1d6b44);background:var(--g700,#1d6b44);color:#fff;font:inherit;font-weight:800;font-size:.98rem;cursor:pointer;text-decoration:none}' +
+    '.nlm-btn.w{background:#fff;color:var(--g700,#1d6b44)}.nlm-btn:disabled{opacity:.6;cursor:default}' +
+    '.nlm-msg{margin-top:10px;font-weight:700;color:var(--g700,#1d6b44)}.nlm-msg.err{color:var(--red,#c0392b)}' +
+    '.nlm-note{background:var(--g50,#f2f8f4);border:1px solid var(--g100,#e3efe7);border-radius:8px;padding:6px 12px;font-size:.88rem;margin:8px 12px 0}' +
+    '.nlm-fr{flex:1;width:100%;border:0;display:block}' +
+    '@media(max-width:760px){.menu-info .mnl-b{padding:0 11px;font-size:.8rem}.nlm{padding:0}.nlm-box.wide{max-width:none;height:100%;border-radius:0;max-height:none}}';
+  document.head.appendChild(st);
+  let box = null;
+  const close = () => { if (box) { box.remove(); box = null; document.removeEventListener('keydown', onKey); } };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  const open = (title, html, wide) => {
+    close();
+    box = document.createElement('div'); box.className = 'nlm';
+    box.innerHTML = '<div class="nlm-box' + (wide ? ' wide' : '') + '" role="dialog" aria-modal="true" aria-label="' + esc(title) + '"><div class="nlm-hd"><b>' + esc(title) + '</b><button type="button" class="nlm-x" aria-label="닫기">×</button></div>' + html + '</div>';
+    box.addEventListener('click', e => { if (e.target === box || e.target.closest('.nlm-x')) close(); });
+    document.body.appendChild(box); document.addEventListener('keydown', onKey);
+    return box;
+  };
+  const isNl = n => /뉴스레터\s*Vol\.?\s*\d+/i.test(n.title || '') && /^https?:\/\//.test(n.embed || '');
+  async function view() {
+    const b = open('오늘의 뉴스레터 견양', '<div class="nlm-bd"><p>뉴스레터를 불러오는 중입니다...</p></div>', true);
+    let list = [];
+    try { list = (await getNews()).filter(isNl); } catch (e) {}
+    if (box !== b) return;
+    if (!list.length) { b.querySelector('.nlm-bd').innerHTML = '<p>아직 올라온 뉴스레터가 없습니다.</p>'; return; }
+    const t = ymd(new Date()), it = list.find(n => ymd(n.date) === t) || list[0], isToday = ymd(it.date) === t;
+    const vol = ((it.title || '').match(/Vol\.?\s*\d+/i) || [''])[0];
+    b.querySelector('.nlm-hd b').textContent = '뉴스레터 ' + vol + ' · ' + (it.date.getMonth() + 1) + '월 ' + it.date.getDate() + '일 견양';
+    b.querySelector('.nlm-bd').outerHTML = (isToday ? '' : '<div class="nlm-note">오늘 날짜 뉴스레터가 아직 없어 가장 최근 호를 보여 드립니다.</div>') + '<iframe class="nlm-fr" title="뉴스레터 견양" src="' + esc(it.embed) + '"></iframe>';
+  }
+  async function sub() {
+    const me = Auth.get(), here = location.pathname.split('/').pop() + location.search;
+    const intro = '<p>파크골프뉴스 뉴스레터로 대회·접수 일정과 파크골프 소식을 이메일로 받아 보세요.</p>';
+    const viewBtn = '<button type="button" class="nlm-btn w" data-nl="view">견양보기</button>';
+    if (!me) {
+      open('뉴스레터 받기', '<div class="nlm-bd">' + intro + '<p>뉴스레터는 회원에게 보내 드립니다. 회원가입할 때 <b>뉴스레터 받기</b>에 체크하시거나, 이미 회원이시면 로그인한 뒤 이 버튼을 다시 눌러 주세요.</p><div class="nlm-row"><a class="nlm-btn" href="signup.html?nl=1">회원가입하고 받기</a><a class="nlm-btn w" href="login.html?next=' + encodeURIComponent(here) + '">로그인</a>' + viewBtn + '</div></div>');
+      return;
+    }
+    if (me.role === 'admin') { open('뉴스레터 받기', '<div class="nlm-bd">' + intro + '<p>관리자 계정은 뉴스레터를 신청할 수 없습니다. 회원 계정으로 로그인해 주세요.</p><div class="nlm-row">' + viewBtn + '</div></div>'); return; }
+    const b = open('뉴스레터 받기', '<div class="nlm-bd">' + intro + '<p>회원 정보를 확인하는 중입니다...</p></div>');
+    let r;
+    try { r = await api('me'); } catch (e) { if (box === b) b.querySelector('.nlm-bd').innerHTML = '<p class="nlm-msg err">' + esc(e.message) + '</p>'; return; }
+    if (box !== b) return;
+    const draw = (on, email, msg) => {
+      b.querySelector('.nlm-bd').innerHTML = intro + (on
+        ? '<p><b>지금 뉴스레터를 받고 계십니다.</b><br>받는 이메일: <b>' + esc(email) + '</b></p><small>이메일 주소는 마이페이지에서 바꿀 수 있습니다.</small><div class="nlm-row"><button type="button" class="nlm-btn w" data-nlset="0">그만 받기</button>' + viewBtn + '</div>'
+        : email
+          ? '<p>등록된 이메일 <b>' + esc(email) + '</b>(으)로 보내 드립니다.</p><small>동의하지 않아도 회원 이용에는 지장이 없고, 언제든 그만 받을 수 있습니다.</small><div class="nlm-row"><button type="button" class="nlm-btn" data-nlset="1">뉴스레터 받기</button>' + viewBtn + '</div>'
+          : '<p>뉴스레터를 받을 이메일이 등록되어 있지 않습니다. 마이페이지에서 이메일을 먼저 등록해 주세요.</p><div class="nlm-row"><a class="nlm-btn" href="mypage.html">마이페이지로 가기</a>' + viewBtn + '</div>')
+        + (msg ? '<div class="nlm-msg">' + esc(msg) + '</div>' : '');
+    };
+    draw(!!r.newsletter, String(r.email || '').trim());
+    b.addEventListener('click', async e => {
+      const t = e.target.closest('[data-nlset]'); if (!t) return;
+      t.disabled = true; t.textContent = '저장 중...';
+      try { const o = await api('menl', { on: t.dataset.nlset === '1' }); if (box === b) draw(!!o.newsletter, String(o.email || ''), o.newsletter ? '뉴스레터 받기를 신청했습니다.' : '뉴스레터를 그만 받도록 바꿨습니다.'); }
+      catch (z) { t.disabled = false; t.textContent = t.dataset.nlset === '1' ? '뉴스레터 받기' : '그만 받기'; const m = document.createElement('div'); m.className = 'nlm-msg err'; m.textContent = z.message; b.querySelector('.nlm-bd').appendChild(m); }
+    });
+  }
+  document.addEventListener('click', e => {
+    const t = e.target.closest && e.target.closest('[data-nl]'); if (!t) return;
+    e.preventDefault(); if (t.dataset.nl === 'view') view(); else sub();
+  });
 })();
