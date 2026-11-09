@@ -427,8 +427,9 @@ function pgnNavAlign() {
   if (!nav) return;
   const links = [...nav.querySelectorAll(':scope > a:not(.auth)')];
   const ed = document.getElementById('pgnEd');
-  const reset = () => { nav.style.cssText = ''; if (mi) mi.style.cssText = ''; if (ed) ed.style.paddingLeft = ''; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = ''; }); };
+  const reset = () => { nav.style.cssText = ''; if (mi) mi.style.cssText = ''; if (ed) ed.style.left = ''; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = ''; }); };
   reset();
+  if (ed && !ed.textContent && typeof pgnEdFill === 'function') pgnEdFill(ed);   // 머리 부분을 다시 그렸을 때 '최근 편집' 다시 채움
   if (mb && getComputedStyle(mb).display !== 'none') return;   // 휴대폰은 기존 모양
   const W = Math.min(PGN_W, nav.parentElement.clientWidth - 36);
   let pad = 12; const need = () => [...nav.children].reduce((s, e) => s + (e.offsetWidth ? e.getBoundingClientRect().width + (parseFloat(getComputedStyle(e).marginLeft) || 0) : 0), 0);
@@ -439,7 +440,7 @@ function pgnNavAlign() {
   const dx = r && Math.abs(r.width - W) < 4 ? r.left - nav.getBoundingClientRect().left : 0;
   nav.style.left = dx + 'px';
   if (mi) { mi.style.cssText = 'max-width:' + W + 'px;padding-left:0;padding-right:0;position:relative'; mi.style.left = (nav.getBoundingClientRect().left - mi.getBoundingClientRect().left) + 'px'; }   // 메뉴 밑 날짜 줄(가는 선)도 같은 폭
-  if (ed) { const a0 = links[0]; ed.style.paddingLeft = Math.max(0, Math.round((a0 || nav).getBoundingClientRect().left + (a0 ? parseFloat(getComputedStyle(a0).paddingLeft) || 0 : 0))) + 'px'; }   // '최근 편집'을 '홈' 글자 위에 맞춤 (2026-11-09)
+  if (ed && ed.parentElement) { const a0 = links[0], x = (a0 || nav).getBoundingClientRect().left + (a0 ? parseFloat(getComputedStyle(a0).paddingLeft) || 0 : 0); ed.style.left = Math.max(0, Math.round(x - ed.parentElement.getBoundingClientRect().left)) + 'px'; }   // '최근 편집'을 슬로건 줄, '홈' 글자 왼쪽 끝에 맞춤 (2026-11-09)
 }
 function pgnAlignAll() { pgnSubAlign(); pgnNavAlign(); }
 function schedSubPrep(active) {
@@ -502,8 +503,7 @@ async function layout(active, opts) {
   const isSched = SCHED_PAGES.includes(active), subK = schedSubKey(active);
   const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a><a href="stats.html" class="${active === 'stats' ? 'on' : ''}">통계</a>` : '') + `<a href="mypage.html" class="who ${active === 'mypage' ? 'on' : ''}" title="마이페이지">${esc(me.name)}님</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   const head = S => `
-    <div class="mast"><a href="index.html" title="홈"><img src="assets/logo.png" alt=""><span class="nm">${esc(S.사이트명)}</span></a><div class="sl">${esc(S.슬로건)}</div></div>
-    <div class="pgn-ed" id="pgnEd" hidden></div>
+    <div class="mast"><a href="index.html" title="홈"><img src="assets/logo.png" alt=""><span class="nm">${esc(S.사이트명)}</span></a><div class="sl">${esc(S.슬로건)}<span class="pgn-ed" id="pgnEd" hidden></span></div></div>
     <header class="site"><div class="wrap">
       <span class="brand"><a href="index.html" title="홈" style="display:flex;align-items:center"><img src="assets/logo.png" alt="홈"></a><a href="about.html" title="회사소개">${esc(S.사이트명)}</a></span>
       <button class="menu-btn" aria-label="메뉴" onclick="document.querySelector('nav.main').classList.toggle('open')">메뉴</button>
@@ -1517,9 +1517,9 @@ if (document.body) pgnLinkCore(document, false); else document.addEventListener(
    모든 방문자: 최근 편집 일시만 표시. 관리자: 누르면 전체 변경 기록(변경일시·변경 내용·작성자·바뀐 파일)을 봄 */
 (function () {
   const st = document.createElement('style');
-  st.textContent = '.pgn-ed{font-size:.78rem;color:#777;padding:0 18px 5px;line-height:1.4;text-align:left}' +
+  st.textContent = '.mast .sl{position:relative}.pgn-ed{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;font-size:.78rem;color:#777;white-space:nowrap}.pgn-ed[hidden]{display:none!important}' +
     '.pgn-ed button{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.pgn-ed button:hover{color:var(--g700,#1d6b44)}' +
-    '@media(max-width:760px){.pgn-ed{text-align:center;padding:0 12px 5px}}' +
+    '@media(max-width:760px){.pgn-ed{position:static;display:block;margin-top:2px;text-align:center;line-height:1.5}}' +
     '.edm{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:14px}' +
     '.edm-box{background:#fff;border-radius:14px;width:100%;max-width:920px;height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);color:var(--ink,#222)}' +
     '.edm-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:2px solid var(--g100,#e3efe7)}.edm-hd b{font-size:1.05rem;color:var(--g900,#0d3b26)}.edm-hd small{color:var(--muted,#777)}' +
@@ -1532,7 +1532,7 @@ if (document.body) pgnLinkCore(document, false); else document.addEventListener(
     '@media(max-width:760px){.edm{padding:0}.edm-box{max-width:none;height:100%;border-radius:0}.edm-q{margin-left:0;flex:1}.edm td.t{white-space:normal}}';
   document.head.appendChild(st);
   const KEY = 'pgn_edited';
-  const fmt = t => String(t || '').replace(/^(\d{4})-(\d{2})-(\d{2})/, '$1.$2.$3');
+  const fmt = t => String(t || '').replace(/^(\d{4})-(\d{2})-(\d{2})/, (s, y, m, d) => y + '.' + m + '.' + d + '(' + '일월화수목금토'[new Date(+y, +m - 1, +d).getDay()] + ')');   // 2026.11.09(월) 17:03
   const who = a => a === 'jungjure' ? '정지현 (jungjure)' : a === 'github-actions[bot]' ? '자동' : a;
   const isAdmin = () => { const m = Auth.get(); return !!(m && m.role === 'admin'); };
   function show(el, t) {
@@ -1563,6 +1563,7 @@ if (document.body) pgnLinkCore(document, false); else document.addEventListener(
     d.querySelector('.edm-q').addEventListener('input', e => draw(e.target.value));
   }
   document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#pgnEd button')) openLog(); });
+  window.pgnEdFill = el => { try { show(el, localStorage.getItem(KEY)); } catch (e) {} };
   const tick = n => {
     const el = document.getElementById('pgnEd');
     if (!el) { if (n < 60) setTimeout(() => tick(n + 1), 150); return; }
