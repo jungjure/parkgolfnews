@@ -20,16 +20,15 @@ video{width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;display:bl
 <div class="top">PARKGOLF NEWS · 뉴스 영상</div>
 <div class="wrap">
   <h1 id="tt">파크골프뉴스 영상</h1>
-  <video id="v" controls playsinline preload="metadata"></video>
-  <p class="note">화면을 누르면 바로 재생됩니다. 와이파이가 아니면 데이터가 사용될 수 있습니다(약 13MB).</p>
-  <a class="btn" href="https://parkgolfnews.org/">파크골프뉴스 홈페이지</a>
+  <p class="note" style="font-size:1rem;line-height:1.7">뉴스 영상은 이제 파크골프뉴스 네이버 밴드에서 보실 수 있습니다.</p>
+  <a class="btn" href="https://band.us/@parkgolfnews1">파크골프뉴스 밴드에서 영상 보기</a>
+  <a class="btn" href="https://parkgolfnews.org/" style="margin-top:10px">파크골프뉴스 홈페이지</a>
 </div>
 <script>
+/* 2026-11-09: 영상 파일은 홈페이지(GitHub)에 두지 않음 (사용자 지시). 지난 뉴스레터의 영상 링크는 밴드로 안내 */
 (function(){
-  var q=new URLSearchParams(location.search), f=(q.get('v')||'').replace(/[^0-9A-Za-z_\-]/g,''), t=q.get('t');
+  var t=new URLSearchParams(location.search).get('t');
   if(t){document.getElementById('tt').textContent=t;document.title=t+' · 파크골프뉴스';}
-  var v=document.getElementById('v');
-  if(f){v.poster='assets/'+f+'_poster.jpg';v.src='assets/'+f+'_mobile.mp4';}
 })();
 </script>
 </body>
