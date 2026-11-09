@@ -1109,7 +1109,10 @@ function rxPaint(id) {
   document.querySelectorAll('.rx[data-id]').forEach(el => { if (!id || el.dataset.id === id) { el.dataset.ok = 1; el.innerHTML = rxHtml(el.dataset.id); } });
 }
 function rxLoad() {
-  if (!RX.p) RX.p = api('rlist').then(r => { RX.counts = r.counts || {}; RX.mine = r.mine || {}; }).catch(() => {}).then(() => { RX.loaded = true; });
+  /* 2026-11-10: 반응 수는 1분마다 만들어지는 data/counts.json에서 읽음 (손님은 회원 서버를 부르지 않음, 동시접속 대비).
+     로그인한 회원만 '내가 누른 반응'을 위해 서버(rlist)를 부름. 파일이 없으면 예전처럼 서버에서 */
+  const rxServer = () => api('rlist').then(r => { RX.counts = r.counts || RX.counts || {}; RX.mine = r.mine || {}; });
+  if (!RX.p) RX.p = pgnCounts().then(c => { if (!c || !c.rx) throw 0; RX.counts = c.rx; RX.mine = RX.mine || {}; if (Auth.get()) return rxServer().catch(() => {}); }).catch(() => rxServer()).catch(() => {}).then(() => { RX.loaded = true; });
   return RX.p;
 }
 let _rxT;
@@ -1192,7 +1195,7 @@ const PAGE_CMT = { today: '오늘일정', schedule: '월간일정', board: '자�
 })();
 const CMC = { counts: null, p: null };
 function cmCountLoad() {
-  if (!CMC.p) CMC.p = api('ccount').then(r => { CMC.counts = r.counts || {}; }).catch(() => { CMC.counts = CMC.counts || {}; });
+  if (!CMC.p) CMC.p = pgnCounts().then(c => { if (!c || !c.cc) throw 0; CMC.counts = c.cc; }).catch(() => api('ccount').then(r => { CMC.counts = r.counts || {}; })).catch(() => { CMC.counts = CMC.counts || {}; });   /* 2026-11-10: 댓글 수도 data/counts.json 먼저 */
   return CMC.p;
 }
 function cmPaint() {
@@ -1572,3 +1575,6 @@ if (document.body) pgnLinkCore(document, false); else document.addEventListener(
   };
   tick(0);
 })();
+
+/* 2026-11-10: 기사 반응 수·댓글 수 파일 (회원 서버가 1분마다 data/counts.json으로 게시). 한 페이지에서 한 번만 받음 */
+function pgnCounts() { return window._pgnCnt || (window._pgnCnt = fetch('data/counts.json?t=' + Math.floor(Date.now() / 60000), { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error('no counts'); return r.json(); })); }
