@@ -96,6 +96,7 @@
   };
   const nlSync = () => { $('#emailHint').textContent = $('#nl').checked ? '뉴스레터를 받을 주소입니다. 비밀번호를 잊었을 때 본인 확인에도 쓰입니다.' : '비밀번호를 잊었을 때 본인 확인용으로 쓰입니다.'; };
   $('#nl').addEventListener('change', () => { nlSync(); if ($('#nl').checked && !$('#email').value.trim()) $('#email').focus(); });
+  if (new URLSearchParams(location.search).get('nl') === '1') { $('#nl').checked = true; nlSync(); }   /* 2026-11-09: 머리 부분 '뉴스레터 받기' > 회원가입하고 받기 */
   $('#nlEx').onclick = () => {
     const d = document.createElement('div'); d.className = 'modal'; d.style.alignItems = 'flex-start';
     d.innerHTML = '<div style="background:#fff;border-radius:14px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25)"><div style="display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:2px solid var(--g100)"><b style="flex:1">뉴스레터 예시 <span style="font-weight:600;color:var(--muted);font-size:.85rem">(Vol.01, 2026.10.30)</span></b><button type="button" class="nlx" style="border:2px solid var(--g700);background:#fff;color:var(--g900);border-radius:10px;font:inherit;font-weight:800;padding:4px 12px;cursor:pointer">닫기</button></div><iframe src="assets/newsletter_vol01_20261030.html" title="뉴스레터 예시" style="display:block;width:100%;height:min(72vh,760px);border:0;background:#E9E3D6"></iframe><div style="padding:10px 14px;font-size:.82rem;color:var(--muted)">실제 뉴스레터는 이런 모양으로 이메일에 담겨 갑니다. 예시 화면이라 링크는 눌리지 않습니다.</div></div>';
