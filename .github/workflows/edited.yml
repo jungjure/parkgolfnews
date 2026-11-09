@@ -1,11 +1,13 @@
-# 2026-11-09: 홈페이지 파일이 바뀔 때마다(데이터 자동 갱신 data/** 제외) 편집일시를 data/edited.json에 기록
-# 홈페이지 머리 부분 '최근 편집' 표시가 이 파일을 읽습니다.
+# 2026-11-09: 홈페이지 파일이 바뀔 때마다(데이터 자동 갱신 data/** 제외) 편집일시와 전체 변경 기록을 만듦
+#  - data/edited.json : 최근 편집일시 (모든 방문자 화면의 메뉴 위 '최근 편집')
+#  - data/editlog.json: 전체 변경 기록 (일시·변경 내용·작성자·바뀐 파일, 관리자가 '최근 편집'을 누르면 표시)
 name: 편집일시 기록
 on:
   push:
     branches: [main]
     paths-ignore:
       - 'data/**'
+  workflow_dispatch:
 permissions:
   contents: write
 concurrency:
@@ -16,18 +18,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: 편집일시 쓰기
-        env:
-          TS: ${{ github.event.head_commit.timestamp }}
+        with:
+          fetch-depth: 0
+      - name: 편집일시·변경 기록 쓰기
         run: |
-          T=$(TZ=Asia/Seoul date -d "$TS" '+%Y-%m-%d %H:%M')
           mkdir -p data
-          printf '{"t":"%s"}\n' "$T" > data/edited.json
+          python3 - <<'PY'
+          import subprocess, json, datetime
+          KST = datetime.timezone(datetime.timedelta(hours=9))
+          out = subprocess.check_output(['git', 'log', '--no-merges', '--format=%x1e%H%x1f%an%x1f%cI%x1f%s', '--name-only', '--', '.', ':(exclude)data'], text=True)
+          items = []
+          for rec in out.split('\x1e')[1:]:
+              head, _, files = rec.partition('\n')
+              h, an, cd, s = head.split('\x1f', 3)
+              fl = [f for f in files.strip().split('\n') if f and not f.startswith('data/')]
+              if not fl:
+                  continue
+              t = datetime.datetime.fromisoformat(cd.replace('Z', '+00:00')).astimezone(KST).strftime('%Y-%m-%d %H:%M')
+              items.append({'t': t, 'm': s, 'a': an, 'f': fl[:20], 'n': len(fl), 'h': h[:7]})
+          last = items[0]['t'] if items else ''
+          json.dump({'t': last}, open('data/edited.json', 'w'), ensure_ascii=False)
+          json.dump({'t': last, 'count': len(items), 'log': items}, open('data/editlog.json', 'w'), ensure_ascii=False, separators=(',', ':'))
+          print(last, len(items))
+          PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/edited.json
+          git add data/edited.json data/editlog.json
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "data: 편집일시 $T"
+          git commit -m "data: 편집일시·변경 기록"
           for i in 1 2 3 4 5; do
             git pull --rebase origin main && git push origin HEAD:main && exit 0
             sleep 5
