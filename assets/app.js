@@ -426,7 +426,8 @@ function pgnNavAlign() {
   const nav = document.querySelector('nav.main'), mb = document.querySelector('.menu-btn'), mi = document.querySelector('.menu-info');
   if (!nav) return;
   const links = [...nav.querySelectorAll(':scope > a:not(.auth)')];
-  const reset = () => { nav.style.cssText = ''; if (mi) mi.style.cssText = ''; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = ''; }); };
+  const ed = document.getElementById('pgnEd');
+  const reset = () => { nav.style.cssText = ''; if (mi) mi.style.cssText = ''; if (ed) ed.style.paddingLeft = ''; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = ''; }); };
   reset();
   if (mb && getComputedStyle(mb).display !== 'none') return;   // 휴대폰은 기존 모양
   const W = Math.min(PGN_W, nav.parentElement.clientWidth - 36);
@@ -438,6 +439,7 @@ function pgnNavAlign() {
   const dx = r && Math.abs(r.width - W) < 4 ? r.left - nav.getBoundingClientRect().left : 0;
   nav.style.left = dx + 'px';
   if (mi) { mi.style.cssText = 'max-width:' + W + 'px;padding-left:0;padding-right:0;position:relative'; mi.style.left = (nav.getBoundingClientRect().left - mi.getBoundingClientRect().left) + 'px'; }   // 메뉴 밑 날짜 줄(가는 선)도 같은 폭
+  if (ed) { const a0 = links[0]; ed.style.paddingLeft = Math.max(0, Math.round((a0 || nav).getBoundingClientRect().left + (a0 ? parseFloat(getComputedStyle(a0).paddingLeft) || 0 : 0))) + 'px'; }   // '최근 편집'을 '홈' 글자 위에 맞춤 (2026-11-09)
 }
 function pgnAlignAll() { pgnSubAlign(); pgnNavAlign(); }
 function schedSubPrep(active) {
@@ -501,6 +503,7 @@ async function layout(active, opts) {
   const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a><a href="stats.html" class="${active === 'stats' ? 'on' : ''}">통계</a>` : '') + `<a href="mypage.html" class="who ${active === 'mypage' ? 'on' : ''}" title="마이페이지">${esc(me.name)}님</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   const head = S => `
     <div class="mast"><a href="index.html" title="홈"><img src="assets/logo.png" alt=""><span class="nm">${esc(S.사이트명)}</span></a><div class="sl">${esc(S.슬로건)}</div></div>
+    <div class="pgn-ed" id="pgnEd" hidden></div>
     <header class="site"><div class="wrap">
       <span class="brand"><a href="index.html" title="홈" style="display:flex;align-items:center"><img src="assets/logo.png" alt="홈"></a><a href="about.html" title="회사소개">${esc(S.사이트명)}</a></span>
       <button class="menu-btn" aria-label="메뉴" onclick="document.querySelector('nav.main').classList.toggle('open')">메뉴</button>
@@ -1505,4 +1508,66 @@ if (document.body) pgnLinkCore(document, false); else document.addEventListener(
     const t = e.target.closest && e.target.closest('[data-nl]'); if (!t) return;
     e.preventDefault(); if (t.dataset.nl === 'view') window.pgnNlView(); else sub();
   });
+})();
+
+
+/* ---------- 2026-11-09: 메뉴 '홈' 위 '최근 편집' 일시 ----------
+   GitHub Actions(.github/workflows/edited.yml)가 홈페이지 파일이 바뀔 때마다(데이터 자동 갱신 data/** 제외)
+   data/edited.json(최근 편집일시)과 data/editlog.json(전체 변경 기록)을 다시 만듦.
+   모든 방문자: 최근 편집 일시만 표시. 관리자: 누르면 전체 변경 기록(변경일시·변경 내용·작성자·바뀐 파일)을 봄 */
+(function () {
+  const st = document.createElement('style');
+  st.textContent = '.pgn-ed{font-size:.78rem;color:#777;padding:0 18px 5px;line-height:1.4;text-align:left}' +
+    '.pgn-ed button{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.pgn-ed button:hover{color:var(--g700,#1d6b44)}' +
+    '@media(max-width:760px){.pgn-ed{text-align:center;padding:0 12px 5px}}' +
+    '.edm{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:14px}' +
+    '.edm-box{background:#fff;border-radius:14px;width:100%;max-width:920px;height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);color:var(--ink,#222)}' +
+    '.edm-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:2px solid var(--g100,#e3efe7)}.edm-hd b{font-size:1.05rem;color:var(--g900,#0d3b26)}.edm-hd small{color:var(--muted,#777)}' +
+    '.edm-q{margin-left:auto;padding:7px 11px;border:2px solid var(--line,#ddd);border-radius:9px;font:inherit;font-size:.9rem;min-width:180px}' +
+    '.edm-x{border:0;background:none;font:inherit;font-size:1.5rem;line-height:1;cursor:pointer;color:#666;padding:2px 6px}' +
+    '.edm-sc{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}' +
+    '.edm table{width:100%;border-collapse:collapse;font-size:.9rem}.edm th,.edm td{padding:8px 10px;border-bottom:1px solid var(--line,#e5e5e5);text-align:left;vertical-align:top}' +
+    '.edm th{position:sticky;top:0;background:var(--g50,#f2f8f4);z-index:1;white-space:nowrap}.edm td.t{white-space:nowrap;color:#555}.edm td.a{white-space:nowrap}' +
+    '.edm .fl{display:block;color:var(--muted,#888);font-size:.8rem;margin-top:3px;word-break:break-all}' +
+    '@media(max-width:760px){.edm{padding:0}.edm-box{max-width:none;height:100%;border-radius:0}.edm-q{margin-left:0;flex:1}.edm td.t{white-space:normal}}';
+  document.head.appendChild(st);
+  const KEY = 'pgn_edited';
+  const fmt = t => String(t || '').replace(/^(\d{4})-(\d{2})-(\d{2})/, '$1.$2.$3');
+  const who = a => a === 'jungjure' ? '정지현 (jungjure)' : a === 'github-actions[bot]' ? '자동' : a;
+  const isAdmin = () => { const m = Auth.get(); return !!(m && m.role === 'admin'); };
+  function show(el, t) {
+    if (!t) return;
+    el.hidden = false;
+    el.innerHTML = isAdmin() ? '<button type="button" title="전체 변경 기록 보기 (관리자)">최근 편집 ' + esc(fmt(t)) + '</button>' : '최근 편집 ' + esc(fmt(t));
+  }
+  async function openLog() {
+    if (!isAdmin()) return;
+    const d = document.createElement('div'); d.className = 'edm';
+    d.innerHTML = '<div class="edm-box" role="dialog" aria-modal="true" aria-label="홈페이지 변경 기록"><div class="edm-hd"><b>홈페이지 변경 기록</b><small>불러오는 중...</small><input class="edm-q" type="search" placeholder="내용·파일·작성자 찾기" aria-label="변경 기록 찾기"><button type="button" class="edm-x" aria-label="닫기">×</button></div><div class="edm-sc"></div></div>';
+    const close = () => { d.remove(); document.removeEventListener('keydown', k); };
+    const k = e => { if (e.key === 'Escape') close(); };
+    d.addEventListener('click', e => { if (e.target === d || e.target.closest('.edm-x')) close(); });
+    document.addEventListener('keydown', k); document.body.appendChild(d);
+    let j;
+    try { j = await (await fetch('data/editlog.json?t=' + Date.now(), { cache: 'no-store' })).json(); }
+    catch (e) { d.querySelector('.edm-hd small').textContent = '변경 기록을 불러오지 못했습니다.'; return; }
+    const log = j.log || [];
+    const row = x => '<tr><td class="t">' + esc(fmt(x.t)) + '</td><td>' + esc(x.m) + '<span class="fl">' + esc((x.f || []).join(', ')) + (x.n > (x.f || []).length ? ' 외 ' + (x.n - x.f.length) + '개' : '') + '</span></td><td class="a">' + esc(who(x.a)) + '</td></tr>';
+    const draw = q => {
+      q = (q || '').trim().toLowerCase();
+      const list = q ? log.filter(x => (x.t + ' ' + x.m + ' ' + (x.f || []).join(' ') + ' ' + who(x.a)).toLowerCase().includes(q)) : log;
+      d.querySelector('.edm-hd small').textContent = '전체 ' + log.length + '건' + (q ? ' 중 ' + list.length + '건' : '') + ' · 데이터 자동 갱신 제외';
+      d.querySelector('.edm-sc').innerHTML = '<table><thead><tr><th>변경일시</th><th>변경 내용 (바뀐 파일)</th><th>작성자</th></tr></thead><tbody>' + list.map(row).join('') + '</tbody></table>';
+    };
+    draw('');
+    d.querySelector('.edm-q').addEventListener('input', e => draw(e.target.value));
+  }
+  document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#pgnEd button')) openLog(); });
+  const tick = n => {
+    const el = document.getElementById('pgnEd');
+    if (!el) { if (n < 60) setTimeout(() => tick(n + 1), 150); return; }
+    try { show(el, localStorage.getItem(KEY)); } catch (e) {}
+    fetch('data/edited.json?t=' + Math.floor(Date.now() / 60000), { cache: 'no-cache' }).then(r => r.json()).then(j => { if (j && j.t) { try { localStorage.setItem(KEY, j.t); } catch (e) {} show(el, j.t); if (typeof pgnNavAlign === 'function') pgnNavAlign(); } }).catch(() => {});
+  };
+  tick(0);
 })();
