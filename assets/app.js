@@ -1517,9 +1517,9 @@ if (document.body) pgnLinkCore(document, false); else document.addEventListener(
    모든 방문자: 최근 편집 일시만 표시. 관리자: 누르면 전체 변경 기록(변경일시·변경 내용·작성자·바뀐 파일)을 봄 */
 (function () {
   const st = document.createElement('style');
-  st.textContent = '.mast .sl{position:relative}.pgn-ed{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;font-size:.78rem;color:#777;white-space:nowrap}.pgn-ed[hidden]{display:none!important}' +
+  st.textContent = '.mast .sl{position:relative}.pgn-ed{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;font-size:inherit;color:#777;white-space:nowrap}.pgn-ed[hidden]{display:none!important}' +
     '.pgn-ed button{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.pgn-ed button:hover{color:var(--g700,#1d6b44)}' +
-    '@media(max-width:760px){.pgn-ed{position:static;display:block;margin-top:2px;text-align:center;line-height:1.5}}' +
+    '@media(max-width:1000px){.pgn-ed{position:static;display:block;margin-top:2px;text-align:center;line-height:1.5}}' +   /* 좁은 화면은 슬로건과 겹치지 않게 아래 줄 */
     '.edm{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:14px}' +
     '.edm-box{background:#fff;border-radius:14px;width:100%;max-width:920px;height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);color:var(--ink,#222)}' +
     '.edm-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:2px solid var(--g100,#e3efe7)}.edm-hd b{font-size:1.05rem;color:var(--g900,#0d3b26)}.edm-hd small{color:var(--muted,#777)}' +
