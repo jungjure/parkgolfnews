@@ -510,10 +510,11 @@ async function layout(active, opts) {
       <nav class="main${isSched ? ' subopen' : ''}">${nav.map(n => n[2] === 'today' ? `<a href="${n[0]}" class="${isSched ? 'on' : ''}" data-sub="1" aria-haspopup="true">${n[1]}</a>${schedSubHtml('subm', subK)}` : `<a href="${n[0]}" class="${n[2] === active ? 'on' : ''}">${n[1]}</a>`).join('')}${authNav}</nav>
     </div><div class="menu-info" aria-label="날짜 및 연락처"><time>${pgnDateLine()}</time><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a><a href="tel:${esc(S.전화.replace(/[^0-9+]/g, ''))}">${esc(S.전화)}</a><form class="msearch" action="search.html" method="get" role="search"><input type="search" name="q" placeholder="기사 검색" aria-label="기사 검색어" maxlength="40" value="${/search\.html$/.test(location.pathname) ? esc(new URLSearchParams(location.search).get('q') || '') : ''}"><button type="submit" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></form><span class="mnl"><button type="button" class="mnl-b" data-nl="sub">뉴스레터 받기</button></span></div>${schedSubHtml('subnav', subK, !isSched)}</header>
     ${S.공지 ? `<div class="notice"><div class="wrap">공지 | ${esc(S.공지)}</div></div>` : ''}`;
+  /* 2026-11-10: 하단 상호는 '파크골프세계(주)' (설정 탭에 '상호' 칸을 만들면 그 값) */
   const foot = S => `
     <div class="wrap">
-      <div><b>${esc(S.사이트명)}</b><br>주소 : ${esc(S.주소)}<br>전화 : ${esc(S.전화)} · 팩스 : ${esc(S.팩스)}${S.담당 ? `<br>담당 : ${esc(S.담당)}` : ''}</div>
-      <div><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 ${esc(S.밴드.replace(/^https?:\/\//, ''))}</a><br>개선요청사항 접수 : <a href="request.html">개선요청 남기기</a><br><a href="privacy.html"><b>개인정보처리방침</b></a><br><br>&copy; ${new Date().getFullYear()} ${esc(S.사이트명)}. All rights reserved.</div>
+      <div><b>${esc(S.상호 || '파크골프세계(주)')}</b><br>주소 : ${esc(S.주소)}<br>전화 : ${esc(S.전화)} · 팩스 : ${esc(S.팩스)}${S.담당 ? `<br>담당 : ${esc(S.담당)}` : ''}</div>
+      <div><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 ${esc(S.밴드.replace(/^https?:\/\//, ''))}</a><br>개선요청사항 접수 : <a href="request.html">개선요청 남기기</a><br><a href="privacy.html"><b>개인정보처리방침</b></a><br><br>&copy; ${new Date().getFullYear()} ${esc(S.상호 || '파크골프세계(주)')}. All rights reserved.</div>
     </div>`;
   document.body.insertAdjacentHTML('afterbegin', '<div id="pgn-head" style="display:contents">' + head(S) + '</div>');
   document.body.insertAdjacentHTML('beforeend', '<footer class="site" id="pgn-foot">' + foot(S) + '</footer>');
