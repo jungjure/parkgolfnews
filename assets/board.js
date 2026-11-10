@@ -108,7 +108,7 @@
 
   /* ---------- 목록 ---------- */
   async function showList() {
-    document.title = CFG.name + ' - 파크골프세계';
+    document.title = CFG.name + ' - 파크골프뉴스';
     bd.innerHTML = '<h2 class="sec">' + esc(CFG.name) + '</h2>' + RULES +
       '<div class="tools"><input id="bs" placeholder="제목·글쓴이 검색"><a class="btn green" id="bw" href="' + CFG.page + '?write=1">글쓰기</a></div><div id="capw"></div><div class="card" id="blist"><div class="loading">불러오는 중...</div></div><div class="pager" id="bpg"></div>';
     let all = [], page = 1, kw = '';
@@ -117,7 +117,7 @@
       const k = kw.trim().toLowerCase();
       const f = k ? all.filter(x => x.title.toLowerCase().includes(k) || x.nick.toLowerCase().includes(k)) : all;
       const pages = Math.max(1, Math.ceil(f.length / PER)); if (page > pages) page = pages;
-      { const n1 = f.length; window.PGN_SHARE = () => new URLSearchParams(location.search).get('id') ? '' : '파크골프세계 ' + CFG.name + ' 총 ' + n1 + '건입니다.'; }   /* 공유 문구 */
+      { const n1 = f.length; window.PGN_SHARE = () => new URLSearchParams(location.search).get('id') ? '' : '파크골프뉴스 ' + CFG.name + ' 총 ' + n1 + '건입니다.'; }   /* 공유 문구 */
       $('#blist').innerHTML = f.length ? f.slice((page - 1) * PER, page * PER).map(x =>
         '<a class="bitem" href="' + CFG.page + '?id=' + esc(x.id) + '"><div class="bx"><div class="bt">' + esc(x.title) + (x.status === '숨김' ? ' <span class="tag hide">숨김</span>' : '') + (isAdmin && x.reports ? ' <span class="tag 접수">신고 ' + x.reports + '</span>' : '') + '</div>' +
         (x.ex ? '<div class="bex">' + esc(x.ex) + '</div>' : '') +

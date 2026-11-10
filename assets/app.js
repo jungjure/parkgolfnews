@@ -1,4 +1,4 @@
-/* 파크골프세계(옛 파크골프뉴스) 공용 스크립트: 구글시트 -> 화면 */
+/* 파크골프뉴스 공용 스크립트: 구글시트 -> 화면 */
 const CONFIG = {
   SHEET_ID: '1sl-4jdTKIqpiUM-s2kjPAF-jJoIrCnBnoM8mmcY36cc',   // 구글시트 주소의 /d/ 와 /edit 사이 긴 문자열
   TABS: { news: '뉴스', schedule: '일정', calendar: '캘린더', settings: '설정' },
@@ -8,8 +8,8 @@ const CONFIG = {
 };
 
 const DEFAULTS = {
-  사이트명: '파크골프세계',
-  슬로건: '파크골프세계는 오늘의 소식을 전합니다.',
+  사이트명: '파크골프뉴스',
+  슬로건: '파크골프뉴스는 오늘의 소식을 전합니다.',
   주소: '대전 유성구 대학로 31, 803호',
   전화: '042-368-7330',
   팩스: '0504-326-2591',
@@ -231,10 +231,10 @@ window.addEventListener('message', ev => {
   const d = ev.data; if (!d || !d.pgnFrame) return;
   const f = document.getElementById(d.pgnFrame); if (f && d.h) f.style.height = (d.h + 4) + 'px';
 });
-/* 기사 본문의 밴드 주소 안내 줄("파크골프세계 밴드 : band.us/...", 주소만 있는 줄)은 홈페이지에서 보이지 않게 (2026-11-07) */
+/* 기사 본문의 밴드 주소 안내 줄("파크골프뉴스 밴드 : band.us/...", 주소만 있는 줄)은 홈페이지에서 보이지 않게 (2026-11-07) */
 function noBandUrl(s) {
   return String(s || '')
-    .replace(/<(p|div|span|li|h\d)\b[^>]*>\s*(파크골프(?:뉴스|세계)\s*)?(네이버\s*)?밴드\s*[:：]?\s*(<a\b[^>]*>)?\s*(https?:\/\/)?(www\.)?band\.us\/[^<\s]*\s*(<\/a>)?\s*<\/\1>/gi, '')
+    .replace(/<(p|div|span|li|h\d)\b[^>]*>\s*(파크골프뉴스\s*)?(네이버\s*)?밴드\s*[:：]?\s*(<a\b[^>]*>)?\s*(https?:\/\/)?(www\.)?band\.us\/[^<\s]*\s*(<\/a>)?\s*<\/\1>/gi, '')
     .replace(/^[^\n<>]*밴드\s*[:：]\s*(https?:\/\/)?(www\.)?band\.us\/\S*[ \t]*$/gim, '')
     .replace(/^[ \t]*(https?:\/\/)?(www\.)?band\.us\/\S+[ \t]*$/gim, '');
 }
@@ -345,7 +345,7 @@ const TRK = (() => {
   function flush() {
     clearTimeout(tm); tm = 0;
     if (!q.length || off()) { q = []; return; }
-    const t = document.title.replace(/\s*-\s*파크골프세계$/, '');
+    const t = document.title.replace(/\s*-\s*파크골프뉴스$/, '');
     q.forEach(h => { if (h.k === 'pv' && !h.ti) h.ti = t; });
     const a = Auth.get(), body = JSON.stringify({ action: 'hit', token: a ? a.token : '', hits: q.splice(0, 30) });
     /* sendBeacon은 구글 로그인 쿠키가 붙어 여러 계정 사용자에게서 실패하므로 쿠키 없이 fetch(keepalive) */
@@ -510,11 +510,10 @@ async function layout(active, opts) {
       <nav class="main${isSched ? ' subopen' : ''}">${nav.map(n => n[2] === 'today' ? `<a href="${n[0]}" class="${isSched ? 'on' : ''}" data-sub="1" aria-haspopup="true">${n[1]}</a>${schedSubHtml('subm', subK)}` : `<a href="${n[0]}" class="${n[2] === active ? 'on' : ''}">${n[1]}</a>`).join('')}${authNav}</nav>
     </div><div class="menu-info" aria-label="날짜 및 연락처"><time>${pgnDateLine()}</time><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a><a href="tel:${esc(S.전화.replace(/[^0-9+]/g, ''))}">${esc(S.전화)}</a><form class="msearch" action="search.html" method="get" role="search"><input type="search" name="q" placeholder="기사 검색" aria-label="기사 검색어" maxlength="40" value="${/search\.html$/.test(location.pathname) ? esc(new URLSearchParams(location.search).get('q') || '') : ''}"><button type="submit" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></form><span class="mnl"><button type="button" class="mnl-b" data-nl="sub">뉴스레터 받기</button></span></div>${schedSubHtml('subnav', subK, !isSched)}</header>
     ${S.공지 ? `<div class="notice"><div class="wrap">공지 | ${esc(S.공지)}</div></div>` : ''}`;
-  /* 2026-11-10: 하단 상호는 '파크골프세계(주)' (설정 탭에 '상호' 칸을 만들면 그 값) */
   const foot = S => `
     <div class="wrap">
-      <div><b>${esc(S.상호 || '파크골프세계(주)')}</b><br>주소 : ${esc(S.주소)}<br>전화 : ${esc(S.전화)} · 팩스 : ${esc(S.팩스)}${S.담당 ? `<br>담당 : ${esc(S.담당)}` : ''}</div>
-      <div><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 ${esc(S.밴드.replace(/^https?:\/\//, ''))}</a><br>개선요청사항 접수 : <a href="request.html">개선요청 남기기</a><br><a href="privacy.html"><b>개인정보처리방침</b></a><br><br>&copy; ${new Date().getFullYear()} ${esc(S.상호 || '파크골프세계(주)')}. All rights reserved.</div>
+      <div><b>${esc(S.사이트명)}</b><br>주소 : ${esc(S.주소)}<br>전화 : ${esc(S.전화)} · 팩스 : ${esc(S.팩스)}${S.담당 ? `<br>담당 : ${esc(S.담당)}` : ''}</div>
+      <div><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드 ${esc(S.밴드.replace(/^https?:\/\//, ''))}</a><br>개선요청사항 접수 : <a href="request.html">개선요청 남기기</a><br><a href="privacy.html"><b>개인정보처리방침</b></a><br><br>&copy; ${new Date().getFullYear()} ${esc(S.사이트명)}. All rights reserved.</div>
     </div>`;
   document.body.insertAdjacentHTML('afterbegin', '<div id="pgn-head" style="display:contents">' + head(S) + '</div>');
   document.body.insertAdjacentHTML('beforeend', '<footer class="site" id="pgn-foot">' + foot(S) + '</footer>');
@@ -602,7 +601,7 @@ function startAdmBadge(active) {
 }
 
 /* ---------- 오늘 방문자 수/페이지뷰 (관리자·본인 계정만): 이름 밑에 작게 00/00. 로그인·비로그인 합산, 통계와 같은 기준 ---------- */
-const VS_K = 'pgn_vsum', VS_WHO = ['정지현', '파크골프세계', '파크골프뉴스'];
+const VS_K = 'pgn_vsum', VS_WHO = ['정지현', '파크골프뉴스'];
 function vsOn() { const me = Auth.get(); return !!(me && (me.role === 'admin' || VS_WHO.indexOf(me.name) >= 0)); }
 function vsDraw() {
   const w = document.querySelector('nav.main a.who'); if (!w) return;
@@ -869,12 +868,12 @@ const SHARE_SKIP = ['write', 'members', 'requests', 'stats', 'request', 'mypage'
 function shareInfo() {
   const url = location.href.split('#')[0];
   const h = document.querySelector('h1') || document.querySelector('h2.sec');
-  const t = (h && h.firstChild && h.firstChild.textContent || document.title).trim().replace(/\s*-\s*파크골프세계$/, '') || '파크골프세계';
-  /* 공유 문구: 페이지가 PGN_SHARE()로 정해 주면 그것(예: 파크골프세계 오늘일정 총 14건입니다.), 없으면 제목으로 */
+  const t = (h && h.firstChild && h.firstChild.textContent || document.title).trim().replace(/\s*-\s*파크골프뉴스$/, '') || '파크골프뉴스';
+  /* 공유 문구: 페이지가 PGN_SHARE()로 정해 주면 그것(예: 파크골프뉴스 오늘일정 총 14건입니다.), 없으면 제목으로 */
   let text = '';
   try { if (typeof window.PGN_SHARE === 'function') text = window.PGN_SHARE() || ''; } catch (e) {}
-  if (!text) text = t === '파크골프세계' ? '파크골프세계' : document.querySelector('main.article h1') ? '[파크골프세계] ' + t : '파크골프세계 ' + t + '입니다.';
-  return { url, title: t === '파크골프세계' ? t : t + ' - 파크골프세계', text };
+  if (!text) text = t === '파크골프뉴스' ? '파크골프뉴스' : document.querySelector('main.article h1') ? '[파크골프뉴스] ' + t : '파크골프뉴스 ' + t + '입니다.';
+  return { url, title: t === '파크골프뉴스' ? t : t + ' - 파크골프뉴스', text };
 }
 /* 앱 자동실행: 앱이 열리면 이 화면이 숨겨짐. 1.6초 뒤에도 화면이 그대로면(앱 없음) fallback 실행 */
 const SH_UA = navigator.userAgent;
