@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>장소 보기 · 파크골프세계</title>
+<title>장소 보기 · 파크골프뉴스</title>
 <link rel="preconnect" href="https://tile.openstreetmap.org">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
@@ -39,7 +39,7 @@ h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 12px}
 (function(){
   var q=new URLSearchParams(location.search);
   var n=q.get('n')||'장소', lat=parseFloat(q.get('lat')), lng=parseFloat(q.get('lng')), id=q.get('id')||'';
-  document.getElementById('nm').textContent=n; document.title=n+' · 파크골프세계';
+  document.getElementById('nm').textContent=n; document.title=n+' · 파크골프뉴스';
   var en=encodeURIComponent(n), app='org.parkgolfnews';
   /* 2026-11-07: 어디서 눌러도 반드시 이동하도록 고침 (PC·카톡 안 브라우저·앱 없는 폰에서 앱 주소만 쓰면 아무 일도 안 일어남)
      - PC: 네이버 지도 웹으로 바로 이동

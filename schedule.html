@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>월간일정 - 파크골프세계</title>
+<title>월간일정 - 파크골프뉴스</title>
 <meta name="description" content="전국 파크골프 대회 일정과 접수 기간, 연습일 일정을 한눈에 확인하세요.">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
-<meta property="og:site_name" content="파크골프세계">
+<meta property="og:site_name" content="파크골프뉴스">
 <meta property="og:type" content="website">
-<meta property="og:title" content="파크골프세계 월간일정">
+<meta property="og:title" content="파크골프뉴스 월간일정">
 <meta property="og:description" content="전국 파크골프 대회 일정과 접수 기간, 연습일을 한 달 단위로 확인하세요.">
 <meta property="og:url" content="https://parkgolfnews.org/schedule.html">
 <meta property="og:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
@@ -32,7 +32,7 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261110c"></script>
+<script src="assets/app.js?v=20261110d"></script>
 <script>
 (async () => {
   const S = await layout('schedule');
@@ -55,7 +55,7 @@
     $('#chips').innerHTML = keys.map(k => '<button type="button" class="tag ' + esc(k) + (k === type ? ' on' : '') + '" data-c="' + esc(k) + '" title="' + esc(k) + '만 보기">' + esc(k) + ' ' + cnt[k] + '건</button>').join('');
     const f = mon.filter(e => type === '전체' || kind(e) === type);
     { const mm = m + 1, ty = type, n1 = f.length;   /* 공유 문구 */
-      window.PGN_SHARE = () => '파크골프세계 월간일정 ' + mm + '월 ' + (ty === '전체' ? '총 ' : ty + ' ') + n1 + '건입니다.'; }
+      window.PGN_SHARE = () => '파크골프뉴스 월간일정 ' + mm + '월 ' + (ty === '전체' ? '총 ' : ty + ' ') + n1 + '건입니다.'; }
     if (!f.length) { $('#list').innerHTML = '<div class="empty">이 달에 등록된 일정이 없습니다.</div>'; return; }
     /* 시작일 기준으로 묶기 (이번 달 이전에 시작한 일정은 1일로) */
     const groups = new Map();
