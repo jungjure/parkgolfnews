@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>글쓰기 - 파크골프뉴스</title>
-<meta name="description" content="파크골프뉴스 글쓰기">
+<title>글쓰기 - 파크골프세계</title>
+<meta name="description" content="파크골프세계 글쓰기">
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
@@ -42,7 +42,7 @@
         <label class="field"><span>출처 (선택)</span><input id="source"></label>
         <label class="field"><span>출처 링크 (선택)</span><input id="link" type="url"></label>
       </div>
-      <label class="field"><span>작성자</span><input id="writer" value="파크골프뉴스"></label>
+      <label class="field"><span>작성자</span><input id="writer" value="파크골프세계"></label>
       <label class="chk"><input type="checkbox" id="pub" checked> 바로 공개</label>
       <div id="msg"></div>
       <div class="actions">
@@ -58,7 +58,7 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261110a"></script>
+<script src="assets/app.js?v=20261110b"></script>
 <script src="assets/picker.js?v=20261026a"></script>
 <script>
 (async () => {
@@ -72,7 +72,7 @@
   const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   const count = () => { const n = bodyVal().length; const c = $('#cnt'); c.textContent = n.toLocaleString() + ' / ' + MAX.toLocaleString() + '자'; c.classList.toggle('over', n > MAX); };
   const setMode = m => { mode = m; $('#mText').hidden = m !== 'text'; $('#mHtml').hidden = m !== 'html'; document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === m)); count(); };
-  const reset = () => { editRow = 0; $('#editing').innerHTML = ''; ['title', 'cat', 'summary', 'bodyText', 'bodyHtml', 'images', 'embed', 'source', 'link'].forEach(i => $('#' + i).value = ''); $('#date').value = today(); $('#writer').value = '파크골프뉴스'; $('#pub').checked = true; $('#save').textContent = '게시하기'; $('#prev').hidden = true; msg(''); setMode('text'); };
+  const reset = () => { editRow = 0; $('#editing').innerHTML = ''; ['title', 'cat', 'summary', 'bodyText', 'bodyHtml', 'images', 'embed', 'source', 'link'].forEach(i => $('#' + i).value = ''); $('#date').value = today(); $('#writer').value = '파크골프세계'; $('#pub').checked = true; $('#save').textContent = '게시하기'; $('#prev').hidden = true; msg(''); setMode('text'); };
   const showTab = t => { $('#pNew').hidden = t !== 'new'; $('#pList').hidden = t !== 'list'; document.querySelectorAll('#top button').forEach(b => b.classList.toggle('on', b.dataset.t === t)); if (t === 'list') loadMine(); };
 
   $('#top').onclick = e => { const b = e.target.closest('[data-t]'); if (b) showTab(b.dataset.t); };

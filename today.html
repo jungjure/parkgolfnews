@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>오늘일정 - 파크골프뉴스</title>
+<title>오늘일정 - 파크골프세계</title>
 <meta name="description" content="오늘 열리는 전국 파크골프 대회, 접수 시작·마감, 연습일 일정을 날짜별로 확인하세요.">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
-<meta property="og:site_name" content="파크골프뉴스">
+<meta property="og:site_name" content="파크골프세계">
 <meta property="og:type" content="website">
-<meta property="og:title" content="파크골프뉴스 오늘일정">
+<meta property="og:title" content="파크골프세계 오늘일정">
 <meta property="og:description" content="오늘 열리는 전국 파크골프 대회, 접수, 연습일 일정을 날짜별로 확인하세요.">
 <meta property="og:url" content="https://parkgolfnews.org/today.html">
 <meta property="og:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
@@ -23,7 +23,7 @@
 <meta name="theme-color" content="#148a4a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="파크골프뉴스">
+<meta name="apple-mobile-web-app-title" content="파크골프세계">
 <link rel="stylesheet" href="assets/style.css?v=20261022b">
 <style>#sum button.tag{border:2px solid transparent;cursor:pointer;font-family:inherit;line-height:inherit}#sum button.tag.on{border-color:currentColor}#sum.f button.tag:not(.on){opacity:.4}#list{transition:border-color .2s,box-shadow .2s}#list[data-f]{border-width:3px}#list[data-f="대회"]{border-color:var(--blue);box-shadow:0 0 0 4px #e3f0ff}#list[data-f="접수"]{border-color:var(--red);box-shadow:0 0 0 4px #fdecea}#list[data-f="연습일"],#list[data-f="연습라운딩"]{border-color:var(--amber);box-shadow:0 0 0 4px #fff3e0}#list[data-f="시범운영"]{border-color:#0f766e;box-shadow:0 0 0 4px #ccfbf1}</style>
 
@@ -65,7 +65,7 @@
       h = '<p>휴대폰으로 이 화면(parkgolfnews.org)을 연 다음 <b>폰에 설치</b> 버튼을 누르세요.</p><p>컴퓨터에서는 주소창 오른쪽 <b>설치 아이콘</b>이나 <b>⋮ 메뉴 → 전송, 저장, 공유 → 바로가기 만들기</b>로 바탕화면에 둘 수 있습니다.</p>';
     }
     const m = document.createElement('div'); m.className = 'ins-ov';
-    m.innerHTML = '<div class="ins-box" role="dialog" aria-label="폰에 설치"><button type="button" class="ins-x" aria-label="닫기">×</button><div class="ins-top"><img src="assets/icon-192.png" alt=""><b>파크골프뉴스 아이콘을<br>휴대폰 홈 화면에 만들기</b></div>' + h + '<p class="ins-note">한 번 만들어 두면, 홈 화면의 아이콘만 누르면 오늘일정이 바로 열립니다.</p></div>';
+    m.innerHTML = '<div class="ins-box" role="dialog" aria-label="폰에 설치"><button type="button" class="ins-x" aria-label="닫기">×</button><div class="ins-top"><img src="assets/icon-192.png" alt=""><b>파크골프세계 아이콘을<br>휴대폰 홈 화면에 만들기</b></div>' + h + '<p class="ins-note">한 번 만들어 두면, 홈 화면의 아이콘만 누르면 오늘일정이 바로 열립니다.</p></div>';
     m.addEventListener('click', e => { if (e.target === m || e.target.closest('.ins-x')) m.remove(); });
     document.body.appendChild(m);
   }
@@ -91,7 +91,7 @@
   window.pgnInstallBtn = add;
 })();
 </script>
-<script src="assets/app.js?v=20261110a"></script>
+<script src="assets/app.js?v=20261110b"></script>
 <script>
 (async () => {
   const S = await layout('today');
@@ -114,7 +114,7 @@
     $('#sum').innerHTML = td.length ? Object.entries(cnt).map(([k, v]) => '<button type="button" class="tag ' + esc(k) + (k === type ? ' on' : '') + '" data-c="' + esc(k) + '" title="' + esc(k) + '만 보기">' + esc(k) + ' ' + v + '건</button>').join('') : '';
     const f = td.filter(e => type === '전체' || (isTrial(e) ? '시범운영' : e.type) === type);
     { const lb = diff === 0 ? '오늘일정' : (cur.getMonth() + 1) + '월 ' + cur.getDate() + '일(' + WD[cur.getDay()] + ') 일정', ty = type, n1 = td.length, n2 = f.length;   /* 공유 문구 */
-      window.PGN_SHARE = () => '파크골프뉴스 ' + lb + (ty === '전체' ? ' 총 ' + n1 : ' ' + ty + ' ' + n2) + '건입니다.'; }
+      window.PGN_SHARE = () => '파크골프세계 ' + lb + (ty === '전체' ? ' 총 ' + n1 : ' ' + ty + ' ' + n2) + '건입니다.'; }
     $('#list').innerHTML = f.length ? f.map(e => eventRow(e)).join('') : '<div class="empty">이 날 등록된 일정이 없습니다.</div>';
     if (window.pgnCm) { const c = cmDayKey(cur); pgnCm(c.key, diff === 0 ? '오늘(' + (cur.getMonth() + 1) + '월 ' + cur.getDate() + '일) 일정' : c.label); }   /* 댓글은 보고 있는 날짜에 달림 */
   };

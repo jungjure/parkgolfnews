@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>구장 날씨 · 파크골프뉴스</title>
+<title>구장 날씨 · 파크골프세계</title>
 <link rel="preconnect" href="https://api.open-meteo.com">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
@@ -38,7 +38,7 @@ td:first-child{text-align:left;font-weight:700}
 (function(){
   var q=new URLSearchParams(location.search);
   var n=q.get('n')||'구장', lat=parseFloat(q.get('lat')), lng=parseFloat(q.get('lng'));
-  document.getElementById('nm').textContent=n+' 날씨'; document.title=n+' 날씨 · 파크골프뉴스';
+  document.getElementById('nm').textContent=n+' 날씨'; document.title=n+' 날씨 · 파크골프세계';
   var W={0:'맑음',1:'대체로 맑음',2:'구름 조금',3:'흐림',45:'안개',48:'안개',51:'이슬비',53:'이슬비',55:'이슬비',56:'어는 이슬비',57:'어는 이슬비',61:'약한 비',63:'비',65:'강한 비',66:'어는 비',67:'어는 비',71:'약한 눈',73:'눈',75:'강한 눈',77:'싸락눈',80:'소나기',81:'소나기',82:'강한 소나기',85:'눈 소나기',86:'눈 소나기',95:'뇌우',96:'뇌우',99:'뇌우'};
   var days=['일','월','화','수','목','금','토'];
   var url='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lng+'&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FSeoul&forecast_days=3&wind_speed_unit=ms';

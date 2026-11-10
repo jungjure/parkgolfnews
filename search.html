@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>기사 검색 - 파크골프뉴스</title>
-<meta name="description" content="파크골프뉴스 전체 기사에서 검색어가 들어간 기사를 찾아 보여 줍니다.">
+<title>기사 검색 - 파크골프세계</title>
+<meta name="description" content="파크골프세계 전체 기사에서 검색어가 들어간 기사를 찾아 보여 줍니다.">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
-<meta property="og:site_name" content="파크골프뉴스">
+<meta property="og:site_name" content="파크골프세계">
 <meta property="og:type" content="website">
-<meta property="og:title" content="파크골프뉴스 기사 검색">
+<meta property="og:title" content="파크골프세계 기사 검색">
 <meta property="og:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
 <link rel="icon" href="assets/logo.png">
 <link rel="stylesheet" href="assets/style.css?v=20261022b">
@@ -41,7 +41,7 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261110a"></script>
+<script src="assets/app.js?v=20261110b"></script>
 <script>
 (async () => {
   const S = await layout('search');
@@ -63,12 +63,12 @@
     q = (q || '').trim(); $('#q').value = q;
     document.querySelectorAll('.msearch input').forEach(i => { i.value = q; });
     if (!q) { $('#cnt').textContent = '검색어를 넣고 검색을 눌러 주세요.'; $('#list').innerHTML = ''; return; }
-    document.title = q + ' 검색 - 파크골프뉴스';
+    document.title = q + ' 검색 - 파크골프세계';
     $('#cnt').textContent = ''; $('#list').innerHTML = '<div class="loading">기사 내용을 찾는 중...</div>';
     await load();
     const words = q.split(/\s+/).filter(Boolean);
     const f = all.filter(n => { const hay = (n.title + ' ' + n.cat + ' ' + n._t).toLowerCase(); return words.every(w => hay.includes(w.toLowerCase())); });
-    window.PGN_SHARE = () => '파크골프뉴스 기사 검색 "' + q + '" ' + f.length + '건';
+    window.PGN_SHARE = () => '파크골프세계 기사 검색 "' + q + '" ' + f.length + '건';
     $('#cnt').innerHTML = '<b>' + esc(q) + '</b> 검색 결과 <b>' + f.length + '</b>건 (전체 기사 ' + all.length + '건 중, 최신순)';
     $('#list').innerHTML = f.length ? '<ul class="sres">' + f.map(n => { const img = n.images[0]; return '<li><a href="article.html?id=' + esc(n.id) + '"><div class="th">' + (img ? '<img src="' + esc(thumbUrl(img)) + '" alt="" loading="lazy">' : '<img src="assets/logo.png" alt="" style="object-fit:contain;padding:10px">') + '</div><div class="tx"><h3>' + mark(n.title, words) + '</h3><p>' + mark(snip(n._t, words), words) + '</p><div class="mt">' + esc(n.cat) + ' · ' + fmtDate(n.date) + '</div></div></a></li>'; }).join('') + '</ul>' : '<div class="empty">"' + esc(q) + '"가 들어간 기사가 없습니다.<br>다른 검색어로 찾아 보세요.</div>';
   };

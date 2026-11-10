@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>회사소개 - 파크골프뉴스</title>
-<meta name="description" content="파크골프뉴스 회사소개와 연락처, 제보·제휴 문의 안내.">
+<title>회사소개 - 파크골프세계</title>
+<meta name="description" content="파크골프세계 회사소개와 연락처, 제보·제휴 문의 안내.">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
-<meta property="og:site_name" content="파크골프뉴스">
+<meta property="og:site_name" content="파크골프세계">
 <meta property="og:type" content="website">
-<meta property="og:title" content="파크골프뉴스 회사소개">
-<meta property="og:description" content="파크골프뉴스는 전국 파크골프 대회 일정과 소식을 매일 전합니다.">
+<meta property="og:title" content="파크골프세계 회사소개">
+<meta property="og:description" content="파크골프세계는 전국 파크골프 대회 일정과 소식을 매일 전합니다.">
 <meta property="og:url" content="https://parkgolfnews.org/about.html">
 <meta property="og:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
 <meta property="og:image:width" content="1280">
@@ -32,7 +32,7 @@
   <main class="article">
     <h2 class="sec">회사소개</h2>
     <div class="content">
-      <p>파크골프뉴스는 전국 파크골프 대회 일정과 접수 안내, 협회 소식, 대회 결과와 행사 뉴스를 매일 전하는 매체입니다.</p>
+      <p>파크골프세계는 전국 파크골프 대회 일정과 접수 안내, 협회 소식, 대회 결과와 행사 뉴스를 매일 전하는 매체입니다.</p>
       <p>매일 아침 오늘의 일정과 뉴스를 정리해 네이버 밴드에 올리고, 이 홈페이지에서도 함께 볼 수 있습니다.</p>
       <p>대회 소식 제보, 보도자료, 광고·제휴 문의는 아래 연락처로 보내주세요.</p>
     </div>
@@ -41,12 +41,12 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261110a"></script>
+<script src="assets/app.js?v=20261110b"></script>
 <script>
 (async () => {
   const S = await layout('about');
   $('#side').innerHTML = sideBox(S);
-  $('#contact').innerHTML = `<div class="about-logo"><img src="assets/logo.png" alt="파크골프뉴스 로고"></div><div class="info about-info"><b>업체명</b> ${esc(S.사이트명)}<br><b>주소</b> ${esc(S.주소)}<br><b>전화</b> ${esc(S.전화)}<br><b>팩스</b> ${esc(S.팩스)}<br><b>네이버 밴드</b> <a href="${esc(S.밴드)}" target="_blank" rel="noopener" style="color:var(--g700)">${esc(S.밴드)}</a></div>`;
+  $('#contact').innerHTML = `<div class="about-logo"><img src="assets/logo.png" alt="파크골프세계 로고"></div><div class="info about-info"><b>업체명</b> ${esc(S.사이트명)}<br><b>주소</b> ${esc(S.주소)}<br><b>전화</b> ${esc(S.전화)}<br><b>팩스</b> ${esc(S.팩스)}<br><b>네이버 밴드</b> <a href="${esc(S.밴드)}" target="_blank" rel="noopener" style="color:var(--g700)">${esc(S.밴드)}</a></div>`;
 })();
 </script>
 </body>

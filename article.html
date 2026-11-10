@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>파크골프뉴스</title>
-<meta name="description" content="파크골프뉴스 기사">
+<title>파크골프세계</title>
+<meta name="description" content="파크골프세계 기사">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
-<meta property="og:site_name" content="파크골프뉴스">
+<meta property="og:site_name" content="파크골프세계">
 <meta property="og:type" content="website">
-<meta property="og:title" content="파크골프뉴스">
+<meta property="og:title" content="파크골프세계">
 <meta property="og:description" content="전국 파크골프 소식과 대회 뉴스를 전합니다.">
 <meta property="og:url" content="https://parkgolfnews.org/article.html">
 <meta property="og:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
@@ -25,7 +25,7 @@
   <main class="article" id="art"><div class="loading">불러오는 중...</div></main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261110a"></script>
+<script src="assets/app.js?v=20261110b"></script>
 <script>
 (async () => {
   const S = await layout('news');
@@ -36,7 +36,7 @@
     const n = all.find(x => x.id === id);
     if (!n) { $('#art').innerHTML = '<div class="empty">기사를 찾을 수 없습니다.<br><br><a class="btn green" href="news.html">뉴스 목록으로</a></div>'; return; }
     await withBodies([n], n).catch(() => {});   // 본문은 data/body.json에서 따로 받음
-    document.title = n.title + ' - 파크골프뉴스';
+    document.title = n.title + ' - 파크골프세계';
     const setMeta = (sel, attr, v) => { let m = document.querySelector(sel); if (!m) { m = document.createElement('meta'); document.head.appendChild(m); } m.setAttribute(attr, v); };
     setMeta('meta[name=description]', 'content', n.summary);
     const og = (p, v) => { let m = document.querySelector(`meta[property="${p}"]`); if (!m) { m = document.createElement('meta'); m.setAttribute('property', p); document.head.appendChild(m); } m.setAttribute('content', v); };
@@ -45,7 +45,7 @@
     $('#art').innerHTML = `
       <span class="tag">${esc(n.cat)}</span>
       <h1>${esc(n.title)}</h1>
-      <div class="meta">${fmtDate(n.date)}${n.writer ? ' · ' + esc(n.writer) : ' · 파크골프뉴스'}</div>
+      <div class="meta">${fmtDate(n.date)}${n.writer ? ' · ' + esc(n.writer) : ' · 파크골프세계'}</div>
       <div class="content">${n.images.map(u => `<img src="${esc(u)}" alt="${esc(n.title)}" loading="lazy">`).join('')}${renderBody(n)}</div>
       ${n.link && !/band\.us/i.test(n.link) ? `<div class="src">${n.source ? esc(n.source) + ' · ' : '관련 링크 · '}<a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(n.link)}</a></div>` : ''}
       <div class="share">

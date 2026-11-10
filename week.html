@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>주간일정 - 파크골프뉴스</title>
+<title>주간일정 - 파크골프세계</title>
 <meta name="description" content="이번 주 전국 파크골프 대회, 접수, 연습일 일정을 요일별로 확인하세요.">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
-<meta property="og:site_name" content="파크골프뉴스">
+<meta property="og:site_name" content="파크골프세계">
 <meta property="og:type" content="website">
-<meta property="og:title" content="파크골프뉴스 주간일정">
+<meta property="og:title" content="파크골프세계 주간일정">
 <meta property="og:description" content="이번 주 전국 파크골프 대회, 접수, 연습일 일정을 요일별로 확인하세요.">
 <meta property="og:url" content="https://parkgolfnews.org/week.html">
 <meta property="og:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
@@ -31,7 +31,7 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261110a"></script>
+<script src="assets/app.js?v=20261110b"></script>
 <script>
 /* 주간일정 (2026-11-03): 월요일~일요일 7일을 날짜별로 묶어 보여 줌. 카드·구분 버튼은 월간일정(schedule.html)과 같은 방식
    - 여러 날 이어지는 일정(접수 기간 등)은 이번 주 안에서 시작한 날(이번 주 전에 시작했으면 월요일)에 한 번만 보임
@@ -59,7 +59,7 @@
     $('#chips').innerHTML = keys.map(k => '<button type="button" class="tag ' + esc(k) + (k === type ? ' on' : '') + '" data-c="' + esc(k) + '" title="' + esc(k) + '만 보기">' + esc(k) + ' ' + cnt[k] + '건</button>').join('');
     const f = wk.filter(e => type === '전체' || kind(e) === type);
     { const lb = md(mon) + '~' + md(sun), ty = type, n1 = f.length;   /* 공유 문구 */
-      window.PGN_SHARE = () => '파크골프뉴스 주간일정 ' + lb + ' ' + (ty === '전체' ? '총 ' : ty + ' ') + n1 + '건입니다.'; }
+      window.PGN_SHARE = () => '파크골프세계 주간일정 ' + lb + ' ' + (ty === '전체' ? '총 ' : ty + ' ') + n1 + '건입니다.'; }
     const order = { '대회': 0, '접수': 1, '연습일': 2 };
     const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); return { d, items: [] }; });
     f.forEach(e => { const s = e.start < mon ? mon : e.start, i = Math.round((new Date(s.getFullYear(), s.getMonth(), s.getDate()) - mon) / 864e5); if (days[i]) days[i].items.push(e); });

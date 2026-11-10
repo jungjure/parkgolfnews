@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script>/* 모바일에서 외부(즐겨찾기·바탕화면 아이콘·밴드 링크 등)로 뉴스에 처음 들어오면 오늘일정을 첫 화면으로 */(function(){try{var m=matchMedia('(max-width:760px)').matches||matchMedia('(pointer:coarse)').matches;var inSite=document.referrer&&document.referrer.indexOf(location.host)>-1;if(m&&!inSite&&!location.search&&!sessionStorage.getItem('pgn_entered'))location.replace('today.html');else sessionStorage.setItem('pgn_entered','1');}catch(e){}})();</script>
-<title>뉴스 - 파크골프뉴스</title>
-<meta name="description" content="파크골프뉴스의 전체 뉴스. 대회 결과, 협회 소식, 행사 안내를 모았습니다.">
+<title>뉴스 - 파크골프세계</title>
+<meta name="description" content="파크골프세계의 전체 뉴스. 대회 결과, 협회 소식, 행사 안내를 모았습니다.">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
-<meta property="og:site_name" content="파크골프뉴스">
+<meta property="og:site_name" content="파크골프세계">
 <meta property="og:type" content="website">
-<meta property="og:title" content="파크골프뉴스 뉴스">
+<meta property="og:title" content="파크골프세계 뉴스">
 <meta property="og:description" content="전국 파크골프 소식과 대회 뉴스를 전합니다.">
 <meta property="og:url" content="https://parkgolfnews.org/news.html">
 <meta property="og:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
@@ -32,7 +32,7 @@
   </main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261110a"></script>
+<script src="assets/app.js?v=20261110b"></script>
 <script>
 (async () => {
   const S = await layout('news', { openList: true });
@@ -42,7 +42,7 @@
     const f = all.filter(n => (cat === '전체' || (cat === '__fav' ? fav.has(n.cat) : n.cat === cat)) && (!q || (n.title + n.summary + n.body).includes(q)));
     const pages = Math.max(1, Math.ceil(f.length / PER)); page = Math.min(page, pages);
     { const c0 = cat, n1 = f.length;   /* 공유 문구 */
-      window.PGN_SHARE = () => '파크골프뉴스 뉴스' + (c0 === '전체' || c0 === '__fav' ? '' : ' ' + c0) + ' 총 ' + n1 + '건입니다.'; }
+      window.PGN_SHARE = () => '파크골프세계 뉴스' + (c0 === '전체' || c0 === '__fav' ? '' : ' ' + c0) + ' 총 ' + n1 + '건입니다.'; }
     $('#list').innerHTML = f.length ? `<div class="grid">${f.slice((page - 1) * PER, page * PER).map(newsCard).join('')}</div>` : '<div class="empty">해당하는 뉴스가 없습니다.</div>';
     { /* 페이지 번호는 5개씩만 보이고, 이전·다음 버튼으로 5개 묶음을 이동 (2026-11-06) */
       const G = 5, g0 = Math.floor((page - 1) / G) * G + 1, g1 = Math.min(pages, g0 + G - 1);

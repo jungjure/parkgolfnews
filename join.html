@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>조인게시판 - 파크골프뉴스</title>
+<title>조인게시판 - 파크골프세계</title>
 <meta name="description" content="같은 지역에서 함께 파크골프 칠 사람을 찾는 조인게시판. 멤버 구함, 조인 희망, 정기 라운딩, 원정·투어 동행.">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
-<meta property="og:site_name" content="파크골프뉴스">
+<meta property="og:site_name" content="파크골프세계">
 <meta property="og:type" content="website">
-<meta property="og:title" content="파크골프뉴스 조인게시판">
+<meta property="og:title" content="파크골프세계 조인게시판">
 <meta property="og:description" content="함께 라운딩할 동반자를 찾는 조인게시판입니다.">
 <meta property="og:url" content="https://parkgolfnews.org/join.html">
 <meta property="og:image" content="https://parkgolfnews.org/assets/pgn_logo_card.jpg">
@@ -134,7 +134,7 @@
 </style>
 </head>
 <body>
-<script src="assets/app.js?v=20261110a"></script>
+<script src="assets/app.js?v=20261110b"></script>
 <script src="assets/picker.js?v=20261108a"></script>
 <script>
 (async () => {
@@ -164,7 +164,7 @@
 
   /* ---------- 목록 ---------- */
   async function showList() {
-    document.title = '조인게시판 - 파크골프뉴스';
+    document.title = '조인게시판 - 파크골프세계';
     const st = { cat: qs.get('cat') || '전체', sido: '', when: '전체', q: '', hideDone: false, rep: false };
     jn.innerHTML = '<h2 class="sec">조인게시판</h2><div class="intro"><b>함께 칠 사람을 찾는 곳입니다.</b> 같은 지역에서 같이 칠 분, 빈자리 채울 분, 정기 멤버, 원정 동행을 구해 보세요. 연락처는 공개되지 않고, 신청을 수락하면 서로 번호가 보입니다. 레슨·용품 판매 등 영업 글은 올릴 수 없습니다.</div>'
       + '<div style="margin-bottom:12px"><button class="jbig" id="wr">+ 조인 글쓰기</button></div>'
@@ -189,7 +189,7 @@
       const cnt = { '전체': base.length }; base.forEach(it => cnt[it.cat] = (cnt[it.cat] || 0) + 1);
       $('#cats').innerHTML = ['전체'].concat(CATS).map(c => '<button data-c="' + esc(c) + '" class="' + (c === st.cat ? 'on' : '') + '" title="' + esc(CAT_HELP[c] || '') + '">' + esc(c) + ' ' + (cnt[c] || 0) + '</button>').join('');
       const rows = base.filter(it => st.cat === '전체' || it.cat === st.cat).sort((a, b) => (b.at || '').localeCompare(a.at || ''));   /* 최근에 쓴 글이 위로, 마감 글도 자리 그대로 */
-      { const c0 = st.cat, n1 = rows.length; window.PGN_SHARE = () => new URLSearchParams(location.search).get('id') ? '' : '파크골프뉴스 조인게시판' + (c0 === '전체' ? '' : ' ' + c0) + ' 총 ' + n1 + '건입니다.'; }   /* 공유 문구 */
+      { const c0 = st.cat, n1 = rows.length; window.PGN_SHARE = () => new URLSearchParams(location.search).get('id') ? '' : '파크골프세계 조인게시판' + (c0 === '전체' ? '' : ' ' + c0) + ' 총 ' + n1 + '건입니다.'; }   /* 공유 문구 */
       $('#list').innerHTML = rows.length ? rows.map(it => '<a class="jcard ' + (it.state === '마감' ? 'done' : '') + '" href="join.html?id=' + esc(it.id) + '">'
         + '<div class="top">' + (data.admin ? '<input type="checkbox" class="ck" data-id="' + esc(it.id) + '" onclick="event.stopPropagation()">' : '') + '<span class="jt ' + catCls(it.cat) + '">' + esc(it.cat) + '</span><span class="jt ' + stCls(it.state) + '">' + esc(it.state) + '</span>' + (it.st === '숨김' ? '<span class="jt hid">숨김</span>' : '') + (it.reports ? '<span class="jt s1">신고 ' + it.reports + '</span>' : '') + (it.mine ? '<span class="jt">내 글</span>' : '') + (it.apps && it.mine ? '<span class="jt s1">신청 ' + it.apps + '</span>' : '') + '</div>'
         + '<div class="main">' + esc(whenTxt(it)) + ' · ' + esc(it.place) + ' · <span class="left">' + esc(leftTxt(it)) + '</span></div>'
@@ -402,7 +402,7 @@
     if (!me()) { location.replace('login.html?next=' + encodeURIComponent('join.html?write=1')); return; }
     let it = null;
     if (editId) { try { it = (await api('jget', { id: editId })).item; if (!it.mine) throw new Error('본인이 쓴 글만 고칠 수 있습니다.'); } catch (e) { jn.innerHTML = '<div class="msg err">' + esc(e.message) + '</div>'; return; } }
-    document.title = (editId ? '조인 글 수정' : '조인 글쓰기') + ' - 파크골프뉴스';
+    document.title = (editId ? '조인 글 수정' : '조인 글쓰기') + ' - 파크골프세계';
     const radios = (name, list, val) => '<div class="opts">' + list.map(v => '<label><input type="radio" name="' + name + '" value="' + esc(v) + '"' + (v === val ? ' checked' : '') + '><span>' + esc(v) + '</span></label>').join('') + '</div>';
     const sel = (id, list, val) => '<select id="' + id + '">' + list.map(v => '<option' + (String(v) === String(val) ? ' selected' : '') + '>' + v + '</option>').join('') + '</select>';
     const v = it || { cat: qs.get('cat') || '멤버 구함', sido: localStorage.getItem('pgn_jsido') || '', sgg: '', place: '', date: TODAY, end: '', time: '08:00', holes: '18홀', cur: 3, need: 1, level: '무관', gender: '무관', age: '무관', cost: '', carpool: '없음', resv: '예약 필요 없음', contact: '사이트에서 신청만', text: '', rep: '' };
