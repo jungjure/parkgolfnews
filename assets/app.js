@@ -770,7 +770,7 @@ function showEv(i) {
 function mapQ(e) {
   const s = String(e.place || '');
   if (/홈페이지|온라인|네이버\s*폼|구글\s*폼|어플|대리점|총판|밴드|카페|이메일|메일|전화|문자|www\.|https?:|일괄|미정|추후/.test(s)) return '';
-  if (/태국|일본|오키나와|후쿠오카|구마모토|파타야|나콘사완|베트남|필리핀|라오스|대만|해외|항\s*출발|출발\s*$/.test(s)) return ''; /* 해외 투어·출발 항구는 경기장이 아니어서 글자만 (2026-11-07) */
+  if (/태국|일본|오키나와|후쿠오카|구마모토|파타야|나콘사완|베트남|필리핀|라오스|대만|중국|하이난|미션힐스|해외|항\s*출발|출발\s*$/.test(s)) return ''; /* 해외 투어·출발 항구는 경기장이 아니어서 글자만 (2026-11-07) */
   const ADDR = /[가-힣\d]+(로|길|리|동|가)\s*(산\s*)?\d+(\s*[-~]\s*\d+)?/;
   const tidy = a => a.replace(/(번지)?\s*일원|번지|\s+내$/g, '').replace(/(\d)\s*~\s*(\d)/g, '$1-$2').replace(/^(대한민국|\d+)\s+/, '').replace(/\s+/g, ' ').trim();
   const par = (s.match(/\(([^)]*)\)/) || [])[1] || '';
@@ -809,7 +809,8 @@ const PLACE_FIX = [
 ];
 function mapUrl(q) {
   const f = (PLACE_FIX.find(x => x[0].test(q)) || [])[1];
-  if (!f) return 'https://map.naver.com/p/search/' + encodeURIComponent(q);
+  /* 휴대폰: map.naver.com 검색 주소는 네이버 지도 앱으로 넘어가며 검색어가 빠져 현재 위치만 보여서, 앱으로 넘어가지 않는 모바일 웹 지도 검색으로 연다 (2026-11-12) */
+  if (!f) return (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ? 'https://m.map.naver.com/search?query=' : 'https://map.naver.com/p/search/') + encodeURIComponent(q);
   if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) return '/place.html?n=' + encodeURIComponent(f.n) + '&lat=' + f.lat + '&lng=' + f.lng + (f.id ? '&id=' + f.id : '');
   return f.id ? 'https://map.naver.com/p/entry/place/' + f.id : 'https://map.naver.com/p/search/' + f.lat + ',' + f.lng;
 }
@@ -818,6 +819,7 @@ function mapLink(e) {
   return '<a class="pgmap" href="' + mapUrl(q) + '" title="네이버지도에서 위치 보기">' + esc(e.place) + '</a>';
 }
 function openMap(u) {
+  if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) { location.href = u; return; } /* 휴대폰(카톡 안 브라우저 포함)은 팝업 대신 같은 창에서 이동 (2026-11-12) */
   const sw = screen.availWidth || 1280, sh = screen.availHeight || 800;
   const w = Math.min(1000, sw - 40), h = Math.min(820, sh - 60);
   const win = window.open(u, 'pgnmap', 'popup=yes,width=' + w + ',height=' + h + ',left=' + Math.max(0, Math.round((sw - w) / 2)) + ',top=' + Math.max(0, Math.round((sh - h) / 2)));
