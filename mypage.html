@@ -49,7 +49,7 @@
 </style>
 </head>
 <body>
-<script src="assets/app.js?v=20261110d"></script>
+<script src="assets/app.js?v=20261113d"></script>
 <script>
 (async () => {
   if (!Auth.get()) { location.replace('login.html?next=mypage.html'); return; }
@@ -255,11 +255,11 @@
   function memberWrites(box) {
     let items = [];
     const draw = () => {
-      box.innerHTML = `<div class="card box"><h3>자유게시판에 글쓰기</h3>
-        <p class="sub">회원이 쓰는 글은 뉴스가 아니라 <b>자유게시판</b>에 올라갑니다. 욕설·선정적 내용·도박/불법 광고·링크 등은 자동으로 차단됩니다.</p>
-        <a class="btn green big" href="board.html?write=1">자유게시판에 새 글 쓰기</a></div>
+      box.innerHTML = `<div class="card box"><h3>파크톡에 글쓰기</h3>
+        <p class="sub">회원이 쓰는 글은 뉴스가 아니라 <b>파크톡</b>에 올라갑니다. 욕설·선정적 내용·도박/불법 광고·링크 등은 자동으로 차단됩니다.</p>
+        <a class="btn green big" href="talk.html?write=1">파크톡에 새 글 쓰기</a></div>
         <div class="card box"><h3>내가 쓴 글 ${items.length ? '(' + items.length + ')' : ''}</h3>
-          ${items.length ? items.map(p => '<div class="mc">' + (p.status === '숨김' ? '<span class="t gone">' + esc(p.title) + ' <small>(숨김 처리됨)</small></span>' : '<a class="t" href="' + (p.kind === '칼럼' ? 'column' : 'board') + '.html?id=' + esc(p.id) + '">' + (p.kind === '칼럼' ? '[독자칼럼] ' : '') + esc(p.title) + (p.cm ? ' [' + p.cm + ']' : '') + '</a>') + '<div class="d"><span>' + esc(p.at) + '</span><a href="' + (p.kind === '칼럼' ? 'column' : 'board') + '.html?edit=' + esc(p.id) + '">수정</a><button data-d="' + esc(p.id) + '">삭제</button></div></div>').join('') : '<div class="empty" style="padding:18px">아직 쓴 글이 없습니다. 위 버튼으로 첫 글을 써 보세요.</div>'}
+          ${items.length ? items.map(p => '<div class="mc">' + (p.status === '숨김' ? '<span class="t gone">' + esc(p.title) + ' <small>(숨김 처리됨)</small></span>' : '<a class="t" href="' + (p.kind === '칼럼' ? 'column' : p.kind === '톡' ? 'talk' : 'board') + '.html?id=' + esc(p.id) + '">' + (p.kind === '칼럼' ? '[독자칼럼] ' : '') + esc(p.title) + (p.cm ? ' [' + p.cm + ']' : '') + '</a>') + '<div class="d"><span>' + esc(p.at) + '</span><a href="' + (p.kind === '칼럼' ? 'column' : p.kind === '톡' ? 'talk' : 'board') + '.html?edit=' + esc(p.id) + '">수정</a><button data-d="' + esc(p.id) + '">삭제</button></div></div>').join('') : '<div class="empty" style="padding:18px">아직 쓴 글이 없습니다. 위 버튼으로 첫 글을 써 보세요.</div>'}
           <div id="wMsg"></div></div>`;
       box.querySelectorAll('[data-d]').forEach(bt => bt.onclick = async () => {
         const p = items.find(x => x.id === bt.dataset.d); if (!p || !confirm('\u201c' + p.title + '\u201d 글을 삭제할까요? 되돌릴 수 없습니다.')) return;

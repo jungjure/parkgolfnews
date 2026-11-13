@@ -74,7 +74,7 @@
 </style>
 </head>
 <body>
-<script src="assets/app.js?v=20261110d"></script>
+<script src="assets/app.js?v=20261113d"></script>
 <script src="assets/picker.js?v=20261026a"></script>
 <script>
 (async () => {
@@ -138,7 +138,7 @@
   const table = (head, rows, empty) => rows.length ? '<div class="st-tw"><table class="st-tbl"><thead><tr>' + head.map(h => '<th' + (h[1] ? ' class="r"' : '') + '>' + h[0] + '</th>').join('') + '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>' : '<div class="empty-s">' + (empty || '이 기간에 기록이 없습니다.') + '</div>';
   const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '-';
   const pageLabel = o => o.ti || o.p;
-  const PAGE_NAMES = { '/today.html': '오늘일정', '/index.html': '첫 화면', '/schedule.html': '월간일정', '/news.html': '뉴스 목록', '/board.html': '자유게시판', '/join.html': '조인게시판', '/about.html': '회사소개', '/mypage.html': '마이페이지', '/login.html': '로그인', '/signup.html': '회원가입' };
+  const PAGE_NAMES = { '/today.html': '오늘일정', '/index.html': '첫 화면', '/schedule.html': '월간일정', '/news.html': '뉴스 목록', '/board.html': '자유게시판', '/talk.html': '파크톡', '/join.html': '조인게시판', '/about.html': '회사소개', '/mypage.html': '마이페이지', '/login.html': '로그인', '/signup.html': '회원가입' };
   const pname = p => { const b = p.split('?')[0]; return PAGE_NAMES[b] || ''; };
 
   /* ---------- 그래프 ---------- */
