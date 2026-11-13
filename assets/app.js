@@ -923,18 +923,18 @@ function nlShare() {
   const m = /newsletter_vol(\d+)_(\d{4})(\d{2})(\d{2})(_mobile)?\.html$/.exec(src);
   if (!m) return null;
   if (NL_SH.src !== src) {
-    NL_SH.src = src; NL_SH.url = src; NL_SH.img = '';
+    NL_SH.src = src; NL_SH.url = src; NL_SH.img = ''; NL_SH.wide = 0;
     const mob = m[5] ? src : src.replace(/\.html$/, '_mobile.html');
-    const jpg = src.replace(/newsletter_vol\d+_\d{8}(_mobile)?\.html$/, 'nl_vol' + m[1] + '_' + m[2] + m[3] + m[4] + '.jpg');
+    const jpg = src.replace(/newsletter_vol\d+_\d{8}(_mobile)?\.html$/, 'nl_vol' + m[1] + '_' + m[2] + m[3] + m[4] + '.jpg'), wide = jpg.replace(/\.jpg$/, '_og.jpg');   /* 2026-11-14: 가로형(1200x630) 공유 이미지가 있으면 그것 (정사각형은 카톡·밴드 미리보기에서 위쪽 제목이 잘림) */
     const head = u => fetch(u, { method: 'HEAD', cache: 'no-store' }).then(r => r.ok).catch(() => false);
     head(mob).then(ok => { if (ok && NL_SH.src === src) NL_SH.url = mob; });
-    head(jpg).then(ok => { if (ok && NL_SH.src === src) NL_SH.img = jpg; });
+    head(wide).then(ok => { if (NL_SH.src !== src) return; if (ok) { NL_SH.img = wide; NL_SH.wide = 1; } else head(jpg).then(ok2 => { if (ok2 && NL_SH.src === src && !NL_SH.wide) NL_SH.img = jpg; }); });
   }
   const d = new Date(+m[2], +m[3] - 1, +m[4]);
   const day = (+m[3]) + '월 ' + (+m[4]) + '일(' + '일월화수목금토'[d.getDay()] + ')';
   const md = document.querySelector('meta[name=description]');
   const desc = (md && md.content && md.content !== '파크골프뉴스 기사' ? md.content : '').replace(/^\d{1,2}월\s*\d{1,2}일\s*/, '');   // 날짜는 앞에 따로 붙이므로 요약 첫머리 날짜는 뺌
-  return { vol: 'Vol.' + m[1], day, desc, url: NL_SH.url, img: NL_SH.img || 'https://parkgolfnews.org/assets/pgn_logo_card.jpg' };
+  return { vol: 'Vol.' + m[1], day, desc, url: NL_SH.url, img: NL_SH.img || 'https://parkgolfnews.org/assets/pgn_logo_card.jpg', w: NL_SH.img && NL_SH.wide ? 1200 : 800, h: NL_SH.img && NL_SH.wide ? 630 : 800 };
 }
 function shareInfo() {
   const nl = nlShare();
@@ -980,7 +980,7 @@ function loadKakaoSdk() {
 function kakaoSend(s) {
   if (s.nl) {
     const link = { mobileWebUrl: s.url, webUrl: s.url };
-    Kakao.Share.sendDefault({ objectType: 'feed', content: { title: '[파크골프 뉴스레터] ' + s.nl.vol, description: s.nl.day + (s.nl.desc ? ' ' + s.nl.desc : ''), imageUrl: s.nl.img, imageWidth: 800, imageHeight: 800, link }, buttons: [{ title: '뉴스레터 보기', link }] });
+    Kakao.Share.sendDefault({ objectType: 'feed', content: { title: '[파크골프 뉴스레터] ' + s.nl.vol, description: s.nl.day + (s.nl.desc ? ' ' + s.nl.desc : ''), imageUrl: s.nl.img, imageWidth: s.nl.w || 800, imageHeight: s.nl.h || 800, link }, buttons: [{ title: '뉴스레터 보기', link }] });
   } else Kakao.Share.sendScrap({ requestUrl: s.url });
 }
 window.pgnShareUrl = () => shareInfo().url;
