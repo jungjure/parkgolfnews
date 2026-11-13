@@ -703,7 +703,7 @@ function newsCard(n) {
   const img = n.images[0];
   return `<a class="card news-card" href="article.html?id=${n.id}">
     <div class="thumb ${img ? '' : 'ph'}" ${img ? 'style="position:relative;overflow:hidden"' : ''}>${img ? `<img src="${esc(thumbUrl(img))}" alt="" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">` : '<img src="assets/logo.png" alt="">'}</div>
-    <div class="body"><span><span class="tag">${esc(n.cat)}</span></span><h3>${esc(n.title)}</h3><p>${esc(n.summary)}</p><div class="meta">${fmtDate(n.date)}</div><div class="cardfoot"><div class="rx" data-id="${esc(n.id)}"></div><button type="button" class="cmb" data-cid="${esc(n.id)}" data-title="${esc(n.title)}" data-href="article.html?id=${esc(n.id)}" aria-label="댓글 보기·쓰기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>댓글 <b>0</b></button></div></div></a>`;
+    <div class="body"><span><span class="tag">${esc(n.cat)}</span></span><h3>${esc(n.title)}</h3><p>${esc(n.summary)}</p><div class="meta">${fmtDate(n.date)}</div><div class="cardfoot"><button type="button" class="cmb" data-cid="${esc(n.id)}" data-title="${esc(n.title)}" data-href="article.html?id=${esc(n.id)}" aria-label="댓글 보기·쓰기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>댓글 <b>0</b></button></div></div></a>`;
 }
 
 /* 제목·비고·장소에 시범운영(시범 운영) 문구가 있으면 시범운영 일정 */
