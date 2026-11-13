@@ -444,6 +444,15 @@ function pgnNavAlign() {
   if (ed && ed.parentElement) { const a0 = links[0], x = (a0 || nav).getBoundingClientRect().left + (a0 ? parseFloat(getComputedStyle(a0).paddingLeft) || 0 : 0); ed.style.left = Math.max(0, Math.round(x - ed.parentElement.getBoundingClientRect().left)) + 'px'; }   // '최근 편집'을 슬로건 줄, '홈' 글자 왼쪽 끝에 맞춤 (2026-11-09)
   if (tk && tk.parentElement) tk.style.right = Math.max(0, Math.round(tk.parentElement.getBoundingClientRect().right - nav.getBoundingClientRect().right)) + 'px';   // '파크톡'은 메뉴 오른쪽 끝에 맞춤 (2026-11-13)
 }
+/* 파크톡 (2026-11-13): 머리 부분 [파크톡] 버튼을 누르면 화면을 옮기지 않고 오른쪽에서 대화창이 열림 (assets/talk.js, 러닝톡 방식) */
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('#pgnTalk');
+  if (!a || e.button || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  e.preventDefault();
+  const go = () => window.PGNTalk && PGNTalk.open({ page: /talk\.html$/.test(location.pathname) });
+  if (window.PGNTalk) { go(); return; }
+  const s = document.createElement('script'); s.src = 'assets/talk.js?v=20261113e'; s.onload = go; s.onerror = () => { location.href = 'talk.html'; }; document.head.appendChild(s);
+});
 function pgnAlignAll() { pgnSubAlign(); pgnNavAlign(); }
 function schedSubPrep(active) {
   pgnAlignAll(); [300, 1000, 2500].forEach(t => setTimeout(pgnAlignAll, t));
