@@ -486,7 +486,7 @@ function pgnDateLine() { const d = new Date(); return d.getFullYear() + '년 ' +
 
 /* ---------- 휴대폰 메뉴 띠 (2026-11-13, 사용자 "휴대폰 화면은 메뉴가 맨 위에 띄워지는데 그걸 일정(누르면 오늘·주간·월간·특정일 조회)… 그 옆에 뉴스 독자칼럼 조인게시판… 파크톡은 맨 오른쪽")
    - 760px 이하: [메뉴] 버튼 대신 한 줄 메뉴 띠: 일정▾ · 뉴스 · 독자칼럼 · 조인게시판 · (맨 오른쪽) 파크톡
-   - 일정을 누르면 바로 아래에 오늘일정·주간일정·월간일정·특정일 조회가 펼쳐짐 (다시 누르거나 바깥을 누르면 닫힘)
+   - (2026-11-14 바꿈) 일정을 누르면 오늘일정 화면으로 바로 이동. 주간·월간·특정일 조회는 일정 화면 위쪽 띠에서
    - 로그인·회원가입(로그인하면 이름·로그아웃)은 녹색 띠 아래 줄 맨 앞으로. 슬로건 옆 파크톡 버튼은 휴대폰에서는 숨김(메뉴 띠에 있음) */
 (function () {
   const st = document.createElement('style'); st.id = 'pgn-mbar-css';
@@ -510,12 +510,8 @@ function pgnDateLine() { const d = new Date(); return d.getFullYear() + '년 ' +
     '.mauth a.who .admb{top:-9px;right:-14px}' +
     '.menu-info>a[target=_blank],.menu-info>a[href^="tel:"]{display:none!important}}';   /* 2026-11-13 사용자 "휴대폰메뉴에서 네이버밴드와 전화번호 없애줘" */
   document.head.appendChild(st);
-  document.addEventListener('click', e => {
-    const d = document.getElementById('pgnMDrop'); if (!d) return;
-    const b = e.target.closest && e.target.closest('.mbar .mb-s');
-    if (b) { e.preventDefault(); const open = d.hidden; d.hidden = !open; b.setAttribute('aria-expanded', String(open)); return; }
-    if (!d.hidden && !(e.target.closest && e.target.closest('#pgnMDrop, [class*="pgp"], [id*="pgp"]'))) { d.hidden = true; const bb = document.querySelector('.mbar .mb-s'); if (bb) bb.setAttribute('aria-expanded', 'false'); }
-  });
+  /* 2026-11-14 사용자 "일정을 누르면 오늘일정이 띄워지고 주간 월간 특정일조회를 할수있게": 휴대폰 '일정'은 펼침 메뉴 없이 오늘일정으로 바로 이동.
+     오늘·주간·월간·특정일 조회는 일정 화면 위쪽 띠(#pgn-sub)에서 고름 */
 })();
 
 /* ---------- 창 속 페이지 방지 (2026-11-06) ----------
@@ -554,8 +550,8 @@ async function layout(active, opts) {
       <span class="brand"><a href="index.html" title="홈" style="display:flex;align-items:center"><img src="assets/logo.png" alt="홈"></a><a href="about.html" title="회사소개">${esc(S.사이트명)}</a></span>
       <button class="menu-btn" aria-label="메뉴" onclick="document.querySelector('nav.main').classList.toggle('open')">메뉴</button>
       <nav class="main${isSched ? ' subopen' : ''}">${nav.map(n => n[2] === 'today' ? `<a href="${n[0]}" class="${isSched ? 'on' : ''}" data-sub="1" aria-haspopup="true">${n[1]}</a>${schedSubHtml('subm', subK)}` : `<a href="${n[0]}" class="${n[2] === active ? 'on' : ''}">${n[1]}</a>`).join('')}${authNav}</nav>
-      <nav class="mbar" aria-label="메뉴"><button type="button" class="mb-s${isSched ? ' on' : ''}" aria-haspopup="true" aria-expanded="false" aria-controls="pgnMDrop">일정<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><a href="news.html" class="${active === 'news' ? 'on' : ''}">뉴스</a><a href="column.html" class="${active === 'column' ? 'on' : ''}">독자칼럼</a><a href="join.html" class="${active === 'join' ? 'on' : ''}">조인게시판</a><a href="venues.html" class="${active === 'venues' ? 'on' : ''}">구장정보</a><a href="talk.html" class="mb-talk${active === 'talk' ? ' on' : ''}" data-talk="1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>파크톡</a></nav>
-    </div><div class="mdrop" id="pgnMDrop" hidden>${schedSubHtml('subm', subK)}</div><div class="menu-info" aria-label="날짜 및 연락처"><span class="mauth">${authNav}</span><time>${pgnDateLine()}</time><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a><a href="tel:${esc(S.전화.replace(/[^0-9+]/g, ''))}">${esc(S.전화)}</a><form class="msearch" action="search.html" method="get" role="search"><input type="search" name="q" placeholder="기사 검색" aria-label="기사 검색어" maxlength="40" value="${/search\.html$/.test(location.pathname) ? esc(new URLSearchParams(location.search).get('q') || '') : ''}"><button type="submit" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></form><span class="mnl"><button type="button" class="mnl-b" data-nl="sub">뉴스레터 받기</button></span></div>${schedSubHtml('subnav', subK, !isSched)}</header>
+      <nav class="mbar" aria-label="메뉴"><a href="today.html" class="mb-s${isSched ? ' on' : ''}">일정</a><a href="news.html" class="${active === 'news' ? 'on' : ''}">뉴스</a><a href="column.html" class="${active === 'column' ? 'on' : ''}">독자칼럼</a><a href="join.html" class="${active === 'join' ? 'on' : ''}">조인게시판</a><a href="venues.html" class="${active === 'venues' ? 'on' : ''}">구장정보</a><a href="talk.html" class="mb-talk${active === 'talk' ? ' on' : ''}" data-talk="1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>파크톡</a></nav>
+    </div><div class="menu-info" aria-label="날짜 및 연락처"><span class="mauth">${authNav}</span><time>${pgnDateLine()}</time><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a><a href="tel:${esc(S.전화.replace(/[^0-9+]/g, ''))}">${esc(S.전화)}</a><form class="msearch" action="search.html" method="get" role="search"><input type="search" name="q" placeholder="기사 검색" aria-label="기사 검색어" maxlength="40" value="${/search\.html$/.test(location.pathname) ? esc(new URLSearchParams(location.search).get('q') || '') : ''}"><button type="submit" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></form><span class="mnl"><button type="button" class="mnl-b" data-nl="sub">뉴스레터 받기</button></span></div>${schedSubHtml('subnav', subK, !isSched)}</header>
     ${S.공지 ? `<div class="notice"><div class="wrap">공지 | ${esc(S.공지)}</div></div>` : ''}`;
   const foot = S => `
     <div class="wrap">
