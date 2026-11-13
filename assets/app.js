@@ -505,7 +505,8 @@ function pgnDateLine() { const d = new Date(); return d.getFullYear() + '년 ' +
     '.mdrop .subm .pk.on input{background-color:var(--g700)!important;background-image:none!important;padding-right:13px!important;color:#fff}.mdrop .subm .pk.on input::placeholder{color:#fff}' +
     '.mauth{display:flex;flex-basis:100%;justify-content:center;flex-wrap:wrap;gap:4px 12px;margin-bottom:4px}' +
     '.mauth a{color:#fff;font-size:.88rem;font-weight:700;text-decoration:none;position:relative;padding:2px 0}.mauth a.auth{border:1px solid rgba(255,255,255,.75);border-radius:6px;padding:2px 10px}.mauth a.on{text-decoration:underline}.mauth .vsum{display:none}' +
-    '.mauth a.who .admb{top:-9px;right:-14px}}';
+    '.mauth a.who .admb{top:-9px;right:-14px}' +
+    '.menu-info>a[target=_blank],.menu-info>a[href^="tel:"]{display:none!important}}';   /* 2026-11-13 사용자 "휴대폰메뉴에서 네이버밴드와 전화번호 없애줘" */
   document.head.appendChild(st);
   document.addEventListener('click', e => {
     const d = document.getElementById('pgnMDrop'); if (!d) return;
