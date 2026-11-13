@@ -868,7 +868,33 @@ function eventRow(e, opts = {}) {
 
 /* ---------- 공유 버튼 (각 페이지 제목 오른쪽 끝): 카카오톡 / 밴드 ---------- */
 const SHARE_SKIP = ['write', 'members', 'requests', 'stats', 'request', 'mypage', 'login', 'signup', 'find'];
+/* 뉴스레터 공유 (2026-11-13 사용자 지시 "뉴스레터를 공유하면 파크골프뉴스 사이트 안내가 뜨게 하지 말고 뉴스레터 자체가 공유되게"):
+   본문에 assets/newsletter_volNN_YYYYMMDD.html 이 임베드된 기사에서는 기사 주소 대신 뉴스레터 파일 자체를 공유한다.
+   휴대폰판(_mobile.html)이 있으면 그것, 없으면 임베드 파일. 카카오톡은 뉴스레터 대표 이미지(nl_volNN_YYYYMMDD.jpg) 카드로 보낸다. */
+const NL_SH = { src: '', url: '', img: '' };
+function nlShare() {
+  const f = document.querySelector('main.article iframe.artifact[src*="/assets/newsletter_vol"]');
+  if (!f) return null;
+  const src = (f.getAttribute('src') || '').split(/[?#]/)[0];
+  const m = /newsletter_vol(\d+)_(\d{4})(\d{2})(\d{2})(_mobile)?\.html$/.exec(src);
+  if (!m) return null;
+  if (NL_SH.src !== src) {
+    NL_SH.src = src; NL_SH.url = src; NL_SH.img = '';
+    const mob = m[5] ? src : src.replace(/\.html$/, '_mobile.html');
+    const jpg = src.replace(/newsletter_vol\d+_\d{8}(_mobile)?\.html$/, 'nl_vol' + m[1] + '_' + m[2] + m[3] + m[4] + '.jpg');
+    const head = u => fetch(u, { method: 'HEAD', cache: 'no-store' }).then(r => r.ok).catch(() => false);
+    head(mob).then(ok => { if (ok && NL_SH.src === src) NL_SH.url = mob; });
+    head(jpg).then(ok => { if (ok && NL_SH.src === src) NL_SH.img = jpg; });
+  }
+  const d = new Date(+m[2], +m[3] - 1, +m[4]);
+  const day = (+m[3]) + '월 ' + (+m[4]) + '일(' + '일월화수목금토'[d.getDay()] + ')';
+  const md = document.querySelector('meta[name=description]');
+  const desc = md && md.content && md.content !== '파크골프뉴스 기사' ? md.content : '';
+  return { vol: 'Vol.' + m[1], day, desc, url: NL_SH.url, img: NL_SH.img || 'https://parkgolfnews.org/assets/pgn_logo_card.jpg' };
+}
 function shareInfo() {
+  const nl = nlShare();
+  if (nl) return { url: nl.url, title: '파크골프 뉴스레터 ' + nl.vol, text: '[파크골프 뉴스레터] ' + nl.vol + ' · ' + nl.day + (nl.desc ? '\n' + nl.desc : ''), nl };
   const url = location.href.split('#')[0];
   const h = document.querySelector('h1') || document.querySelector('h2.sec');
   const t = (h && h.firstChild && h.firstChild.textContent || document.title).trim().replace(/\s*-\s*파크골프뉴스$/, '') || '파크골프뉴스';
@@ -906,7 +932,16 @@ function loadKakaoSdk() {
   document.head.appendChild(s);
 }
 /* PC 카카오톡 공유: 카카오 로그인은 QR코드로만 (① QR 로그인 창 → ② 같은 창에서 친구 선택) */
-function kakaoQrBox(url) {
+/* 카카오톡 보내기: 뉴스레터는 대표 이미지 카드(제목·날짜·버튼 "뉴스레터 보기"), 그 밖의 화면은 주소 미리보기 */
+function kakaoSend(s) {
+  if (s.nl) {
+    const link = { mobileWebUrl: s.url, webUrl: s.url };
+    Kakao.Share.sendDefault({ objectType: 'feed', content: { title: '[파크골프 뉴스레터] ' + s.nl.vol, description: s.nl.day + (s.nl.desc ? ' ' + s.nl.desc : ''), imageUrl: s.nl.img, imageWidth: 800, imageHeight: 800, link }, buttons: [{ title: '뉴스레터 보기', link }] });
+  } else Kakao.Share.sendScrap({ requestUrl: s.url });
+}
+window.pgnShareUrl = () => shareInfo().url;
+function kakaoQrBox(s) {
+  const url = s.url;
   const old = document.getElementById('kqr'); if (old) old.remove();
   const FEAT = 'width=480,height=700,left=480,top=100,scrollbars=yes,resizable=1';
   const QR = 'https://accounts.kakao.com/qr_login/?continue=' + encodeURIComponent('https://accounts.kakao.com/weblogin/account/info') + '&lang=ko&showHeader=false&stay_signed_in=true#main';
@@ -917,13 +952,13 @@ function kakaoQrBox(url) {
   document.addEventListener('keydown', onKey);
   box.onclick = e => { if (e.target === box || e.target.closest('.kx')) close(); };
   box.querySelector('.kq1').onclick = () => { const w = window.open(QR, 'sharer', FEAT); if (w) try { w.focus(); } catch (e) {} };
-  box.querySelector('.kq2').onclick = () => { close(); try { Kakao.Share.sendScrap({ requestUrl: url }); } catch (e) { copyText(url); shareToast('주소를 복사했습니다.\n카카오톡 대화창에 붙여넣기(Ctrl+V) 해 주세요.'); } };
+  box.querySelector('.kq2').onclick = () => { close(); try { kakaoSend(s); } catch (e) { copyText(url); shareToast('주소를 복사했습니다.\n카카오톡 대화창에 붙여넣기(Ctrl+V) 해 주세요.'); } };
 }
 
 function shareKakao() {
   const s = shareInfo(); s.url = TRK.tag(s.url, 'kakao');
   const all = s.text + '\n' + s.url;
-  if (kakaoReady()) { if (!SH_MOB) { kakaoQrBox(s.url); return; } try { Kakao.Share.sendScrap({ requestUrl: s.url }); return; } catch (e) {} }
+  if (kakaoReady()) { if (!SH_MOB) { kakaoQrBox(s); return; } try { kakaoSend(s); return; } catch (e) {} }
   copyText(all);   // 앱에서 바로 붙여넣기 할 수 있게 공유 문구+주소 복사
   shareToast(SH_MOB ? '공유 문구를 복사했습니다.\n카카오톡이 열리면 대화방에 붙여넣기 해 주세요.' : '공유 문구와 주소를 복사했습니다.\n카카오톡 대화창에 붙여넣기(Ctrl+V) 해 주세요.');
   launchApp('kakaotalk://launch', null);   // 카카오톡 앱(PC는 설치된 경우) 자동실행
@@ -936,6 +971,7 @@ function shareBand() {
   launchApp('bandapp://create/post?text=' + encodeURIComponent(body) + '&route=' + encodeURIComponent(route), () => { location.href = web; });   // 휴대폰: 밴드 앱 자동실행, 앱이 없으면 웹 공유
 }
 function addShareButtons() {
+  nlShare();   // 뉴스레터 기사면 휴대폰판·대표 이미지 주소를 미리 확인해 둠
   if (!document.getElementById('shr-css')) {
     const st = document.createElement('style'); st.id = 'shr-css';
     st.textContent = '.shr{position:relative;margin-left:auto;flex-shrink:0;border-left:0;padding:0}.shr-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;color:var(--g900);border-radius:999px;padding:5px 12px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;line-height:1.4}.shr-btn:hover{border-color:var(--g700);color:var(--g700)}.shr-menu{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px;z-index:30;display:flex;flex-direction:column;gap:4px;min-width:150px}.shr-menu[hidden]{display:none!important}.shr-menu button{display:flex;align-items:center;gap:8px;border:0;border-radius:8px;padding:9px 12px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;text-align:left}.shr-k{background:#FEE500;color:#191919}.shr-b{background:#00C73C;color:#fff}';
