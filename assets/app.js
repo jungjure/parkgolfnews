@@ -889,7 +889,7 @@ function nlShare() {
   const d = new Date(+m[2], +m[3] - 1, +m[4]);
   const day = (+m[3]) + '월 ' + (+m[4]) + '일(' + '일월화수목금토'[d.getDay()] + ')';
   const md = document.querySelector('meta[name=description]');
-  const desc = md && md.content && md.content !== '파크골프뉴스 기사' ? md.content : '';
+  const desc = (md && md.content && md.content !== '파크골프뉴스 기사' ? md.content : '').replace(/^\d{1,2}월\s*\d{1,2}일\s*/, '');   // 날짜는 앞에 따로 붙이므로 요약 첫머리 날짜는 뺌
   return { vol: 'Vol.' + m[1], day, desc, url: NL_SH.url, img: NL_SH.img || 'https://parkgolfnews.org/assets/pgn_logo_card.jpg' };
 }
 function shareInfo() {
