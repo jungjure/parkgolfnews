@@ -25,7 +25,7 @@
   <main class="article" id="art"><div class="loading">불러오는 중...</div></main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261113b"></script>
+<script src="assets/app.js?v=20261113c"></script>
 <script>
 (async () => {
   const S = await layout('news');
@@ -54,8 +54,6 @@
         <button class="btn green" onclick="copyText(window.pgnShareUrl?pgnShareUrl():location.href);this.textContent='주소가 복사되었습니다'">기사 주소 복사</button>
         <a class="btn green" href="news.html">목록</a>
       </div>
-      <p class="rxhead">이 기사 어떠셨나요?</p>
-      <div class="rx big" data-id="${esc(n.id)}"></div>
       <section class="card comments" id="cm"><h3>댓글 <span id="ccount"></span></h3><div id="cbox"></div><div id="clist"><div class="loading">불러오는 중...</div></div></section>
       <div class="grid" style="margin-top:24px">${[next, prev].filter(Boolean).map(newsCard).join('')}</div>`;
     loadComments(n.id);
