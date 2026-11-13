@@ -416,12 +416,13 @@ function pgnSubOn(k) { document.querySelectorAll('.subnav [data-k], nav.main .su
 function pgnSubAlign() {
   const a = document.querySelector('nav.main a[data-sub]'), bar = document.getElementById('pgn-sub'), sw = bar && bar.querySelector('.sw'), mb = document.querySelector('.menu-btn');
   if (!a || !sw) return;
-  if (bar.hidden || (mb && getComputedStyle(mb).display !== 'none')) { sw.removeAttribute('style'); return; }   // 휴대폰은 기존 모양 유지
+  if (bar.hidden || pgnMob()) { sw.removeAttribute('style'); return; }   // 휴대폰은 기존 모양 유지
   const left = Math.max(8, Math.round(a.getBoundingClientRect().left - bar.getBoundingClientRect().left));
   sw.style.cssText = 'max-width:none;margin:0;justify-content:flex-start;padding-left:' + left + 'px';
 }
 /* 2026-11-05: PC에서 메뉴 '홈'~'로그아웃'(마지막 메뉴) 폭을 항상 869px(본문·행사지도 폭)로 고정하고, 본문과 같은 위치에 맞춤 */
 const PGN_W = 869;
+const pgnMob = () => window.matchMedia('(max-width:760px)').matches;   // 2026-11-13: 휴대폰 판단은 화면 폭으로 (메뉴 버튼을 숨겨도 맞게)
 function pgnNavAlign() {
   const nav = document.querySelector('nav.main'), mb = document.querySelector('.menu-btn'), mi = document.querySelector('.menu-info');
   if (!nav) return;
@@ -431,7 +432,7 @@ function pgnNavAlign() {
   const reset = () => { nav.style.cssText = ''; if (mi) mi.style.cssText = ''; if (ed) ed.style.left = ''; if (tk) tk.style.right = ''; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = ''; }); };
   reset();
   if (ed && !ed.textContent && typeof pgnEdFill === 'function') pgnEdFill(ed);   // 머리 부분을 다시 그렸을 때 '최근 편집' 다시 채움
-  if (mb && getComputedStyle(mb).display !== 'none') return;   // 휴대폰은 기존 모양
+  if (pgnMob()) return;   // 휴대폰은 기존 모양
   const W = Math.min(PGN_W, nav.parentElement.clientWidth - 36);
   let pad = 12; const need = () => [...nav.children].reduce((s, e) => s + (e.offsetWidth ? e.getBoundingClientRect().width + (parseFloat(getComputedStyle(e).marginLeft) || 0) : 0), 0);
   while (need() > W && pad > 4) { pad--; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = pad + 'px'; }); }
@@ -446,7 +447,7 @@ function pgnNavAlign() {
 }
 /* 파크톡 (2026-11-13): 머리 부분 [파크톡] 버튼을 누르면 화면을 옮기지 않고 오른쪽에서 대화창이 열림 (assets/talk.js, 러닝톡 방식) */
 document.addEventListener('click', e => {
-  const a = e.target.closest && e.target.closest('#pgnTalk');
+  const a = e.target.closest && e.target.closest('#pgnTalk, [data-talk]');
   if (!a || e.button || e.ctrlKey || e.metaKey || e.shiftKey) return;
   e.preventDefault();
   const go = () => window.PGNTalk && PGNTalk.open({ page: /talk\.html$/.test(location.pathname) });
@@ -481,6 +482,37 @@ function pgnDateLine() { const d = new Date(); return d.getFullYear() + '년 ' +
     '@media(max-width:760px){.mast{padding:14px 12px 10px}.mast>a{gap:10px}.mast img{height:84px}.mast .nm{font-size:34px;letter-spacing:-1px}.mast .sl{font-size:.85rem;margin-top:-12px}header.site .wrap{min-height:50px}.menu-btn{background:#fff;color:#0b4d32}}' +
     'footer.site{background:#222;color:#bbb}footer.site .wrap{max-width:905px}';
   document.head.appendChild(st);
+})();
+
+/* ---------- 휴대폰 메뉴 띠 (2026-11-13, 사용자 "휴대폰 화면은 메뉴가 맨 위에 띄워지는데 그걸 일정(누르면 오늘·주간·월간·특정일 조회)… 그 옆에 뉴스 독자칼럼 조인게시판… 파크톡은 맨 오른쪽")
+   - 760px 이하: [메뉴] 버튼 대신 한 줄 메뉴 띠: 일정▾ · 뉴스 · 독자칼럼 · 조인게시판 · (맨 오른쪽) 파크톡
+   - 일정을 누르면 바로 아래에 오늘일정·주간일정·월간일정·특정일 조회가 펼쳐짐 (다시 누르거나 바깥을 누르면 닫힘)
+   - 로그인·회원가입(로그인하면 이름·로그아웃)은 녹색 띠 아래 줄 맨 앞으로. 슬로건 옆 파크톡 버튼은 휴대폰에서는 숨김(메뉴 띠에 있음) */
+(function () {
+  const st = document.createElement('style'); st.id = 'pgn-mbar-css';
+  st.textContent = '.mbar,.mdrop,.mauth{display:none}' +
+    '@media(max-width:760px){header.site .menu-btn,header.site nav.main{display:none!important}.mast .sl .pgn-talk{display:none!important}' +
+    'header.site .wrap{min-height:0;padding-left:8px;padding-right:8px}' +
+    '.mbar{display:flex;align-items:center;gap:0;width:100%;padding:5px 0}' +
+    '.mbar a,.mbar button{font-family:inherit;font-size:.9rem;font-weight:700;color:#fff;background:none;border:0;padding:9px 7px;border-radius:0;white-space:nowrap;cursor:pointer;line-height:1.3;display:inline-flex;align-items:center;gap:3px;text-decoration:none;letter-spacing:-.02em}' +
+    '.mbar a.on,.mbar button.on{box-shadow:inset 0 -3px 0 #fff}.mbar button[aria-expanded=true]{background:#083a26}' +
+    '.mbar .mb-talk{margin-left:auto;background:#fff;color:#0b4d32;border-radius:999px;padding:6px 11px 6px 9px;gap:4px}.mbar .mb-talk.on{box-shadow:none}' +
+    '.mdrop{display:block;background:#fff;border-bottom:2px solid #0b4d32}.mdrop[hidden]{display:none!important}' +
+    '.mdrop .subm{display:flex;flex-wrap:wrap;gap:6px;padding:9px 10px;align-items:center}' +
+    '.mdrop .subm a,.mdrop .subm .pk input{font-family:inherit;font-size:.9rem;font-weight:700;color:var(--g900);border-radius:999px;padding:7px 13px;line-height:1.4;white-space:nowrap;border:2px solid var(--g100,#d8eadf);background:#fff}' +
+    '.mdrop .subm a.on,.mdrop .subm a:hover{background:var(--g700);border-color:var(--g700);color:#fff}' +
+    '.mdrop .subm .pk input{border-color:var(--g700);cursor:pointer;width:calc(6em + 40px);outline:0}.mdrop .subm .pk input::placeholder{color:var(--g900);opacity:1}' +
+    '.mdrop .subm .pk.on input{background-color:var(--g700)!important;background-image:none!important;padding-right:13px!important;color:#fff}.mdrop .subm .pk.on input::placeholder{color:#fff}' +
+    '.mauth{display:flex;flex-basis:100%;justify-content:center;flex-wrap:wrap;gap:4px 12px;margin-bottom:4px}' +
+    '.mauth a{color:#fff;font-size:.88rem;font-weight:700;text-decoration:none;position:relative;padding:2px 0}.mauth a.auth{border:1px solid rgba(255,255,255,.75);border-radius:6px;padding:2px 10px}.mauth a.on{text-decoration:underline}.mauth .vsum{display:none}' +
+    '.mauth a.who .admb{top:-9px;right:-14px}}';
+  document.head.appendChild(st);
+  document.addEventListener('click', e => {
+    const d = document.getElementById('pgnMDrop'); if (!d) return;
+    const b = e.target.closest && e.target.closest('.mbar .mb-s');
+    if (b) { e.preventDefault(); const open = d.hidden; d.hidden = !open; b.setAttribute('aria-expanded', String(open)); return; }
+    if (!d.hidden && !(e.target.closest && e.target.closest('#pgnMDrop, [class*="pgp"], [id*="pgp"]'))) { d.hidden = true; const bb = document.querySelector('.mbar .mb-s'); if (bb) bb.setAttribute('aria-expanded', 'false'); }
+  });
 })();
 
 /* ---------- 창 속 페이지 방지 (2026-11-06) ----------
@@ -519,7 +551,8 @@ async function layout(active, opts) {
       <span class="brand"><a href="index.html" title="홈" style="display:flex;align-items:center"><img src="assets/logo.png" alt="홈"></a><a href="about.html" title="회사소개">${esc(S.사이트명)}</a></span>
       <button class="menu-btn" aria-label="메뉴" onclick="document.querySelector('nav.main').classList.toggle('open')">메뉴</button>
       <nav class="main${isSched ? ' subopen' : ''}">${nav.map(n => n[2] === 'today' ? `<a href="${n[0]}" class="${isSched ? 'on' : ''}" data-sub="1" aria-haspopup="true">${n[1]}</a>${schedSubHtml('subm', subK)}` : `<a href="${n[0]}" class="${n[2] === active ? 'on' : ''}">${n[1]}</a>`).join('')}${authNav}</nav>
-    </div><div class="menu-info" aria-label="날짜 및 연락처"><time>${pgnDateLine()}</time><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a><a href="tel:${esc(S.전화.replace(/[^0-9+]/g, ''))}">${esc(S.전화)}</a><form class="msearch" action="search.html" method="get" role="search"><input type="search" name="q" placeholder="기사 검색" aria-label="기사 검색어" maxlength="40" value="${/search\.html$/.test(location.pathname) ? esc(new URLSearchParams(location.search).get('q') || '') : ''}"><button type="submit" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></form><span class="mnl"><button type="button" class="mnl-b" data-nl="sub">뉴스레터 받기</button></span></div>${schedSubHtml('subnav', subK, !isSched)}</header>
+      <nav class="mbar" aria-label="메뉴"><button type="button" class="mb-s${isSched ? ' on' : ''}" aria-haspopup="true" aria-expanded="false" aria-controls="pgnMDrop">일정<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><a href="news.html" class="${active === 'news' ? 'on' : ''}">뉴스</a><a href="column.html" class="${active === 'column' ? 'on' : ''}">독자칼럼</a><a href="join.html" class="${active === 'join' ? 'on' : ''}">조인게시판</a><a href="talk.html" class="mb-talk${active === 'talk' ? ' on' : ''}" data-talk="1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>파크톡</a></nav>
+    </div><div class="mdrop" id="pgnMDrop" hidden>${schedSubHtml('subm', subK)}</div><div class="menu-info" aria-label="날짜 및 연락처"><span class="mauth">${authNav}</span><time>${pgnDateLine()}</time><a href="${esc(S.밴드)}" target="_blank" rel="noopener">네이버 밴드</a><a href="tel:${esc(S.전화.replace(/[^0-9+]/g, ''))}">${esc(S.전화)}</a><form class="msearch" action="search.html" method="get" role="search"><input type="search" name="q" placeholder="기사 검색" aria-label="기사 검색어" maxlength="40" value="${/search\.html$/.test(location.pathname) ? esc(new URLSearchParams(location.search).get('q') || '') : ''}"><button type="submit" aria-label="검색"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></form><span class="mnl"><button type="button" class="mnl-b" data-nl="sub">뉴스레터 받기</button></span></div>${schedSubHtml('subnav', subK, !isSched)}</header>
     ${S.공지 ? `<div class="notice"><div class="wrap">공지 | ${esc(S.공지)}</div></div>` : ''}`;
   const foot = S => `
     <div class="wrap">
@@ -574,6 +607,7 @@ function admDraw() {
   const w = document.querySelector('nav.main a.who');
   if (w) { w.insertAdjacentHTML('beforeend', '<span class="admb" title="' + tip + '">' + t + '</span>'); w.querySelector('.admb').onclick = go; }
   const mb = document.querySelector('.menu-btn'); if (mb) mb.insertAdjacentHTML('beforeend', '<span class="admb" title="' + tip + '">' + t + '</span>');
+  const mw = document.querySelector('.mauth a.who'); if (mw) { mw.insertAdjacentHTML('beforeend', '<span class="admb" title="' + tip + '">' + t + '</span>'); mw.querySelector('.admb').onclick = go; }   // 휴대폰 (2026-11-13)
 }
 async function admFetch(force) {
   if (!admIsAdmin()) return;
