@@ -25,7 +25,7 @@
   <main class="article" id="art"><div class="loading">불러오는 중...</div></main>
   <div id="side"></div>
 </div>
-<script src="assets/app.js?v=20261110d"></script>
+<script src="assets/app.js?v=20261113a"></script>
 <script>
 (async () => {
   const S = await layout('news');
@@ -51,7 +51,7 @@
       <div class="share">
         <button class="btn" style="background:#FEE500;color:#191919;border-color:#FEE500" onclick="shareKakao()">카카오톡 공유</button>
         <button class="btn" style="background:#00C73C;color:#fff;border-color:#00C73C" onclick="shareBand()">밴드 공유</button>
-        <button class="btn green" onclick="copyText(location.href);this.textContent='주소가 복사되었습니다'">기사 주소 복사</button>
+        <button class="btn green" onclick="copyText(window.pgnShareUrl?pgnShareUrl():location.href);this.textContent='주소가 복사되었습니다'">기사 주소 복사</button>
         <a class="btn green" href="news.html">목록</a>
       </div>
       <p class="rxhead">이 기사 어떠셨나요?</p>
