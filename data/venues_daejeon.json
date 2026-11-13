@@ -1,0 +1,959 @@
+{
+ "meta": {
+  "eyebrow": "광역시도 · 파크골프장 목록",
+  "title": "대전광역시에서 1시간거리의 파크골프장",
+  "sub": "기준: 대전시청 · 직선거리 70km 이내 · 36홀 이상",
+  "notice": "자료: stepinsightlab.com · 대한파크골프협회 + 시·도 공공데이터 (2026-10-15 기준) · 이용 요금·운영시간은 변경될 수 있으니 방문 전 시설에 확인하세요. 운영시간·휴장일은 2026-11-13 조사 기준입니다."
+ },
+ "updated": "2026-11-13T05:43:08.000Z",
+ "items": [
+  {
+   "id": "v01hz6t",
+   "name": "유성구 갑천파크골프장",
+   "km": 8,
+   "address": "대전광역시 유성구 탑립동 211-2",
+   "map": "https://map.naver.com/p/search/유성구 갑천파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": false,
+   "visitor": true,
+   "online": true,
+   "onlineLabel": "",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [
+    1
+   ],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "무료",
+     "s": "free",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "09:00~18:00 (그 밖의 시간은 자율 이용)\n타지역민 오전 09~13시 / 오후 14~18시",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "매주 월요일 · 3~4월 잔디생육기 · 비·눈 오는 날",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "대전광역시시설관리공단 회원가입 후 온라인 예약",
+     "s": "",
+     "w": true
+    }
+   ],
+   "resText": "타지역민 온라인 예약",
+   "resUrl": "https://www.djsiseol.or.kr/res/www/121?center=DJSISEOL05",
+   "resNotes": [
+    "대전시민 현장이용",
+    "타지역민만 · 이용일 4주~2일 전 · 하루 40명"
+   ]
+  },
+  {
+   "id": "v026myh",
+   "name": "계룡시파크골프장",
+   "km": 14,
+   "address": "충청남도 계룡시 신도안면 정장리 6",
+   "map": "https://map.naver.com/p/search/계룡시파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": true,
+   "visitor": true,
+   "online": true,
+   "onlineLabel": "",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [
+    3
+   ],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "무료",
+     "s": "free",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "일출 ~ 일몰",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "매주 수요일",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "가능 (무료)",
+     "s": "",
+     "w": true
+    }
+   ],
+   "resText": "타지역민 온라인 예약",
+   "resUrl": "https://www.band.us/band/94577085/",
+   "resNotes": [
+    "계룡시민 현장이용",
+    "이용일 15일~3일 전"
+   ]
+  },
+  {
+   "id": "v03pwhv",
+   "name": "금강파크골프장",
+   "km": 17,
+   "address": "세종특별자치시 세종동 747-321",
+   "map": "https://map.naver.com/p/search/금강파크골프장 세종",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": true,
+   "visitor": true,
+   "online": true,
+   "onlineLabel": "",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [
+    1
+   ],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "무료",
+     "s": "free",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "동절기(10~2월) 07:00~12:00 / 13:00~18:00\n하절기(5~9월) 06:00~11:30 / 13:30~19:00",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "매주 월요일 · 봄철(2~4월) 잔디 휴장",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "가능 · \"금강파크골프장(타지역)\" 항목 선택 · 자동 확정",
+     "s": "",
+     "w": true
+    }
+   ],
+   "resText": "타지역민 온라인 예약",
+   "resUrl": "https://onestop.sejong.go.kr/Usr/resve/instList.do?fcltClCode=MT_GOLF",
+   "resNotes": [
+    "044-300-5584"
+   ]
+  },
+  {
+   "id": "v04iq30",
+   "name": "곰나루파크골프장",
+   "km": 28,
+   "address": "충청남도 공주시 웅진동 722",
+   "map": "https://map.naver.com/p/search/곰나루파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": false,
+   "visitor": false,
+   "online": true,
+   "onlineLabel": "밴드 예약",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [
+    1
+   ],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "전화 확인",
+     "s": "muted",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "날이 밝은 동안 (시간 따로 없음)",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "매주 월요일 · 비 오는 날 · 봄 잔디 휴장(2026년 3/22~4/30)",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "전화 확인 · 041-840-8822 (공주시 체육진흥과) · A~D 4개 코스",
+     "s": "muted",
+     "w": true
+    }
+   ],
+   "resText": "타지역민 온라인 예약",
+   "resUrl": "https://www.band.us/band/101387317/intro",
+   "resNotes": []
+  },
+  {
+   "id": "v05285v",
+   "name": "오송KTX파크골프장",
+   "km": 29,
+   "address": "충청북도 청주시 흥덕구 오송읍 오송리 358-3",
+   "map": "https://map.naver.com/p/search/오송KTX파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": false,
+   "visitor": true,
+   "online": true,
+   "onlineLabel": "",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "전화 확인",
+     "s": "muted",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "동절기(10~6월) 08:00~12:00 / 13:00~17:00\n하절기(7~9월) 07:00~12:00 / 13:00~18:00",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "정기 휴장 공식 표기 없음 (블로그: 매월 셋째 주 월요일) · 토·일·공휴일 예약 불가",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "가능 · 오송 60명, 미호강 20명 (동일 달력) · **토·일 예약 불가**",
+     "s": "",
+     "w": true
+    }
+   ],
+   "resText": "타지역민 온라인 예약",
+   "resUrl": "https://www.cjparkgolf.co.kr/theme/home/page_html/sub5_1.html",
+   "resNotes": []
+  },
+  {
+   "id": "v06gi0j",
+   "name": "금산군파크골프장",
+   "km": 30,
+   "address": "충청남도 금산군 제원면 수당리 986-1",
+   "map": "https://map.naver.com/p/search/금산군파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": true,
+   "visitor": true,
+   "online": true,
+   "onlineLabel": "",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "무료",
+     "s": "free",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "일출 ~ 일몰 또는 09:00~18:00 (자료마다 다름)",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "월요일 휴장 표기가 많으나 '휴장일 없음' 자료도 있음 · 3월 잔디 휴장 · 확인 필요",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "가능 · 금산군파크골프협회 사이트 예약",
+     "s": "",
+     "w": true
+    }
+   ],
+   "resText": "타지역민 온라인 예약",
+   "resUrl": "https://www.geumsan.go.kr/tour/board/list.do?boardId=BOARD_0000000000071&menuNo=610",
+   "resNotes": [
+    "041-750-2621"
+   ]
+  },
+  {
+   "id": "v07x2gk",
+   "name": "논산대교파크골프장",
+   "km": 33,
+   "address": "충청남도 논산시 성동면 원봉리 718-7",
+   "map": "https://map.naver.com/p/search/논산대교파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": false,
+   "visitor": false,
+   "online": false,
+   "onlineLabel": "",
+   "phone": true,
+   "phoneLabel": "",
+   "offDays": [
+    1
+   ],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "전화 확인",
+     "s": "muted",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "09:00~16:00 또는 17:00 (동·하절기)",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "매주 월요일 (확인 필요)",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "전화 확인 · 041-746-8986 (논산시 체육시설 담당)",
+     "s": "muted",
+     "w": true
+    }
+   ],
+   "resText": "",
+   "resUrl": "",
+   "resNotes": []
+  },
+  {
+   "id": "v08139h",
+   "name": "보은덕동파크골프장",
+   "km": 33,
+   "address": "충청북도 보은군 보은읍 성지리 (덕동교옆)",
+   "map": "https://map.naver.com/p/search/보은덕동파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": false,
+   "visitor": false,
+   "online": false,
+   "onlineLabel": "",
+   "phone": true,
+   "phoneLabel": "",
+   "offDays": [],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "전화 확인",
+     "s": "muted",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "일출 ~ 일몰",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "공식 표기 없음",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "전화 확인 · 043-935-9870 (3일 전 전화 예약)",
+     "s": "muted",
+     "w": true
+    }
+   ],
+   "resText": "",
+   "resUrl": "",
+   "resNotes": []
+  },
+  {
+   "id": "v0921gb",
+   "name": "청주 미호강 파크골프장",
+   "km": 35,
+   "address": "충청북도 청주시 흥덕구 미호로 99",
+   "map": "https://map.naver.com/p/search/청주 미호강 파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": true,
+   "free": false,
+   "visitor": true,
+   "online": true,
+   "onlineLabel": "",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "청주시민 3,000원\n관외 5,000원 · 경로(관내) 2,000원",
+     "s": "paid",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "동절기(10~6월) 08:00~12:00 / 13:00~17:00\n하절기(7~9월) 07:00~12:00 / 13:00~18:00",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "정기 휴장 공식 표기 없음 · 우천 시 휴장",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "가능 · **4월은 관외 이용 제한** · 인터넷 예약 (일일 40명 한정)",
+     "s": "",
+     "w": true
+    }
+   ],
+   "resText": "타지역민 온라인 예약",
+   "resUrl": "https://www.cjparkgolf.co.kr/theme/home/page_html/sub5_1.html",
+   "resNotes": []
+  },
+  {
+   "id": "v10ac4u",
+   "name": "보은파크골프골프장",
+   "km": 36,
+   "address": "충청북도 보은군 탄부면 삼승탄부로 518",
+   "map": "https://map.naver.com/p/search/보은파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": false,
+   "visitor": false,
+   "online": false,
+   "onlineLabel": "",
+   "phone": true,
+   "phoneLabel": "",
+   "offDays": [
+    1
+   ],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "전화 확인",
+     "s": "muted",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "하절기(4~10월) 08:00~18:00\n동절기(11~3월) 09:00~17:00\n12~13시 점심 이용 불가 · 관외 16:00 접수 마감",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "매주 월요일 · 1월 1일 · 설·추석 연휴 · 3~4월 잔디관리",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "전화 확인 · 043-935-9870 (3일 전 전화 예약)",
+     "s": "muted",
+     "w": true
+    }
+   ],
+   "resText": "",
+   "resUrl": "",
+   "resNotes": []
+  },
+  {
+   "id": "v11puai",
+   "name": "청양왕진나루파크골프장",
+   "km": 39,
+   "address": "충청남도 청양군 청남면 왕진리 367",
+   "map": "https://map.naver.com/p/search/청양왕진나루파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": false,
+   "visitor": true,
+   "online": true,
+   "onlineLabel": "",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [
+    1
+   ],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "타지역 10,000원\n(카드 결제만)",
+     "s": "paid",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "09:00~17:00",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "매주 월요일 · 3~4월 잔디 휴장",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "가능 · 전날 17시 마감",
+     "s": "",
+     "w": true
+    }
+   ],
+   "resText": "타지역민 온라인 예약",
+   "resUrl": "https://www.cheongyang.go.kr/kor/sub05_05_04.do",
+   "resNotes": [
+    "041-940-2114"
+   ]
+  },
+  {
+   "id": "v121pwl",
+   "name": "충청북도 도립파크골프장",
+   "km": 44,
+   "address": "충청북도 청주시 청원구 내수읍",
+   "map": "https://map.naver.com/p/search/충청북도 도립파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "45홀",
+   "certified": false,
+   "free": false,
+   "visitor": true,
+   "online": true,
+   "onlineLabel": "",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [
+    1
+   ],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "도민 6,000원\n타지역 10,000원\n경로·국가유공자 등 50% 감면",
+     "s": "paid",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "07:00~18:00 (12~13시 쉬는 시간) · 2부제 운영\n하루 440명 한정",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "매주 월요일 (법정공휴일 휴장 자료도 있음)",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "가능 · 전용 홈페이지 사전예약 (이용 1주~1일 전)",
+     "s": "",
+     "w": true
+    }
+   ],
+   "resText": "타지역민 온라인 예약",
+   "resUrl": "https://www.chungbuk.go.kr/parkgolf/reservation/reservation.do",
+   "resNotes": [
+    "10/26부터 실명인증 필수 · 043-220-4461"
+   ]
+  },
+  {
+   "id": "v13ozpm",
+   "name": "부여파크골프장",
+   "km": 44,
+   "address": "충청남도 부여군 부여읍 군수리 268-3",
+   "map": "https://map.naver.com/p/search/부여파크골프장",
+   "unavail": true,
+   "unavailLabel": "이용 불가",
+   "holes": "54홀",
+   "certified": false,
+   "free": false,
+   "visitor": false,
+   "online": false,
+   "onlineLabel": "",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [],
+   "details": [
+    {
+     "k": "현황",
+     "v": "**연말까지 공사 중** · 2027년 1월 2일 개장 예정",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "예약 문의",
+     "v": "041-830-3975 (온라인 예약 없음 · 전화 문의)",
+     "s": "muted",
+     "w": true
+    }
+   ],
+   "resText": "",
+   "resUrl": "",
+   "resNotes": []
+  },
+  {
+   "id": "v1447ng",
+   "name": "생강골파크골프장",
+   "km": 51,
+   "address": "전북특별자치도 완주군 봉동읍 낙평리 795",
+   "map": "https://map.naver.com/p/search/생강골파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": false,
+   "visitor": true,
+   "online": true,
+   "onlineLabel": "",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "전화 확인",
+     "s": "muted",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "일출 ~ 일몰 (07:00~18:00이라는 자료도 있음)",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "봄 잔디 휴장(2026년 3/1~4/20)",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "전화 확인 · 063-240-4114 (완주군 체육시설 담당)",
+     "s": "muted",
+     "w": true
+    }
+   ],
+   "resText": "타지역민 온라인 예약",
+   "resUrl": "https://www.eshare.go.kr/UserPortal/Upv/UprResrcGym/index.do?rsrc_no=BC27M1930360",
+   "resNotes": []
+  },
+  {
+   "id": "v15ou43",
+   "name": "백세파크골프장",
+   "km": 53,
+   "address": "충청남도 청양군 청양읍 은천동길 16-6 백세공원 내",
+   "map": "https://map.naver.com/p/search/백세파크골프장 청양",
+   "unavail": true,
+   "unavailLabel": "이용 불가",
+   "holes": "",
+   "certified": false,
+   "free": false,
+   "visitor": false,
+   "online": false,
+   "onlineLabel": "",
+   "phone": true,
+   "phoneLabel": "전화 확인",
+   "offDays": [],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "전화 확인",
+     "s": "muted",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "동절기(10~2월) 07:00~12:00 / 13:00~18:00\n하절기(5~9월) 06:00~11:30 / 13:30~19:00\n월요일 휴장 · 봄철(2~4월) 잔디 휴장",
+     "s": "muted",
+     "w": false
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "이용 불가",
+     "s": "muted",
+     "w": true
+    }
+   ],
+   "resText": "",
+   "resUrl": "",
+   "resNotes": []
+  },
+  {
+   "id": "v167wvt",
+   "name": "진천 제2파크골프장",
+   "km": 57,
+   "address": "충청북도 진천읍 성석리 726-1",
+   "map": "https://map.naver.com/p/search/진천 제2파크골프장",
+   "unavail": true,
+   "unavailLabel": "이용 불가",
+   "holes": "",
+   "certified": false,
+   "free": false,
+   "visitor": false,
+   "online": false,
+   "onlineLabel": "",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [],
+   "details": [
+    {
+     "k": "현황",
+     "v": "**개장 전** · 043-539-3114 (진천군 체육시설 담당)",
+     "s": "",
+     "w": true
+    }
+   ],
+   "resText": "",
+   "resUrl": "",
+   "resNotes": []
+  },
+  {
+   "id": "v17eo99",
+   "name": "천안유관순파크골프장",
+   "km": 59,
+   "address": "충청남도 천안시 서북구 백석동 571-2",
+   "map": "https://map.naver.com/p/search/천안유관순파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": false,
+   "visitor": true,
+   "online": true,
+   "onlineLabel": "",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [
+    2
+   ],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "전화 확인",
+     "s": "muted",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "08:00~17:00 (12~13시 쉬는 시간)",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "매주 화요일",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "가능",
+     "s": "",
+     "w": true
+    }
+   ],
+   "resText": "타지역민 온라인 예약",
+   "resUrl": "https://parkgolf.cauc.or.kr/reservation/capg/parkGolf",
+   "resNotes": [
+    "041-521-2114"
+   ]
+  },
+  {
+   "id": "v18dzi9",
+   "name": "이순신파크골프장",
+   "km": 61,
+   "address": "충청남도 아산시 염치읍 석정리 536-16",
+   "map": "https://map.naver.com/p/search/이순신파크골프장 아산",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": false,
+   "visitor": false,
+   "online": true,
+   "onlineLabel": "밴드 예약",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [
+    1
+   ],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "전화 확인",
+     "s": "muted",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "09:00~18:00",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "매주 월요일 · 법정공휴일",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "전화 확인 · 041-540-2396",
+     "s": "muted",
+     "w": true
+    }
+   ],
+   "resText": "타지역민 온라인 예약",
+   "resUrl": "https://www.band.us/band/93176752/post",
+   "resNotes": []
+  },
+  {
+   "id": "v195s8r",
+   "name": "무한천파크골프장",
+   "km": 62,
+   "address": "충청남도 예산군 예산읍 주교리 460",
+   "map": "https://map.naver.com/p/search/무한천파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": true,
+   "visitor": true,
+   "online": false,
+   "onlineLabel": "",
+   "phone": true,
+   "phoneLabel": "",
+   "offDays": [
+    1
+   ],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "무료",
+     "s": "free",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "하절기(4~9월) 05:00~일몰 · 동절기에는 늦게 엶",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "매주 월요일 · 3~4월 잔디 휴장",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "가능 · 무료 · 하루 20명 한정 · 이틀 전 예약",
+     "s": "",
+     "w": true
+    }
+   ],
+   "resText": "",
+   "resUrl": "",
+   "resNotes": [
+    "041-339-8267~8269 (전화 예약)"
+   ]
+  },
+  {
+   "id": "v20yab1",
+   "name": "익산이리로파크골프장",
+   "km": 64,
+   "address": "전북특별자치도 익산시 오산면 목천리 655",
+   "map": "https://map.naver.com/p/search/익산이리로파크골프장",
+   "unavail": false,
+   "unavailLabel": "",
+   "holes": "",
+   "certified": false,
+   "free": false,
+   "visitor": true,
+   "online": true,
+   "onlineLabel": "",
+   "phone": false,
+   "phoneLabel": "",
+   "offDays": [
+    1
+   ],
+   "details": [
+    {
+     "k": "이용 요금",
+     "v": "전화 확인",
+     "s": "muted",
+     "w": false
+    },
+    {
+     "k": "운영 시간",
+     "v": "동절기 08:00~17:00 · 하절기 07:00~18:00",
+     "s": "",
+     "w": false
+    },
+    {
+     "k": "휴장일",
+     "v": "매주 월요일 · 2~4월 잔디 휴장",
+     "s": "",
+     "w": true
+    },
+    {
+     "k": "타지역민 이용",
+     "v": "가능 · 오전 20명·오후 20명 · 1일 전부터 선착순",
+     "s": "",
+     "w": true
+    }
+   ],
+   "resText": "타지역민 온라인 예약",
+   "resUrl": "https://www.iksan.go.kr/portal/reserve/facilityList.do",
+   "resNotes": [
+    "063-859-5114"
+   ]
+  }
+ ]
+}
