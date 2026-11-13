@@ -14,7 +14,7 @@
   const MAG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>';
   const tDay = s => { const m = /^\d{4}-(\d{2})-(\d{2})/.exec(s || ''); return m ? (+m[1]) + '월 ' + (+m[2]) + '일' : esc(s || ''); };
   const PGS = {}, pgnStatic = n => PGS[n] || (PGS[n] = fetch('data/' + n + '.json?t=' + Math.floor(Date.now() / 6e4)).then(r => r.ok ? r.json() : null).catch(() => null));   /* 홈페이지에 미리 만들어 둔 목록 파일 (서버보다 훨씬 빠름) */
-  const PHOTO_MAX = 10, LONG = 1280, MAXB = 850 * 1024, TEXT_MAX = CFG.kind === '칼럼' ? 10000 : 3000;
+  const PHOTO_MAX = 20, LONG = 1280, MAXB = 850 * 1024, TEXT_MAX = CFG.kind === '칼럼' ? 10000 : 3000;
   /* 파일 첨부·동영상·유튜브 (2026-11-03): window.PGN_BOARD 에 media: true 를 넣은 게시판에서만 켜짐 (지금은 독자칼럼만) */
   const MEDIA = !!CFG.media, FILE_MAX = 20 * 1024 * 1024, VIDEO_MAX = 100 * 1024 * 1024, FILE_N = 5, VIDEO_N = 3, CHUNK = 8 * 1024 * 1024;
   const FILE_EXT = ['pdf', 'hwp', 'hwpx', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'zip', 'jpg', 'jpeg', 'png', 'gif'], VIDEO_EXT = ['mp4', 'mov', 'm4v', 'webm'];
