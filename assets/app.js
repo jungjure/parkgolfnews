@@ -451,7 +451,7 @@ document.addEventListener('click', e => {
   e.preventDefault();
   const go = () => window.PGNTalk && PGNTalk.open({ page: /talk\.html$/.test(location.pathname) });
   if (window.PGNTalk) { go(); return; }
-  const s = document.createElement('script'); s.src = 'assets/talk.js?v=20261113e'; s.onload = go; s.onerror = () => { location.href = 'talk.html'; }; document.head.appendChild(s);
+  const s = document.createElement('script'); s.src = 'assets/talk.js?v=20261113f'; s.onload = go; s.onerror = () => { location.href = 'talk.html'; }; document.head.appendChild(s);
 });
 function pgnAlignAll() { pgnSubAlign(); pgnNavAlign(); }
 function schedSubPrep(active) {
