@@ -23,13 +23,6 @@
     --radius-pill: 9999px;
     --font: 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #141414; --card: #1f1f1f; --accent: #5aab5e;
-      --ink: #efefef; --ink-sub: #bbbbbb; --ink-muted: #888888;
-      --border: #333333;
-    }
-  }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--font); background: var(--bg); color: var(--ink); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
   .page { max-width: 860px; margin: 0 auto; padding: 28px 20px 100px; }
@@ -74,7 +67,6 @@
   .info-badges { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; flex-wrap: wrap; }
   .region-tag { font-size: 12px; color: var(--ink-muted); font-weight: 500; background: transparent; border: 1px solid var(--border); padding: 1px 8px; border-radius: var(--radius-pill); }
   .hole-badge { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: var(--radius-pill); background: #f0f0f0; color: var(--ink-sub); border: 1px solid var(--border); }
-  @media (prefers-color-scheme: dark) { .hole-badge { background: #2a2a2a; } }
   .certified-badge { font-size: 12px; font-weight: 700; padding: 1px 9px; border-radius: var(--radius-pill); background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
 
   /* 장소명 행 */
@@ -115,11 +107,31 @@
   .tag-visitor { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: var(--radius-pill); background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
   .tag-online  { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: var(--radius-pill); background: #e0f7fa; color: #006064; border: 1px solid #80deea; }
   .tag-phone   { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: var(--radius-pill); background: #f5f5f5; color: #555; border: 1px solid #ccc; }
-  @media (prefers-color-scheme: dark) {
-    .tag-free    { background: #1b3a1c; color: #81c784; border-color: #2e6b30; }
-    .tag-visitor { background: #0d2a4a; color: #64b5f6; border-color: #1a4a7a; }
-    .tag-online  { background: #002f33; color: #4dd0e1; border-color: #005f66; }
-    .tag-phone   { background: #2a2a2a; color: #aaa; border-color: #444; }
+  /* ── 휴대폰 (2026-11-14, 사용자 "휴대폰에서 보면 모양이 안좋은데 좋게 해줘") ── */
+  @media (max-width: 600px) {
+    body { background: transparent; }
+    .page { padding: 4px 0 40px; }
+    .region-header { padding: 20px 18px 18px; }
+    .region-title { font-size: 22px; line-height: 1.35; word-break: keep-all; }
+    .region-sub { font-size: 13px; margin-bottom: 10px; word-break: keep-all; }
+    .update-stamp { margin-top: 4px; }
+    .notice { font-size: 12.5px; padding: 8px 2px 4px; margin-bottom: 14px; word-break: keep-all; }
+    .filter-row { gap: 6px; margin-bottom: 14px; }
+    .filter-btn { font-size: 13.5px; padding: 6px 13px; }
+    .course-card:hover { transform: none; }
+    .card-main { padding: 14px 16px 12px; }
+    .name-row { flex-wrap: wrap; row-gap: 4px; margin-bottom: 6px; }
+    .course-name { order: -1; flex: 1 1 100%; font-size: 19px; word-break: keep-all; }
+    .dist-num { font-size: 17px; }
+    .map-btn { font-size: 13px; padding: 4px 12px; }
+    .address { font-size: 14px; word-break: keep-all; }
+    .card-detail { grid-template-columns: 1fr; gap: 8px; padding: 12px 16px; }
+    .detail-item { display: grid; grid-template-columns: 82px 1fr; column-gap: 10px; align-items: baseline; }
+    .detail-label { font-size: 13px; margin-bottom: 0; letter-spacing: 0; }
+    .detail-value { font-size: 15px; line-height: 1.5; word-break: keep-all; }
+    .reservation-row { padding: 12px 16px 14px; gap: 6px 10px; }
+    .res-btn { flex: 1 1 100%; justify-content: center; font-size: 15px; padding: 10px 16px; }
+    .res-na, .res-phone { font-size: 13.5px; word-break: keep-all; }
   }
 </style>
 </head>
