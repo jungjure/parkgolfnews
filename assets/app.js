@@ -427,7 +427,8 @@ function pgnNavAlign() {
   if (!nav) return;
   const links = [...nav.querySelectorAll(':scope > a:not(.auth)')];
   const ed = document.getElementById('pgnEd');
-  const reset = () => { nav.style.cssText = ''; if (mi) mi.style.cssText = ''; if (ed) ed.style.left = ''; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = ''; }); };
+  const tk = document.getElementById('pgnTalk');
+  const reset = () => { nav.style.cssText = ''; if (mi) mi.style.cssText = ''; if (ed) ed.style.left = ''; if (tk) tk.style.right = ''; links.forEach(a => { a.style.paddingLeft = a.style.paddingRight = ''; }); };
   reset();
   if (ed && !ed.textContent && typeof pgnEdFill === 'function') pgnEdFill(ed);   // 머리 부분을 다시 그렸을 때 '최근 편집' 다시 채움
   if (mb && getComputedStyle(mb).display !== 'none') return;   // 휴대폰은 기존 모양
@@ -441,6 +442,7 @@ function pgnNavAlign() {
   nav.style.left = dx + 'px';
   if (mi) { mi.style.cssText = 'max-width:' + W + 'px;padding-left:0;padding-right:0;position:relative'; mi.style.left = (nav.getBoundingClientRect().left - mi.getBoundingClientRect().left) + 'px'; }   // 메뉴 밑 날짜 줄(가는 선)도 같은 폭
   if (ed && ed.parentElement) { const a0 = links[0], x = (a0 || nav).getBoundingClientRect().left + (a0 ? parseFloat(getComputedStyle(a0).paddingLeft) || 0 : 0); ed.style.left = Math.max(0, Math.round(x - ed.parentElement.getBoundingClientRect().left)) + 'px'; }   // '최근 편집'을 슬로건 줄, '홈' 글자 왼쪽 끝에 맞춤 (2026-11-09)
+  if (tk && tk.parentElement) tk.style.right = Math.max(0, Math.round(tk.parentElement.getBoundingClientRect().right - nav.getBoundingClientRect().right)) + 'px';   // '파크톡'은 메뉴 오른쪽 끝에 맞춤 (2026-11-13)
 }
 function pgnAlignAll() { pgnSubAlign(); pgnNavAlign(); }
 function schedSubPrep(active) {
@@ -499,11 +501,11 @@ async function layout(active, opts) {
   let S = settingsNow();   // 저장된 설정(없으면 기본값)으로 바로 그리고, 바뀐 게 있으면 나중에 갱신
   const me = Auth.get();
   const memberMode = me && me.role !== 'admin';   // 회원: 메뉴는 '자유게시판' 하나 (중복 방지)
-  const nav = [['index.html', '홈', 'home'], ['today.html', '오늘일정', 'today'], ['news.html', '뉴스', 'news'], ['column.html', '독자칼럼', 'column'], ['board.html', '자유게시판', 'board'], ['join.html', '조인게시판', 'join']];   // 오늘일정 = 일정 묶음 (누르면 아래에 오늘·주간·월간·특정일 조회 메뉴, 2026-11-03)
+  const nav = [['index.html', '홈', 'home'], ['today.html', '오늘일정', 'today'], ['news.html', '뉴스', 'news'], ['column.html', '독자칼럼', 'column'], ['join.html', '조인게시판', 'join']];   // 2026-11-13 자유게시판 메뉴 없앰 (파크톡으로 대신, 슬로건 줄 오른쪽 끝 '파크톡')   // 오늘일정 = 일정 묶음 (누르면 아래에 오늘·주간·월간·특정일 조회 메뉴, 2026-11-03)
   const isSched = SCHED_PAGES.includes(active), subK = schedSubKey(active);
   const authNav = !me ? `<a href="login.html" class="auth ${active === 'login' ? 'on' : ''}">로그인</a><a href="signup.html" class="auth ${active === 'signup' ? 'on' : ''}">회원가입</a>` : (me.role === 'admin' ? `<a href="members.html" class="${active === 'members' ? 'on' : ''}">회원현황</a><a href="requests.html" class="${active === 'requests' ? 'on' : ''}">개선요청</a><a href="stats.html" class="${active === 'stats' ? 'on' : ''}">통계</a>` : '') + `<a href="mypage.html" class="who ${active === 'mypage' ? 'on' : ''}" title="마이페이지">${esc(me.name)}님</a><a href="#" onclick="Auth.logout();return false" class="auth">로그아웃</a>`;
   const head = S => `
-    <div class="mast"><a href="index.html" title="홈"><img src="assets/logo.png" alt=""><span class="nm">${esc(S.사이트명)}</span></a><div class="sl">${esc(S.슬로건)}<span class="pgn-ed" id="pgnEd" hidden></span></div></div>
+    <div class="mast"><a href="index.html" title="홈"><img src="assets/logo.png" alt=""><span class="nm">${esc(S.사이트명)}</span></a><div class="sl">${esc(S.슬로건)}<a class="pgn-talk${active === 'talk' ? ' on' : ''}" id="pgnTalk" href="talk.html" title="파크톡: 대회 질문·동행·조인·대회 정보"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>파크톡</a><span class="pgn-ed" id="pgnEd" hidden></span></div></div>
     <header class="site"><div class="wrap">
       <span class="brand"><a href="index.html" title="홈" style="display:flex;align-items:center"><img src="assets/logo.png" alt="홈"></a><a href="about.html" title="회사소개">${esc(S.사이트명)}</a></span>
       <button class="menu-btn" aria-label="메뉴" onclick="document.querySelector('nav.main').classList.toggle('open')">메뉴</button>
@@ -524,7 +526,7 @@ async function layout(active, opts) {
   TRK.pv();             // 방문 통계
   startAdmBadge(active);   // 관리자: 새 개선요청·댓글 빨간 숫자
   if (me) startPing();
-  else if ((active === 'board' || active === 'column' ? /[?&](write|edit)=/.test(location.search) : ['write', 'members', 'mypage', 'request', 'requests', 'noti'].includes(active)) && !opts.openList) { showLoginGate(true); return new Promise(() => {}); }   // 글쓰기 주소로 바로 들어오면: 로그인 전에는 진행 불가 (기사·자유게시판 목록·글 보기는 누구나 볼 수 있음)
+  else if ((active === 'board' || active === 'column' || active === 'talk' ? /[?&](write|edit)=/.test(location.search) : ['write', 'members', 'mypage', 'request', 'requests', 'noti'].includes(active)) && !opts.openList) { showLoginGate(true); return new Promise(() => {}); }   // 글쓰기 주소로 바로 들어오면: 로그인 전에는 진행 불가 (기사·자유게시판 목록·글 보기는 누구나 볼 수 있음)
   else watchClickGate();   // 그 밖의 화면(홈·일정·뉴스 목록 등): 스크롤은 자유, 눌러서 들어갈 때 로그인 안내
   return S;
 }
@@ -658,7 +660,7 @@ function showLoginGate(hard, next) {
   document.querySelector('#pgn-gate .x').onclick = close;
 }
 /* 비회원: 기사·일정 상세·지도·접수처·자유게시판 글은 로그인 없이 볼 수 있음. 글쓰기 등 회원 전용 화면으로 갈 때만 로그인 안내창 */
-const GATED = /^((write|members|mypage|request|requests|noti)\.html|(board|column)\.html\?(.*&)?(write|edit)=)/i;   // 자유게시판·독자칼럼은 글쓰기·수정만 로그인
+const GATED = /^((write|members|mypage|request|requests|noti)\.html|(board|column|talk)\.html\?(.*&)?(write|edit)=)/i;   // 자유게시판·독자칼럼은 글쓰기·수정만 로그인
 function gateTarget(t) {
   if (!t || !t.closest || t.closest('#pgn-gate')) return null;
   const a = t.closest('a[href]');
@@ -1252,7 +1254,7 @@ function cmWhere(aid, newsById, boards) {
     if (pg === 'schedule' && (mm = /^(\d{4})-(\d{2})$/.exec(sub))) return { kind: '페이지', label: '월간일정 · ' + mm[1] + '년 ' + (+mm[2]) + '월', href: 'schedule.html?m=' + sub };
     return { kind: '페이지', label: (PAGE_CMT[pg] || pg) + ' 페이지', href: pg + '.html' };
   }
-  if (aid.indexOf('board:') === 0) { const id = aid.slice(6), t = boards && boards[id]; return { kind: '자유게시판', label: t ? '자유게시판 · ' + t : '자유게시판 글', href: 'board.html?id=' + encodeURIComponent(id) }; }
+  if (aid.indexOf('board:') === 0) { const id = aid.slice(6), t = boards && boards[id]; return { kind: '자유게시판', label: t ? '파크톡 · ' + t : '파크톡 글', href: 'talk.html?id=' + encodeURIComponent(id) }; }
   if (aid.indexOf('join:') === 0) { const id = aid.slice(5), t = boards && boards['join:' + id]; return { kind: '조인게시판', label: t ? '조인게시판 · ' + t : '조인게시판 글', href: 'join.html?id=' + encodeURIComponent(id) }; }
   const n = newsById && newsById[aid];
   return n ? { kind: '뉴스', label: n.title, href: 'article.html?id=' + encodeURIComponent(aid) } : { kind: '뉴스', label: '(삭제되었거나 비공개된 기사)', href: '', gone: true };
@@ -1561,7 +1563,11 @@ if (document.body) pgnLinkCore(document, false); else document.addEventListener(
   const st = document.createElement('style');
   st.textContent = '.mast .sl{position:relative}.pgn-ed{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;font-size:inherit;color:#777;white-space:nowrap}.pgn-ed[hidden]{display:none!important}' +
     '.pgn-ed button{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.pgn-ed button:hover{color:var(--g700,#1d6b44)}' +
-    '@media(max-width:1000px){.pgn-ed{position:static;display:block;margin-top:2px;text-align:center;line-height:1.5}}' +   /* 좁은 화면은 슬로건과 겹치지 않게 아래 줄 */
+    '@media(max-width:1000px){.pgn-ed{position:static;display:block;margin-top:2px;text-align:center;line-height:1.5}}' +
+    /* 파크톡 (2026-11-13): 슬로건 줄 가장 오른쪽 (PC는 메뉴 오른쪽 끝 '회원가입'에 맞춤, 좁은 화면은 슬로건 바로 뒤) */
+    '.pgn-talk{position:absolute;right:0;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:5px;font-size:.92em;font-weight:800;line-height:1;color:#fff;background:var(--g700,#1d6b44);border-radius:999px;padding:7px 14px 7px 12px;text-decoration:none;white-space:nowrap}' +
+    '.pgn-talk:hover,.pgn-talk.on{background:var(--g900,#0b4d32);color:#fff}' +
+    '@media(max-width:1000px){.pgn-talk{position:static;transform:none;vertical-align:middle;margin-left:8px;padding:5px 11px 5px 9px;font-size:.88em}}' +   /* 좁은 화면은 슬로건과 겹치지 않게 아래 줄 */
     '.edm{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:14px}' +
     '.edm-box{background:#fff;border-radius:14px;width:100%;max-width:920px;height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);color:var(--ink,#222)}' +
     '.edm-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:2px solid var(--g100,#e3efe7)}.edm-hd b{font-size:1.05rem;color:var(--g900,#0d3b26)}.edm-hd small{color:var(--muted,#777)}' +

@@ -1,11 +1,18 @@
-/* 자유게시판 · 독자칼럼 공용 화면 (2026-11-03)
+/* 자유게시판 · 독자칼럼 · 파크톡(2026-11-13) 공용 화면 (2026-11-03)
    - 밴드 글쓰기처럼 한 화면에서 글을 쓰고 사진을 여러 장 붙임 (글 사이에도 넣을 수 있음, 위·아래 이동, 삭제)
    - 사진은 브라우저에서 긴 변 1280px JPEG로 줄인 뒤 한 장씩 회원 서버(bimg)로 올림 → 관리자 Google Drive 전용 폴더
    - 읽기는 누구나, 쓰기·수정·삭제·댓글·신고는 로그인 회원 (서버에서도 같은 규칙)
    - 글꼴은 따로 지정하지 않음(inherit = 사이트 기본 Pretendard) */
 (async () => {
   const CFG = Object.assign({ kind: '자유', page: 'board.html', name: '자유게시판', active: 'board' }, window.PGN_BOARD || {});
-  const OTHER = { '자유': 'board.html', '칼럼': 'column.html' };
+  const OTHER = { '자유': 'board.html', '칼럼': 'column.html', '톡': 'talk.html' };
+  /* 파크톡 (2026-11-13): 러닝톡처럼 분류(질문·동행·조인·대회 정보·자유) + 대회 이름 + 좋아요. 자유게시판을 대신함 */
+  const TALK = CFG.kind === '톡', TCATS = ['질문', '동행·조인', '대회 정보', '자유'];
+  const HEART = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg>';
+  const BUBBLE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>';
+  const PEN = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+  const MAG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>';
+  const tDay = s => { const m = /^\d{4}-(\d{2})-(\d{2})/.exec(s || ''); return m ? (+m[1]) + '월 ' + (+m[2]) + '일' : esc(s || ''); };
   const PGS = {}, pgnStatic = n => PGS[n] || (PGS[n] = fetch('data/' + n + '.json?t=' + Math.floor(Date.now() / 6e4)).then(r => r.ok ? r.json() : null).catch(() => null));   /* 홈페이지에 미리 만들어 둔 목록 파일 (서버보다 훨씬 빠름) */
   const PHOTO_MAX = 10, LONG = 1280, MAXB = 850 * 1024, TEXT_MAX = CFG.kind === '칼럼' ? 10000 : 3000;
   /* 파일 첨부·동영상·유튜브 (2026-11-03): window.PGN_BOARD 에 media: true 를 넣은 게시판에서만 켜짐 (지금은 독자칼럼만) */
@@ -73,6 +80,17 @@
     '.bpost .r169 iframe{position:absolute;inset:0;width:100%;height:100%;border:0}.bpost .vcap{font-size:.85rem;color:var(--muted);margin-top:6px;line-height:1.5}' +
     '#blb{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;display:flex;align-items:center;justify-content:center}#blb img{max-width:100vw;max-height:100vh;object-fit:contain}' +
     '#blb button{position:absolute;border:0;background:rgba(255,255,255,.18);color:#fff;font-family:inherit;font-size:1.8rem;width:50px;height:50px;border-radius:50%;cursor:pointer;line-height:1;padding:0}' +
+    '.tk-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin:4px 0 16px}.tk-hd h1{margin:0;font-size:2rem;font-weight:900;letter-spacing:-.02em;line-height:1.2;color:#111}.tk-hd p{margin:6px 0 0;color:#555;font-size:.98rem;line-height:1.5;word-break:keep-all}' +
+    '.tk-w{flex:none;display:inline-flex;align-items:center;gap:7px;background:#111;color:#fff;border-radius:10px;padding:12px 18px;font-weight:800;font-size:1rem;text-decoration:none;white-space:nowrap}.tk-w:hover{background:#333;color:#fff}' +
+    '.tk-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.tk-chips button{font-family:inherit;font-size:.98rem;font-weight:700;background:#fff;color:#222;border:1px solid #d6d6d6;border-radius:9px;padding:8px 14px;cursor:pointer;line-height:1.3}.tk-chips button.on{border:2px solid #111;padding:7px 13px}' +
+    '.tk-s{position:relative;margin-bottom:16px;max-width:400px}.tk-s svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#777}.tk-s input{width:100%;padding:11px 12px 11px 40px;border:1px solid #d6d6d6;border-radius:10px;font-family:inherit;font-size:1rem;background:#fff}.tk-s input:focus{outline:0;border-color:#111}' +
+    '.tk-list{border-top:1px solid #e3e3e3}.tk-it{display:block;padding:16px 8px;border-bottom:1px solid #e3e3e3;color:inherit;text-decoration:none}.tk-it:hover{background:#fafafa}' +
+    '.tk-t{display:flex;align-items:flex-start;gap:8px}.tk-tag{flex:none;font-size:.8rem;font-weight:700;color:#444;border:1px solid #d6d6d6;border-radius:5px;padding:2px 7px;line-height:1.4;margin-top:2px;white-space:nowrap;background:#fff}' +
+    '.tk-t b{font-size:1.05rem;font-weight:800;line-height:1.45;color:#111;word-break:break-all}.tk-m{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;margin-top:7px;font-size:.88rem;color:#666}.tk-m .tk-ev{color:#222;font-weight:700}.tk-m .ic{display:inline-flex;align-items:center;gap:3px}' +
+    '.tk-pg{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:18px 0}.tk-rules{font-size:.82rem;color:#777;line-height:1.6;margin-top:18px}' +
+    '.tk-like{display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:.95rem;font-weight:700;border:1px solid #d6d6d6;background:#fff;color:#333;border-radius:999px;padding:7px 16px;cursor:pointer}.tk-like.on{color:#e0245e;border-color:#e0245e}.tk-like.on svg{fill:#e0245e}' +
+    '.tk-cats{display:flex;gap:8px;flex-wrap:wrap}.tk-cats label{cursor:pointer;position:relative}.tk-cats input{position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;margin:0}.tk-cats span{display:inline-block;font-size:.98rem;font-weight:700;border:1px solid #d6d6d6;border-radius:9px;padding:8px 14px;background:#fff}.tk-cats input:checked+span{border:2px solid #111;padding:7px 13px}.tk-cats input:focus-visible+span{outline:2px solid var(--g600)}' +
+    '@media(max-width:600px){.tk-hd h1{font-size:1.7rem}.tk-w{padding:10px 14px}.tk-s{max-width:none}}' +
     '#blb .x{top:12px;right:12px}#blb .p{left:10px;top:calc(50% - 25px)}#blb .n{right:10px;top:calc(50% - 25px)}#blb .c{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:#fff;font-size:.95rem}';
   document.head.appendChild(st);
 
@@ -82,6 +100,7 @@
   const bd = $('#bd'), q = new URLSearchParams(location.search);
   const RULES = (CFG.kind === '칼럼'
     ? '<div class="rules"><b>독자칼럼 이용 안내</b><br>파크골프에 관한 생각, 경험, 제안, 여행·구장 이야기를 자유롭게 써 주세요. 글 사이사이에 사진을 여러 장 붙일 수 있습니다.' + (MEDIA ? ' 동영상(직접 올리기 또는 유튜브 링크)과 문서 파일도 넣을 수 있습니다.' : '') + '<br>'
+    : TALK ? '<div class="rules"><b>파크톡 이용 안내</b><br>대회 질문, 동행·조인 구하기, 대회 정보, 자유로운 이야기를 나누는 곳입니다. 분류를 고르고, 관련 대회가 있으면 대회 이름을 적어 주세요. 제목만 써도 되고 사진도 붙일 수 있습니다.<br>'
     : '<div class="rules"><b>자유게시판 이용 안내</b><br>회원끼리 파크골프 이야기, 질문, 후기, 모임 소식을 자유롭게 나누는 곳입니다. 사진도 여러 장 붙일 수 있습니다.<br>') +
     (CFG.kind === '칼럼' ? '&middot; <b>독자칼럼은 운영자가 승인한 회원만 쓸 수 있습니다.</b> 처음이시면 로그인 후 [칼럼 쓰기 신청]을 눌러 주세요. 읽기와 댓글은 누구나(댓글은 회원) 할 수 있습니다.<br>' : '') + '아래 내용은 올릴 수 없으며 자동으로 차단되거나 신고·삭제될 수 있습니다.<br>&middot; 욕설·비방·혐오 표현, 선정적이거나 음란한 내용<br>&middot; 도박·불법 광고, 폭력·자해를 부추기는 내용, 개인정보 노출(다른 사람 얼굴·전화번호·차량번호가 보이는 사진 포함), 인터넷 주소(링크)<br>&middot; 회원 3명이 신고하면 글이 자동으로 숨겨지고 운영자가 확인합니다.</div>';
   const go = p => { location.href = CFG.page + (p ? '?' + p : ''); };
@@ -108,6 +127,7 @@
 
   /* ---------- 목록 ---------- */
   async function showList() {
+    if (TALK) return showTalkList();
     document.title = CFG.name + ' - 파크골프뉴스';
     bd.innerHTML = '<h2 class="sec">' + esc(CFG.name) + '</h2>' + RULES +
       '<div class="tools"><input id="bs" placeholder="제목·글쓴이 검색"><a class="btn green" id="bw" href="' + CFG.page + '?write=1">글쓰기</a></div><div id="capw"></div><div class="card" id="blist"><div class="loading">불러오는 중...</div></div><div class="pager" id="bpg"></div>';
@@ -137,6 +157,42 @@
     try {
       const r = await api('blist', { kind: CFG.kind }); fresh = true; useList(r.items);   /* 댓글 수는 목록에서 받은 값 사용 */
     } catch (e) { if (!shown) $('#blist').innerHTML = '<div class="empty">목록을 불러오지 못했습니다.<br><small>' + esc(errOut(e)) + '</small></div>'; }
+  }
+
+  /* ---------- 파크톡 목록 (러닝톡 모양: 제목·설명·글쓰기, 분류 칩, 대회 이름 검색, 분류 표·제목·대회·글쓴이·날짜·댓글·좋아요) ---------- */
+  async function showTalkList() {
+    document.title = CFG.name + ' - 파크골프뉴스';
+    const q0 = new URLSearchParams(location.search);
+    let all = [], page = 1, kw = q0.get('ev') || '', cat = TCATS.includes(q0.get('c')) ? q0.get('c') : '전체', lk = {};
+    const PER = 20;
+    bd.innerHTML = '<div class="tk-hd"><div><h1>' + esc(CFG.name) + '</h1><p>대회 질문, 동행·조인 구하기, 대회 정보를 나누는 곳이에요.</p></div><a class="tk-w" id="bw" href="' + CFG.page + '?write=1">' + PEN + '글쓰기</a></div>' +
+      '<div class="tk-chips" id="tkc">' + ['전체'].concat(TCATS).map(c => '<button type="button" data-c="' + c + '"' + (c === cat ? ' class="on"' : '') + '>' + c + '</button>').join('') + '</div>' +
+      '<div class="tk-s">' + MAG + '<input id="bs" type="search" placeholder="대회: 대회 이름으로 찾기" aria-label="대회 이름으로 찾기" value="' + esc(kw) + '"></div>' +
+      '<div class="tk-list" id="blist"><div class="loading">불러오는 중...</div></div><div class="tk-pg" id="bpg"></div>' +
+      '<p class="tk-rules">욕설·비방, 선정적인 내용, 도박·불법 광고, 개인정보(전화번호 등), 인터넷 주소(링크)는 올릴 수 없으며 자동으로 차단되거나 신고·삭제될 수 있습니다. 회원 3명이 신고하면 글이 숨겨집니다.</p>';
+    const draw = () => {
+      const k = kw.trim().toLowerCase().replace(/\s+/g, '');
+      const f = all.filter(x => (cat === '전체' || (x.cat || '자유') === cat) && (!k || ((x.ev || '') + (x.title || '')).toLowerCase().replace(/\s+/g, '').includes(k)));
+      const pages = Math.max(1, Math.ceil(f.length / PER)); if (page > pages) page = pages;
+      { const n1 = f.length; window.PGN_SHARE = () => new URLSearchParams(location.search).get('id') ? '' : '파크골프뉴스 ' + CFG.name + ' 총 ' + n1 + '건입니다.'; }
+      $('#blist').innerHTML = f.length ? f.slice((page - 1) * PER, page * PER).map(x => {
+        const nL = Math.max(x.lk || 0, (lk['talk:' + x.id] || {}).like || 0);
+        return '<a class="tk-it" href="' + CFG.page + '?id=' + esc(x.id) + '"><div class="tk-t"><span class="tk-tag">' + esc(x.cat || '자유') + '</span><b>' + esc(x.title) + (x.status === '숨김' ? ' <span class="tag hide">숨김</span>' : '') + (isAdmin && x.reports ? ' <span class="tag 접수">신고 ' + x.reports + '</span>' : '') + '</b></div>' +
+          '<div class="tk-m">' + (x.ev ? '<span class="tk-ev">' + esc(x.ev) + '</span>' : '') + '<span>' + esc(x.nick) + '</span><span>' + tDay(x.at) + '</span>' + (x.pc ? '<span>사진 ' + x.pc + '</span>' : '') +
+          (x.cm ? '<span class="ic">' + BUBBLE + x.cm + '</span>' : '') + (nL ? '<span class="ic">' + HEART + nL + '</span>' : '') + '</div></a>';
+      }).join('') : '<div class="empty">' + (k || cat !== '전체' ? '조건에 맞는 글이 없습니다.' : '아직 글이 없습니다. 첫 글을 남겨 보세요.') + '</div>';
+      $('#bpg').innerHTML = pages > 1 ? Array.from({ length: pages }, (_, i) => '<button class="btn ' + (i + 1 === page ? 'green' : 'gray') + '" data-p="' + (i + 1) + '" style="padding:6px 14px">' + (i + 1) + '</button>').join('') : '';
+    };
+    $('#bpg').onclick = e => { const b = e.target.closest('[data-p]'); if (b) { page = +b.dataset.p; draw(); window.scrollTo(0, 0); } };
+    $('#bs').oninput = e => { kw = e.target.value; page = 1; draw(); };
+    $('#tkc').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; cat = b.dataset.c; page = 1; $('#tkc').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); draw(); };
+    const useList = items => { all = (items || []).filter(x => x.kind === '톡'); CMC.counts = Object.assign(CMC.counts || {}, Object.fromEntries(all.map(x => ['board:' + x.id, x.cm || 0]))); CMC.p = CMC.p || Promise.resolve(); draw(); };
+    const lsk = 'pgn_bl_' + CFG.kind; let shown = false, fresh = false;
+    try { const c = JSON.parse(localStorage.getItem(lsk) || 'null'); if (c && c.length) { useList(c); shown = true; } } catch (e) {}
+    pgnStatic('board').then(j => { const it = j && j[CFG.kind]; if (!it || fresh) return; useList(it); shown = true; try { localStorage.setItem(lsk, JSON.stringify(it)); } catch (e) {} }).catch(() => {});
+    pgnStatic('counts').then(j => { if (j && j.rx) { lk = j.rx; draw(); } }).catch(() => {});
+    try { const r = await api('blist', { kind: CFG.kind }); fresh = true; useList(r.items); try { localStorage.setItem(lsk, JSON.stringify(r.items)); } catch (e) {} }
+    catch (e) { if (!shown) $('#blist').innerHTML = '<div class="empty">목록을 불러오지 못했습니다.<br><small>' + esc(errOut(e)) + '</small></div>'; }
   }
 
   /* ---------- 사진 크게 보기 ---------- */
@@ -183,10 +239,10 @@
       : b.v ? '<div class="bvid"><div class="r169"><iframe src="https://drive.google.com/file/d/' + encodeURIComponent(b.v) + '/preview" allow="autoplay; fullscreen" allowfullscreen loading="lazy" title="' + esc(b.n || '동영상') + '"></iframe></div><div class="vcap">' + esc(b.n || '동영상') + ' · ' + fmtSize(b.s || 0) + '<br>영상이 바로 안 나오면 올린 직후라 Google 드라이브가 처리 중인 것입니다. 몇 분 뒤 다시 열어 주세요.</div></div>'
       : b.y ? '<div class="byt"><div class="r169"><iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(b.y) + '?rel=0&playsinline=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy" title="유튜브 영상"></iframe></div></div>'
       : '<div class="bbody">' + esc(b.t || '') + '</div>').join('');
-    bd.innerHTML = '<h2 class="sec">' + esc(CFG.name) + '</h2><article class="card bpost"><h1>' + esc(p.title) + (p.status === '숨김' ? ' <span class="tag hide">숨김</span>' : '') + '</h1>' +
+    bd.innerHTML = '<h2 class="sec">' + esc(CFG.name) + '</h2><article class="card bpost">' + (TALK ? '<div class="tk-t" style="margin-bottom:6px"><span class="tk-tag">' + esc(p.cat || '자유') + '</span>' + (p.ev ? '<a class="tk-m" style="margin:0" href="' + CFG.page + '?ev=' + encodeURIComponent(p.ev) + '"><span class="tk-ev">' + esc(p.ev) + '</span></a>' : '') + '</div>' : '') + '<h1>' + esc(p.title) + (p.status === '숨김' ? ' <span class="tag hide">숨김</span>' : '') + '</h1>' +
       '<div class="bm">' + esc(p.nick) + ' · ' + esc(p.at) + (p.edited ? ' (수정 ' + esc(p.edited) + ')' : '') + (isAdmin && p.reports ? ' · 신고 ' + p.reports + '건' : '') + '</div>' +
       (p.status === '숨김' ? '<div class="msg warn">' + (p.mine ? '신고가 쌓여 다른 회원에게는 보이지 않는 글입니다. 운영자가 확인 중입니다.' : '신고가 쌓여 숨겨진 글입니다.') + '</div>' : '') +
-      '<div class="bcont">' + body + '</div><div id="bmsg"></div><div class="bar">' + btns.join('') + '<a class="btn gray" href="' + CFG.page + '">목록</a></div></article>' +
+      '<div class="bcont">' + body + '</div>' + (TALK ? '<div style="margin-top:18px"><button type="button" class="tk-like" id="tklike" aria-pressed="false">' + HEART + '좋아요 <b>0</b></button></div>' : '') + '<div id="bmsg"></div><div class="bar">' + btns.join('') + '<a class="btn gray" href="' + CFG.page + '">목록</a></div></article>' +
       '<section class="card comments" id="cm"><h3>댓글 <span id="ccount"></span></h3><div id="cbox"></div><div id="clist"><div class="loading">불러오는 중...</div></div></section>';
     bd.querySelector('.bcont').onclick = e => { const im = e.target.closest('figure.bimg img'); if (im) lightbox(ids, +im.dataset.k || 0); };
     const msg = $('#bmsg');
@@ -198,6 +254,19 @@
     };
     if ($('#bhide')) $('#bhide').onclick = async () => { try { await api('bset', { id, status: p.status === '숨김' ? '정상' : '숨김' }); showView(id); } catch (e) { say(msg, errOut(e)); } };
     loadComments('board:' + id);
+    if (TALK) {   /* 좋아요: 뉴스 반응과 같은 저장소(반응 탭, 기사ID talk:번호, 종류 like). 누르면 켜고, 다시 누르면 끔 */
+      const lb = $('#tklike'), aid = 'talk:' + id;
+      const paint = (c, mine) => { lb.querySelector('b').textContent = (c && c.like) || 0; lb.classList.toggle('on', mine === 'like'); lb.setAttribute('aria-pressed', mine === 'like'); };
+      paint({ like: p.lk || 0 }, '');
+      pgnStatic('counts').then(j => { if (j && j.rx && j.rx[aid]) paint(j.rx[aid], ''); }).catch(() => {});
+      if (!guest) api('rlist', { aid }).then(r => paint((r.counts || {})[aid], (r.mine || {})[aid])).catch(() => {});
+      lb.onclick = async () => {
+        if (guest) { showLoginGate(false, CFG.page + '?id=' + id); return; }
+        lb.disabled = true;
+        try { const r = await api('react', { aid, kind: 'like' }); paint((r.counts || {})[aid], (r.mine || {})[aid]); } catch (e) { say(msg, errOut(e)); }
+        lb.disabled = false;
+      };
+    }
   }
 
   async function loadComments(aid) {
@@ -433,6 +502,8 @@
     const mediaHint = MEDIA ? '<span class="hint">동영상: mp4·mov·m4v·webm, 한 개 ' + (VIDEO_MAX >> 20) + 'MB까지(더 크면 유튜브에 올린 뒤 [유튜브 링크]), 동영상·유튜브 합쳐 글 하나에 ' + VIDEO_N + '개.<br>파일: pdf·hwp·hwpx·doc·docx·xls·xlsx·ppt·pptx·txt·csv·zip·jpg·png·gif, 한 개 ' + (FILE_MAX >> 20) + 'MB까지, 글 하나에 ' + FILE_N + '개. 실행 파일·웹페이지 파일 등은 올릴 수 없습니다.</span>' : '';
     bd.innerHTML = '<h2 class="sec">' + esc(CFG.name) + ' ' + (editId ? '글 수정' : '글쓰기') + '</h2>' + RULES +
       '<div class="card bpost"><form id="bf" autocomplete="off">' +
+      (TALK ? '<div class="field"><span>분류</span><div class="tk-cats" id="tkcat">' + TCATS.map((c, i) => '<label><input type="radio" name="tkc" value="' + c + '"' + (i === 0 ? ' checked' : '') + '><span>' + c + '</span></label>').join('') + '</div></div>' +
+        '<label class="field"><span>대회 이름 (선택)</span><input id="bev" maxlength="60" placeholder="관련 대회가 있으면 적어 주세요 (예: 제1회 순창 고추장배)"></label>' : '') +
       '<label class="field"><span>제목</span><input id="bt" maxlength="80" required placeholder="제목 (80자 이내)"></label>' +
       '<div class="field"><span>내용</span><div id="bedh"></div>' +
       '<div class="btools"><button type="button" class="bphoto" id="bph">' + CAM + '사진 추가</button><input type="file" id="bfile" accept="image/*" multiple hidden>' + mediaBtns + '<span class="cnt" id="bc"></span>' +
@@ -450,6 +521,9 @@
     E = makeEditor($('#bedh'), old ? blocksOf(old) : [{ t: '' }], () => { dirty = true; upd(); });
     dirty = false; upd();
     if (old) $('#bt').value = old.title;
+    if (TALK && old) { const r0 = bd.querySelector('input[name=tkc][value="' + (old.cat || '자유') + '"]'); if (r0) r0.checked = true; $('#bev').value = old.ev || ''; }
+    if (TALK && !old && q.get('ev')) $('#bev').value = q.get('ev');
+    if (TALK) { $('#bev').oninput = () => { dirty = true; }; bd.querySelectorAll('input[name=tkc]').forEach(r => { r.onchange = () => { dirty = true; }; }); }
     $('#bt').oninput = () => { dirty = true; };
     $('#bph').onclick = () => $('#bfile').click();
     $('#bfile').onchange = async e => {
@@ -474,13 +548,14 @@
       ev.preventDefault(); const b = $('#bgo'), m = $('#bmsg'); m.innerHTML = '';
       const tx = E.text();
       if (tx.length > TEXT_MAX) { say(m, '내용은 ' + TEXT_MAX + '자까지 쓸 수 있습니다. (지금 ' + tx.length + '자)'); return; }
-      if (tx.length < 5 && !E.count()) { say(m, '내용을 5자 이상 입력해 주세요.'); return; }
+      if (tx.length < 5 && !E.count() && !TALK) { say(m, '내용을 5자 이상 입력해 주세요.'); return; }
       b.disabled = true; b.textContent = '사진·파일 올리는 중...';
       for (let i = 0; E.pending() && i < 4000; i++) await new Promise(r => setTimeout(r, 300));
       if (E.failed()) { say(m, '올리지 못한 사진·파일·동영상이 있습니다. ↻ 로 다시 올리거나 × 로 빼 주세요.'); b.disabled = false; b.textContent = editId ? '수정 저장' : '등록'; return; }
       b.textContent = '확인 중...';
       try {
         const data = { title: $('#bt').value, text: tx, blocks: E.blocks(), kind: CFG.kind };
+        if (TALK) { data.cat = (bd.querySelector('input[name=tkc]:checked') || {}).value || '자유'; data.ev = ($('#bev').value || '').trim(); }
         if (editId) { await api('bupdate', { id: editId, ...data }); dirty = false; go(); }
         else { await api('bpost', data); dirty = false; go(); }   /* 등록·수정 뒤에는 예전처럼 목록으로 */
         return;
