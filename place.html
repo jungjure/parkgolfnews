@@ -30,10 +30,9 @@ h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 12px}
 <div class="wrap">
   <h1 id="nm">장소</h1>
   <div class="map" id="map"><div class="tiles" id="tiles"></div><div class="pin"></div><div class="attr">© OpenStreetMap contributors</div></div>
-  <a class="btn b1" id="nav">네이버 지도 앱으로 보기</a>
+  <a class="btn b1" id="nav">네이버 지도에서 보기</a>
   <a class="btn b2" id="kko">카카오맵으로 보기</a>
-  <a class="btn b3" id="web">네이버 장소 정보(웹)</a>
-  <p class="note">지도 앱이 없으면 자동으로 네이버 지도 웹으로 넘어갑니다. 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright</p>
+  <p class="note">네이버 지도에서 이 장소에 핀이 꽂힌 지도가 열립니다. 네이버 지도 앱으로 보려면 열린 화면 아래의 '지도앱으로 보기'를 누르세요. 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright</p>
 </div>
 <script>
 (function(){
@@ -44,32 +43,18 @@ h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 12px}
   /* 2026-11-07: 어디서 눌러도 반드시 이동하도록 고침 (PC·카톡 안 브라우저·앱 없는 폰에서 앱 주소만 쓰면 아무 일도 안 일어남)
      - PC: 네이버 지도 웹으로 바로 이동
      - 휴대폰: 네이버 지도 앱을 먼저 열어 보고, 1.5초 안에 앱이 안 열리면 네이버 지도 웹(모바일)으로 이동 */
-  var ua=navigator.userAgent||'', android=/Android/i.test(ua), ios=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  var mobile=android||ios;
-  var nav=document.getElementById('nav');
-  /* 2026-11-07(2): 네이버 장소 번호(id)가 없는 구장은 이름 검색이 '업체 없음'이 되어 현재 위치만 보였음 -> 좌표로 정확한 자리에 핀을 꽂아 엶 */
+  /* 2026-11-13: 휴대폰에서 '네이버 지도 앱으로 보기'를 누르면 앱이 구장 대신 현재 위치만 보이는 일이 계속됨(11/1·11/7·11/13 재발, 카톡 안 브라우저에서 앱으로 넘길 때 장소 정보가 빠짐)
+     -> 앱으로 넘기는 주소(nmap://, intent://, map.naver.com/p/…)를 아예 쓰지 않고, 구장 자리에 핀이 꽂히는 네이버 지도 웹 화면으로 바로 엶.
+        앱으로 보고 싶으면 열린 네이버 화면 아래의 '지도앱으로 보기'(네이버가 만든 버튼)를 누르면 됨.
+     - 휴대폰: 장소 번호 있으면 m.place.naver.com/place/번호/location (지도 탭, 핀), 없으면 m.map.naver.com/map?lat&lng (좌표 핀), 둘 다 없으면 모바일 웹 검색
+     - PC: map.naver.com/p/entry/place/번호 또는 map.naver.com/p/search/위도,경도 */
+  var ua=navigator.userAgent||'', mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   var hasLL=!isNaN(lat)&&!isNaN(lng);
-  var qs=id?('appSchemeName=nmap&id='+id+'&lat='+lat+'&lng='+lng+'&name='+en+'&appname='+app):('lat='+lat+'&lng='+lng+'&name='+en+'&appname='+app);
-  var mWeb=id?('https://m.place.naver.com/place/'+id+'/location'):(hasLL?('https://m.map.naver.com/map.naver?lat='+lat+'&lng='+lng+'&dlevel=12&pinTitle='+en+'&pinType=site'):('https://m.map.naver.com/search2/search.naver?query='+en));
+  var mWeb=id?('https://m.place.naver.com/place/'+id+'/location'):(hasLL?('https://m.map.naver.com/map?lat='+lat+'&lng='+lng+'&dlevel=12&pinTitle='+en+'&pinType=site'):('https://m.map.naver.com/search?query='+en));
   var pcWeb=id?('https://map.naver.com/p/entry/place/'+id):(hasLL?('https://map.naver.com/p/search/'+lat+','+lng):('https://map.naver.com/p/search/'+en));
-  var webUrl=mobile?mWeb:pcWeb;
-  if(!mobile){ nav.textContent='네이버 지도에서 보기'; nav.href=pcWeb; }
-  else {
-    var appUrl=android?('intent://place?'+qs+'#Intent;scheme=nmap;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(mWeb)+';end'):('nmap://place?'+qs);
-    nav.href=mWeb;   /* 스크립트가 막혀도 웹 지도로는 감 */
-    nav.addEventListener('click',function(ev){
-      ev.preventDefault();
-      var left=false, t;
-      function gone(){ left=true; clearTimeout(t); }
-      document.addEventListener('visibilitychange',function(){ if(document.hidden) gone(); });
-      window.addEventListener('pagehide',gone);
-      window.addEventListener('blur',function(){ setTimeout(function(){ if(document.hidden) gone(); },300); });
-      t=setTimeout(function(){ if(!left&&!document.hidden) location.href=mWeb; },1500);
-      try{ location.href=appUrl; }catch(e){ location.href=mWeb; }
-    });
-  }
+  var nav=document.getElementById('nav');
+  nav.textContent='네이버 지도에서 보기'; nav.href=mobile?mWeb:pcWeb;
   document.getElementById('kko').href='https://map.kakao.com/link/map/'+en+','+lat+','+lng;
-  document.getElementById('web').href=webUrl;
   if(isNaN(lat)||isNaN(lng)){document.getElementById('map').style.display='none';return;}
   var z=16, N=Math.pow(2,z), r=lat*Math.PI/180;
   var fx=(lng+180)/360*N, fy=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*N;
