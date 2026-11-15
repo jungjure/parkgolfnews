@@ -30,7 +30,7 @@
       ev.preventDefault();
       var pm = window.pgnMapApp, pref = '';
       try { pref = localStorage.getItem('pgn_mapPick') || ''; } catch (e) {}
-      if (pm && pm.mobile && (pref === 'naver' || pref === 'kakao') && /\/place\.html\?/.test(a.href)) {
+      if (pm && pm.mobile && !/KAKAOTALK/i.test(navigator.userAgent) && (pref === 'naver' || pref === 'kakao') && /\/place\.html\?/.test(a.href)) {   /* 2026-11-16: 카톡 안에서는 앱을 직접 열지 않고 장소 화면이 기본 인터넷 앱으로 넘겨서 엶 */
         var u = new URL(a.href), sp = u.searchParams, fb = a.href + (a.href.indexOf('?') >= 0 ? '&' : '?') + 'pick=1';
         pm.open(pref, sp.get('n') || '', parseFloat(sp.get('lat')), parseFloat(sp.get('lng')), function () { location.href = fb; });
         return;
