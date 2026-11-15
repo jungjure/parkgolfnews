@@ -856,16 +856,21 @@ const PLACE_FIX = [
   [/노을빛\s*파크골프장|줄포\s*파크골프장|줄포면\s*생태공원로\s*170/, { n: '줄포파크골프장 (노을빛 파크골프장)', id: '1389202044', lat: 35.5791236, lng: 126.6669581 }], /* 네이버 이름은 줄포파크골프장 (2026-11-12) */
   [/충북보건과학대/, { n: '충북보건과학대학교', id: '11591453', lat: 36.7016738, lng: 127.5515784 }]
 ];
+/* 2026-11-15: 장소 보기(place.html)에서 한 번 고른 지도(네이버/카카오)를 기억해 다음부터 그 지도로 바로 안내 (localStorage pgn_mapPick) */
+function mapPick() { try { return localStorage.getItem('pgn_mapPick') === 'kakao' ? 'kakao' : 'naver'; } catch (e) { return 'naver'; } }
 function mapUrl(q) {
   const f = (PLACE_FIX.find(x => x[0].test(q)) || [])[1];
+  const mob = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent), kk = mapPick() === 'kakao';
   /* 휴대폰: map.naver.com 검색 주소는 네이버 지도 앱으로 넘어가며 검색어가 빠져 현재 위치만 보여서, 앱으로 넘어가지 않는 모바일 웹 지도 검색으로 연다 (2026-11-12) */
-  if (!f) return (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ? 'https://m.map.naver.com/search?query=' : 'https://map.naver.com/p/search/') + encodeURIComponent(q);
-  if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) return '/place.html?n=' + encodeURIComponent(f.n) + '&lat=' + f.lat + '&lng=' + f.lng + (f.id ? '&id=' + f.id : '');
+  if (!f) return kk ? (mob ? 'https://m.map.kakao.com/actions/searchView?q=' : 'https://map.kakao.com/?q=') + encodeURIComponent(q)
+    : (mob ? 'https://m.map.naver.com/search?query=' : 'https://map.naver.com/p/search/') + encodeURIComponent(q);
+  if (mob) return '/place.html?n=' + encodeURIComponent(f.n) + '&lat=' + f.lat + '&lng=' + f.lng + (f.id ? '&id=' + f.id : '');
+  if (kk) return 'https://map.kakao.com/link/map/' + encodeURIComponent(f.n) + ',' + f.lat + ',' + f.lng;
   return f.id ? 'https://map.naver.com/p/entry/place/' + f.id : 'https://map.naver.com/p/search/' + f.lat + ',' + f.lng;
 }
 function mapLink(e) {
   const q = mapQ(e); if (!q) return esc(e.place);
-  return '<a class="pgmap" href="' + mapUrl(q) + '" title="네이버지도에서 위치 보기">' + esc(e.place) + '</a>';
+  return '<a class="pgmap" href="' + mapUrl(q) + '" title="지도에서 위치 보기">' + esc(e.place) + '</a>';
 }
 function openMap(u) {
   if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) { location.href = u; return; } /* 휴대폰(카톡 안 브라우저 포함)은 팝업 대신 같은 창에서 이동 (2026-11-12) */

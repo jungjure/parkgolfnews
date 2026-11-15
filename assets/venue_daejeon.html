@@ -552,6 +552,8 @@
     });
   })();
 </script>
+<script>/* 2026-11-15: 장소 보기에서 카카오맵을 고른 기기는 구장 지도 링크도 카카오맵 검색으로 안내 (localStorage pgn_mapPick) */
+document.addEventListener('click',function(ev){var a=ev.target&&ev.target.closest&&ev.target.closest('a[href*="map.naver.com/p/search/"]');if(!a)return;var k='';try{k=localStorage.getItem('pgn_mapPick');}catch(e){}if(k!=='kakao')return;var q=decodeURIComponent(a.getAttribute('href').split('/p/search/')[1]||'');if(!q)return;ev.preventDefault();var m=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);var u=(m?'https://m.map.kakao.com/actions/searchView?q=':'https://map.kakao.com/?q=')+encodeURIComponent(q);var t=a.getAttribute('target');if(t&&t!=='_self'){var w=window.open(u,t);if(!w)location.href=u;}else (window.top||window).location.href=u;},true);</script>
 </body>
 </html>
 
