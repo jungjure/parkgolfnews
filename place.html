@@ -38,6 +38,7 @@ body.going .btn{opacity:.45}
   <p class="pick" id="pick"></p>
   <p class="note">네이버 지도에서 이 장소에 핀이 꽂힌 지도가 열립니다. 네이버 지도 앱으로 보려면 열린 화면 아래의 '지도앱으로 보기'를 누르세요. 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright</p>
 </div>
+<script src="/assets/mapapp.js?v=20261115a"></script>
 <script>
 (function(){
   var q=new URLSearchParams(location.search);
@@ -107,8 +108,14 @@ body.going .btn{opacity:.45}
   var PK='pgn_mapPick', pref=''; try{pref=localStorage.getItem(PK)||'';}catch(e){}
   if(pref!=='naver'&&pref!=='kakao')pref='';
   function save(v){try{localStorage.setItem(PK,v);}catch(e){}}
-  nav.addEventListener('click',function(e){save('naver');if(inKakao){e.preventDefault();go(nav.href);}});
-  kko.addEventListener('click',function(e){save('kakao');if(inKakao){e.preventDefault();go(kko.href);}});
+  /* 2026-11-15 사용자 지시 "네이버지도와 카카오지도로 직접 연결하게 해줘", "자동차로 설정하게 해주고":
+     휴대폰에서 버튼을 누르면 네이버 지도 앱 / 카카오맵 앱을 바로 열어 도착지 = 구장, 출발 = 내 위치, 자동차 길찾기를 띄움(assets/mapapp.js).
+     앱이 2초 안에 안 열리면(앱 미설치 등) 지금까지처럼 웹 자동차 길찾기 화면을 엶. */
+  var APP=!!(mobile&&window.pgnMapApp);
+  function appGo(kind,el,onFail){pgnMapApp.open(kind,n,lat,lng,onFail||function(){go(el.href);},el.href);}
+  if(APP){nav.textContent='네이버 지도 앱 자동차 길안내';kko.textContent='카카오맵 앱 자동차 길안내';}
+  nav.addEventListener('click',function(e){save('naver');if(APP){e.preventDefault();appGo('naver',nav);}else if(inKakao){e.preventDefault();go(nav.href);}});
+  kko.addEventListener('click',function(e){save('kakao');if(APP){e.preventDefault();appGo('kakao',kko);}else if(inKakao){e.preventDefault();go(kko.href);}});
   var pk=document.getElementById('pick'), NM={naver:'네이버 지도',kakao:'카카오맵'};
   function chooser(){
     pk.innerHTML=pref?('지난번에 고른 지도: <b>'+NM[pref]+'</b> · 다른 지도를 누르면 다음부터는 그 지도로 바로 안내합니다.'):'처음 한 번만 고르시면 다음부터는 묻지 않고 고른 지도로 바로 안내합니다.';
@@ -118,10 +125,11 @@ body.going .btn{opacity:.45}
   if(pref&&q.get('pick')!=='1'&&nt!=='back_forward'){
     pk.innerHTML='<b>'+NM[pref]+'</b>로 바로 안내합니다…';
     document.body.classList.add('going');
-    go((pref==='kakao')?kko.href:nav.href);
+    if(APP)appGo(pref,pref==='kakao'?kko:nav,function(){pk.innerHTML='<b>'+NM[pref]+' 앱</b>이 열리지 않으면 아래 버튼을 눌러 주세요.';document.body.classList.remove('going');});
+    else go((pref==='kakao')?kko.href:nav.href);
   } else chooser();
   window.addEventListener('pageshow',function(e){if(e.persisted)chooser();});
-  if(mobile&&hasLL){var nt0=document.querySelector('.note');if(nt0)nt0.textContent='도착지가 이 구장으로 잡힌 길찾기 화면이 열립니다. 출발은 내 위치이며, 화면의 \'안내시작\'을 누르면 길안내가 시작됩니다.'+(inKakao?' 카카오톡에서 누르면 길안내가 제대로 넘어가도록 휴대폰 기본 인터넷 앱에서 열립니다.':'')+' 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright';}
+  if(mobile){var nt0=document.querySelector('.note');if(nt0)nt0.textContent='누르면 네이버 지도 앱 또는 카카오맵 앱이 바로 열리고, 도착지가 이 구장, 출발이 내 위치, 이동수단이 자동차로 잡힌 길찾기가 나옵니다. 앱의 \'안내시작\'을 누르면 길안내가 시작됩니다. 앱이 없으면 웹 길찾기 화면이 열립니다. 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright';}
   if(isNaN(lat)||isNaN(lng)){document.getElementById('map').style.display='none';return;}
   var z=16, N=Math.pow(2,z), r=lat*Math.PI/180;
   var fx=(lng+180)/360*N, fy=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*N;
