@@ -1404,11 +1404,28 @@ function pgnLinkCore(doc, inFrame) {
   /* 홈페이지 주소 (한글·영문 도메인, https:// 없이 써도 됨): 파크골프대회.com, www.진주시장배파크골프.kr, kpga7330.com/competitions, https://... */
   const WEB = /(?:(?<![\w\/.@-])(https?:\/\/)((?:[A-Za-z0-9가-힣-]+\.)+(?:[a-z]{2,10}|한국)(?::\d{2,5})?)|(?<![\w가-힣.\/@-])((?:[A-Za-z0-9가-힣-]+\.)+(?:co\.kr|or\.kr|go\.kr|ne\.kr|re\.kr|pe\.kr|ac\.kr|com|net|org|kr|한국)))(?![A-Za-z0-9-])(\/[A-Za-z0-9\-._~%!$&*+,;=:@\/?#]*)?/g;
   const css = 'color:inherit;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;cursor:pointer';
-  function piece(text) {
+  /* 2026-11-15 사용자 "뉴스기사안의 장소도 네이버지도와 카카오지도에 연결되게": 기사 본문의 구장 이름(…파크골프장, …파크골프 구장, …파크골프리조트, 제N구장)을 누르면
+     장소 보기(place.html: 네이버 지도 / 카카오맵 고르기, 고른 지도 기억)로 이동. 기사 본문(#art .content)과 기사 iframe 안에서만 */
+  const PLC = /(?<![가-힣A-Za-z0-9·])(?:([가-힣A-Za-z0-9·]{1,15})\s)?([가-힣A-Za-z0-9·]*(?:파크골프장|파크골프\s?구장|파크골프리조트|파크골프센터)(?:\s?제?\d{1,2}구장)?)/g;
+  const PLC_STOP = /^(오는|지난|이번|이날|올해|내년|인근|주변|근처|전국|지역|해당|국내|모든|새|각|두|세|네|및|등|또는|이|그|저|신설|신규|대형|공공|기존|인접|무료|유료|전용|일반|대표|첫|다른|같은|한|및|또|총)$|(는|은|을|를|에서|에게|에|의|와|과|로|으로|던|된|한|인|이|가|도|만|서|고|며|면|게|다|요|일|월|시|분|명|개|회|차|부|곳|홀|번째|까지|부터)$|^\d/;
+  const PLC_BASE = inFrame ? 'https://parkgolfnews.org/place.html' : '/place.html';
+  function piece(text, pl) {
     const parts = []; let last = 0, m;
     const marks = [];
+    if (pl) {
+      PLC.lastIndex = 0;
+      while ((m = PLC.exec(text))) {
+        let pre = m[1] || '', main = m[2], s = m.index;
+        if (pre && PLC_STOP.test(pre)) { s += pre.length + 1; pre = ''; }
+        if (!pre && /^(파크골프장|파크골프\s?구장|파크골프리조트|파크골프센터)/.test(main)) continue;   // 이름 없이 '파크골프장'만 있으면 건너뜀
+        const name = (pre ? pre + ' ' : '') + main, e = s + name.length;
+        let q = 'n=' + encodeURIComponent(name);
+        try { const f = (typeof PLACE_FIX !== 'undefined' ? PLACE_FIX : []).find(x => x[0].test(name)); if (f) q = 'n=' + encodeURIComponent(f[1].n) + '&lat=' + f[1].lat + '&lng=' + f[1].lng + (f[1].id ? '&id=' + f[1].id : ''); } catch (x) {}
+        marks.push({ s, e, t: 'p', url: PLC_BASE + '?' + q, txt: name });
+      }
+    }
     ACCT.lastIndex = 0;
-    while ((m = ACCT.exec(text))) { const no = m[3]; if (no.replace(/\D/g, '').length >= 10 && !isPhone(no)) marks.push({ s: m.index, e: m.index + m[0].length, t: 'a', bank: m[1].trim(), no, txt: m[0] }); }
+    while ((m = ACCT.exec(text))) { const no = m[3], s0 = m.index, e0 = s0 + m[0].length; if (marks.some(k => s0 < k.e && e0 > k.s)) continue; if (no.replace(/\D/g, '').length >= 10 && !isPhone(no)) marks.push({ s: m.index, e: m.index + m[0].length, t: 'a', bank: m[1].trim(), no, txt: m[0] }); }
     WEB.lastIndex = 0;
     while ((m = WEB.exec(text))) { const sch = m[1] || '', host = m[2] || m[3], path = (m[4] || '').replace(/[.,;:!?]+$/, ''), s = m.index, e = s + sch.length + host.length + path.length; if (!marks.some(k => s < k.e && e > k.s)) marks.push({ s, e, t: 'w', url: (sch || 'https://') + host + path, txt: sch + host + path }); }
     TEL.lastIndex = 0;
@@ -1421,6 +1438,7 @@ function pgnLinkCore(doc, inFrame) {
       const a = doc.createElement('a');
       if (k.t === 't') { a.href = 'tel:' + k.no.replace(/\D/g, ''); a.className = 'pgtel'; a.textContent = k.no; a.title = '눌러서 전화 걸기'; }
       else if (k.t === 'w') { a.href = k.url; a.className = 'pgweb'; a.textContent = k.txt; a.title = '눌러서 홈페이지로 이동'; }
+      else if (k.t === 'p') { a.href = k.url; a.className = 'pgweb pgplace'; a.textContent = k.txt; a.title = '눌러서 네이버 지도·카카오맵으로 위치 보기'; }
       else { a.href = '#'; a.className = 'pgacct'; a.dataset.bank = k.bank; a.dataset.no = k.no; a.textContent = k.txt; a.title = '눌러서 계좌번호 복사·송금'; }
       a.style.cssText = css;
       f.appendChild(a); last = k.e;
@@ -1428,17 +1446,18 @@ function pgnLinkCore(doc, inFrame) {
     if (last < text.length) f.appendChild(doc.createTextNode(text.slice(last)));
     return f;
   }
+  const plOk = p => !!p && (inFrame || !!p.closest('#art .content'));
   function scan(root) {
     if (!root) return;
     if (root.nodeType === 3) root = root.parentNode;
     if (!root || root.nodeType !== 1 && root.nodeType !== 9 && root.nodeType !== 11) return;
     const w = doc.createTreeWalker(root, 4, { acceptNode: n => {
-      if (!/\d{3,4}-\d{4}|\d{10}|\d-\d|[A-Za-z0-9가-힣]\.(?:[a-z]{2,}|한국)/.test(n.data)) return 2;
       const p = n.parentElement;
+      if (!/\d{3,4}-\d{4}|\d{10}|\d-\d|[A-Za-z0-9가-힣]\.(?:[a-z]{2,}|한국)/.test(n.data) && !(/파크골프/.test(n.data) && plOk(p))) return 2;
       return !p || p.closest('a,script,style,textarea,input,select,button,option,[contenteditable],.pgn-nolink,#pgn-head') ? 2 : 1;
     } });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
-    for (const n of list) { const f = piece(n.data); if (f && n.parentNode) n.parentNode.replaceChild(f, n); }
+    for (const n of list) { const f = piece(n.data, plOk(n.parentElement)); if (f && n.parentNode) n.parentNode.replaceChild(f, n); }
   }
   scan(doc.body);
   let q = [], t = 0;
