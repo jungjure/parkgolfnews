@@ -4,6 +4,7 @@
    - 앱 주소: 네이버 nmap://route/car?dlat&dlng&dname&appname (안드로이드는 intent://…;package=com.nhn.android.nmap, 앱이 없으면 플레이스토어)
               카카오 kakaomap://route?ep=위도,경도&by=CAR (장소 화면의 카카오 버튼을 누를 때만)
    - 좌표가 없는 장소는 회원 서버(geo)로 좌표를 찾은 뒤 엶(최대 3초)
+   - 카톡 안 브라우저에서는 앱을 바로 열지 않고, 누른 순간 기본 인터넷 앱으로 장소 화면을 열어 거기서 앱을 엶(카톡이 도착지를 빼먹기 때문)
    - 2.5초 안에 앱이 안 열리면 장소 화면(place.html, 앱 버튼·설치 안내)으로 감. 웹 길찾기로 자동으로 가지 않음
    - 컴퓨터는 지도 앱이 없으므로 그대로 장소 화면(현재 위치 -> 웹 자동차 길찾기)으로 감
    쓰는 곳: place.html, 뉴스레터(nlwin.js가 불러옴), 홈페이지(app.js가 불러옴). 길안내 코드는 이 파일과 place.html에만 둠. */
@@ -12,6 +13,7 @@
   var ua = navigator.userAgent || '';
   var ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var android = /Android/i.test(ua), phone = ios || android || /Mobile/i.test(ua);
+  var inKakao = phone && /KAKAOTALK/i.test(ua);   // 카톡 안 브라우저: 여기서 앱을 열면 카톡이 장소(도착지)를 빼고 넘겨 앱에 현재 위치만 나옴
   var GEO = 'https://script.google.com/macros/s/AKfycby4zEPx3AB25E7x4peqc9UTlYsGgywDjew64Xh8Va7VhM4zMG8clQGM0eCUZIQqsW2tVg/exec';
   var APPNAME = 'parkgolfnews.org';
   function parse(href) {
@@ -56,13 +58,22 @@
     return 'https://parkgolfnews.org/place.html?' + s.toString();
   }
   /* 장소 링크를 눌렀을 때: 휴대폰이면 네이버 지도 앱을 바로 엶. 처리했으면 true */
+  /* 카톡 안: 누른 그 순간(사용자 터치가 있어야 카톡이 허락함) 장소 화면을 휴대폰 기본 인터넷 앱(크롬·삼성 인터넷·사파리)으로 열고(go=naver),
+     거기서 네이버 지도 앱을 엶 -> 도착지가 그대로 앱에 들어감 (2026-11-16 사용자 "네비게이션이 바로 떠. 그런데 장소값을 못 불러와") */
+  function outOfKakao(p, kind) {
+    var left = false;
+    document.addEventListener('visibilitychange', function () { if (document.hidden) left = true; });
+    location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(placePage(p, { go: kind || 'naver' }));
+    setTimeout(function () { if (!left && !document.hidden) location.href = placePage(p, { kk: '1' }); }, 1500);
+  }
   function open(href) {
     var p = parse(href); if (!p || !phone) return false;
+    if (inKakao) { outOfKakao(p, 'naver'); return true; }
     geo(p).then(function () { launch('naver', p, function () { location.href = placePage(p, { noapp: '1' }); }); });
     return true;
   }
   if (phone && !/\/place\.html$/.test(location.pathname)) {
-    try { if (window.top !== window.self) { window.pgnNavi = { open: open, appUrl: appUrl, parse: parse, launch: launch, geo: geo, phone: phone, ios: ios, android: android }; return; } } catch (e) {}
+    try { if (window.top !== window.self) { window.pgnNavi = { open: open, appUrl: appUrl, parse: parse, launch: launch, geo: geo, outOfKakao: outOfKakao, phone: phone, inKakao: inKakao, ios: ios, android: android }; return; } } catch (e) {}
     /* window 단계(가장 먼저)에서 장소 링크 클릭을 잡아, 다른 클릭 처리(뉴스레터 창 열기 등)보다 먼저 앱을 엶 */
     window.addEventListener('click', function (ev) {
       if (ev.defaultPrevented || ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
@@ -72,5 +83,5 @@
       open(a.href);
     }, true);
   }
-  window.pgnNavi = { open: open, appUrl: appUrl, parse: parse, launch: launch, geo: geo, phone: phone, ios: ios, android: android };
+  window.pgnNavi = { open: open, appUrl: appUrl, parse: parse, launch: launch, geo: geo, outOfKakao: outOfKakao, phone: phone, inKakao: inKakao, ios: ios, android: android };
 })();
