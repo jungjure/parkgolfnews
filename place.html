@@ -38,7 +38,7 @@ h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 4px}
   <p class="msg" id="msg" style="display:none"></p>
   <p class="note" id="note"></p>
 </div>
-<script src="/assets/navi.js?v=20261116a"></script>
+<script src="/assets/navi.js?v=20261116b"></script>
 <script>
 /* 장소 길안내 (2026-11-16 새로 만듦. 사용자 지시 "장소를 누르면 네비게이션이 열리는 코드는 전체 다 지워주고 다시 만들자",
    "홈페이지와 휴대폰에서 기사나 뉴스레터에서 항상 장소를 누르면 네이버지도 카카오지도에서 자동차경로를 찾아 이동경로를 찾게해줘", "항상 장소를 부르면 그 장소값을 불러오게")
@@ -125,6 +125,10 @@ h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 4px}
   /* ---- 길안내 시작 ---- */
   function go(kind,tap){
     setPref(kind);
+    if(phone&&window.pgnNavi&&pgnNavi.inKakao){   // 카톡 안: 기본 인터넷 앱으로 열어 거기서 앱 (카톡이 도착지를 빼먹음)
+      if(!tap){msg('카카오톡 안에서는 지도 앱에 장소가 전달되지 않습니다. 아래 <b>네이버 지도로 길안내</b> 버튼을 누르면 휴대폰 인터넷 앱에서 길안내가 열립니다. (안 되면 오른쪽 위 ⋮ → 다른 브라우저로 열기)');return;}
+      msg('휴대폰 인터넷 앱에서 길안내를 엽니다…');pgnNavi.outOfKakao(P,kind);return;
+    }
     if(phone){
       msg('<b>'+NM[kind]+'</b> 앱을 여는 중입니다…');
       if(!window.pgnNavi){appFail(kind);return;}
