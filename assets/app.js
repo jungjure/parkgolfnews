@@ -528,7 +528,7 @@ function pgnDateLine() { const d = new Date(); return d.getFullYear() + '년 ' +
       if (ev.defaultPrevented || ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
       const a = ev.target && ev.target.closest && ev.target.closest('a[href]'); if (!a) return;
       const h = a.getAttribute('href') || ''; if (!h || h.charAt(0) === '#' || /^javascript:/i.test(h)) return;
-      ev.preventDefault(); location.href = a.href;
+      ev.preventDefault(); if (window.pgnNavi && window.pgnNavi.open(a.href)) return; location.href = a.href;   // 장소 링크는 휴대폰에서 네이버 지도 앱 바로 (navi.js)
     });
   }
   document.addEventListener('load', e => { const f = e.target; if (f && f.tagName === 'IFRAME') hook(f); }, true);
@@ -1481,7 +1481,7 @@ function pgnAcctBox(bank, no) {
 window.addEventListener('message', ev => {
   const d = ev.data; if (!d) return;
   if (d.pgnTel && /^\d{7,12}$/.test(d.pgnTel)) location.href = 'tel:' + d.pgnTel;
-  else if (d.pgnWeb && /^https?:\/\/[^\s"'<>]+$/.test(String(d.pgnWeb))) location.href = String(d.pgnWeb);   /* 기사 속 홈페이지 주소 */
+  else if (d.pgnWeb && /^https?:\/\/[^\s"'<>]+$/.test(String(d.pgnWeb))) { if (!(window.pgnNavi && window.pgnNavi.open(String(d.pgnWeb)))) location.href = String(d.pgnWeb); }   /* 장소 링크는 휴대폰에서 네이버 지도 앱 바로 (navi.js) */   /* 기사 속 홈페이지 주소 */
   else if (d.pgnAcct && d.pgnAcct.no) pgnAcctBox(String(d.pgnAcct.bank || ''), String(d.pgnAcct.no));
 });
 if (document.body) pgnLinkCore(document, false); else document.addEventListener('DOMContentLoaded', () => pgnLinkCore(document, false));
@@ -1675,3 +1675,5 @@ if (document.body) pgnLinkCore(document, false); else document.addEventListener(
 
 /* 2026-11-10: 기사 반응 수·댓글 수 파일 (회원 서버가 1분마다 data/counts.json으로 게시). 한 페이지에서 한 번만 받음 */
 function pgnCounts() { return window._pgnCnt || (window._pgnCnt = fetch('data/counts.json?t=' + Math.floor(Date.now() / 60000), { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error('no counts'); return r.json(); })); }
+/* 장소 길안내 공용 코드 불러오기 (2026-11-16): 휴대폰에서 장소를 누르면 네이버 지도 앱 자동차 길안내를 바로 엶 */
+(function () { if (window.pgnNavi || document.querySelector('script[src*="/assets/navi.js"]')) return; const s = document.createElement('script'); s.src = '/assets/navi.js?v=20261116a'; (document.head || document.documentElement).appendChild(s); })();
