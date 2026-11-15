@@ -130,8 +130,45 @@ body.going .btn{opacity:.45}
   var APP=!!(mobile&&window.pgnMapApp);
   function appGo(kind,el,onFail){pgnMapApp.open(kind,n,lat,lng,onFail||function(){go(el.href);},el.href);}
   if(APP){nav.textContent='네이버 지도 앱 자동차 길안내';kko.textContent='카카오맵 앱 자동차 길안내';}
-  nav.addEventListener('click',function(e){save('naver');if(APP){e.preventDefault();appGo('naver',nav);}else if(inKakao){e.preventDefault();go(nav.href);}});
-  kko.addEventListener('click',function(e){save('kakao');if(APP){e.preventDefault();appGo('kakao',kko);}else if(inKakao){e.preventDefault();go(kko.href);}});
+
+  /* 2026-11-16 사용자 지시 "컴퓨터와 휴대폰에서 장소를 누르면 ... 그 장소를 불러와서 현재위치에서 자동차를 이용하여 갈 수 있게 경로를 표시해줘":
+     컴퓨터에는 네이버 지도·카카오맵 앱이 없으므로 웹 지도의 자동차 길찾기를 엶. 출발 = 브라우저 현재 위치(처음 한 번 '위치 허용'), 도착 = 구장.
+     - 네이버: map.naver.com/p/directions/출발x,y,내 위치,,/도착x,y,이름,장소번호,PLACE_POI/-/car (x,y = 웹 메르카토르 좌표)
+     - 카카오: map.kakao.com/link/by/car/내 위치,위도,경도/이름,위도,경도
+     위치를 못 받으면(거부·시간 초과) 도착지만 채운 길찾기를 엶. 휴대폰은 위의 앱 바로 열기 그대로. */
+  var PC=!mobile&&hasLL, cn=n.replace(/[,\/]/g,' '), ecn=encodeURIComponent(cn), ME=encodeURIComponent('내 위치');
+  function merc(la,lo){return [lo*20037508.34/180, Math.log(Math.tan((90+la)*Math.PI/360))/(Math.PI/180)*20037508.34/180];}
+  function pcRoute(kind,p){
+    if(kind==='kakao')return p?('https://map.kakao.com/link/by/car/'+ME+','+p.lat+','+p.lng+'/'+ecn+','+lat+','+lng):('https://map.kakao.com/link/to/'+ecn+','+lat+','+lng);
+    var d=merc(lat,lng), s=p?merc(p.lat,p.lng):null;
+    return 'https://map.naver.com/p/directions/'+(s?(s[0]+','+s[1]+','+ME+',,'):'-')+'/'+d[0]+','+d[1]+','+ecn+','+(id?(id+',PLACE_POI'):',')+'/-/car';
+  }
+  function myPos(cb){
+    var done=false, fin=function(p){if(done)return;done=true;cb(p);};
+    try{var c=JSON.parse(localStorage.getItem('pgn_pos')||'null');if(c&&Date.now()-c.t<600000)return fin(c);}catch(e){}
+    if(!navigator.geolocation)return fin(null);
+    var ok=function(g){var p={lat:+g.coords.latitude.toFixed(6),lng:+g.coords.longitude.toFixed(6),t:Date.now()};try{localStorage.setItem('pgn_pos',JSON.stringify(p));}catch(e){}fin(p);};
+    var ask=function(ms){setTimeout(function(){fin(null);},ms);navigator.geolocation.getCurrentPosition(ok,function(){fin(null);},{timeout:ms-500,maximumAge:600000});};
+    try{
+      if(navigator.permissions&&navigator.permissions.query){
+        navigator.permissions.query({name:'geolocation'}).then(function(s){
+          if(s.state==='denied')return fin(null);
+          if(s.state==='prompt')document.getElementById('pick').innerHTML='브라우저 위쪽에 뜬 창에서 <b>위치 정보 허용</b>을 눌러 주세요. 지금 계신 곳에서 출발하는 자동차 길찾기를 엽니다.';
+          ask(s.state==='prompt'?30000:8000);
+        },function(){ask(10000);});
+        return;
+      }
+    }catch(e){}
+    ask(10000);
+  }
+  function pcGo(kind){
+    document.body.classList.add('going');
+    document.getElementById('pick').innerHTML='지금 계신 곳을 확인하고 <b>'+(kind==='kakao'?'카카오맵':'네이버 지도')+'</b> 자동차 길찾기를 엽니다…';
+    myPos(function(p){location.href=pcRoute(kind,p);});
+  }
+  if(PC){nav.textContent='네이버 지도 자동차 길찾기';kko.textContent='카카오맵 자동차 길찾기';nav.href=pcRoute('naver',null);kko.href=pcRoute('kakao',null);}
+  nav.addEventListener('click',function(e){save('naver');if(APP){e.preventDefault();appGo('naver',nav);}else if(PC){e.preventDefault();pcGo('naver');}else if(inKakao){e.preventDefault();go(nav.href);}});
+  kko.addEventListener('click',function(e){save('kakao');if(APP){e.preventDefault();appGo('kakao',kko);}else if(PC){e.preventDefault();pcGo('kakao');}else if(inKakao){e.preventDefault();go(kko.href);}});
   var pk=document.getElementById('pick'), NM={naver:'네이버 지도',kakao:'카카오맵'};
   function chooser(){
     pk.innerHTML=pref?('지난번에 고른 지도: <b>'+NM[pref]+'</b> · 다른 지도를 누르면 다음부터는 그 지도로 바로 안내합니다.'):'처음 한 번만 고르시면 다음부터는 묻지 않고 고른 지도로 바로 안내합니다.';
@@ -142,10 +179,12 @@ body.going .btn{opacity:.45}
     pk.innerHTML='<b>'+NM[pref]+'</b>로 바로 안내합니다…';
     document.body.classList.add('going');
     if(APP)appGo(pref,pref==='kakao'?kko:nav,function(){pk.innerHTML='<b>'+NM[pref]+' 앱</b>이 열리지 않으면 아래 버튼을 눌러 주세요.';document.body.classList.remove('going');});
+    else if(PC)pcGo(pref);
     else go((pref==='kakao')?kko.href:nav.href);
   } else chooser();
   window.addEventListener('pageshow',function(e){if(e.persisted)chooser();});
   if(mobile){var nt0=document.querySelector('.note');if(nt0)nt0.textContent='누르면 네이버 지도 앱 또는 카카오맵 앱이 바로 열리고, 도착지가 이 구장, 출발이 내 위치, 이동수단이 자동차로 잡힌 길찾기가 나옵니다. 앱의 \'안내시작\'을 누르면 길안내가 시작됩니다. 앱이 없으면 웹 길찾기 화면이 열립니다. 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright';}
+  if(PC){var ntp=document.querySelector('.note');if(ntp)ntp.textContent='버튼을 누르면 지금 계신 곳에서 이 구장까지 자동차 길찾기 경로가 열립니다(출발 = 내 위치, 도착 = 구장). 처음 한 번 브라우저가 위치 정보를 물으면 \'허용\'을 눌러 주세요. 컴퓨터에는 네이버 지도·카카오맵 앱이 없어 웹 지도로 엽니다. 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright';}
   if(isNaN(lat)||isNaN(lng)){var nt1=document.querySelector('.note');if(nt1)nt1.textContent='이 장소의 정확한 위치를 찾지 못해 이름으로 검색한 화면이 열립니다. 검색 결과에서 장소를 골라 주세요.';document.getElementById('map').style.display='none';return;}
   var z=16, N=Math.pow(2,z), r=lat*Math.PI/180;
   var fx=(lng+180)/360*N, fy=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*N;
