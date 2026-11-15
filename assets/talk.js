@@ -28,6 +28,7 @@
     '#tk .tk-t b{font-size:.9rem;font-weight:400;line-height:1.55;color:#111;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere}#tk .tk-m.del .tk-t b{color:#999;font-weight:400}' +
     '#tk .tk-meta{display:flex;align-items:center;flex-wrap:wrap;gap:3px 9px;margin-top:4px;font-size:.75rem;color:#777}#tk .tk-meta .nk{color:#444;font-weight:400}#tk .tk-adm{font-size:.66rem;font-weight:400;color:#fff;background:var(--g700,#1d6b44);border-radius:4px;padding:1px 5px;margin-left:4px}' +
     '#tk .tk-del{border:0;background:none;color:#999;font-family:inherit;font-size:.74rem;font-weight:400;cursor:pointer;padding:0;text-decoration:underline}#tk .tk-del:hover{color:#c62828}' +
+    '#tk .tk-m.sys{display:flex;align-items:center;gap:8px;padding:7px 8px;background:#f5f8f6;border-radius:8px;border-bottom:0;margin:4px 0}#tk .tk-sl{flex:1;min-width:0;display:flex;align-items:center;gap:7px;text-decoration:none;color:#14342A}#tk .tk-m.sys .tk-tag{margin-top:0;border-color:#b9d3c4;color:#1d6b44}#tk .tk-sx{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.86rem}#tk .tk-sg{flex:none;font-size:.76rem;color:#1d6b44}#tk .tk-st{flex:none;font-size:.72rem;color:#888;white-space:nowrap}#tk a.tk-sl:hover .tk-sx{text-decoration:underline}' +
     '#tk .tk-empty{text-align:center;color:#777;padding:36px 10px;line-height:1.7;font-size:.86rem}' +
     '#tk .tk-new{position:absolute;left:50%;transform:translateX(-50%);bottom:150px;border:0;background:#111;color:#fff;font-family:inherit;font-weight:400;font-size:.8rem;border-radius:999px;padding:7px 14px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)}#tk .tk-new[hidden]{display:none}' +
     '#tk .tk-in{flex:none;border-top:1px solid #e6e6e6;padding:10px 16px calc(12px + env(safe-area-inset-bottom));background:#fff}' +
@@ -65,7 +66,7 @@
     box.id = 'tk'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', '파크톡');
     box.innerHTML = '<div class="tk-dim"></div><aside class="tk-p"><div class="tk-top"><span>파크톡</span><button type="button" class="tk-x" aria-label="닫기">' + X + '</button></div>' +
       '<div class="tk-hd"><h2>파크톡</h2><p>대회 질문, 동행·조인 구하기, 대회 정보를 나누는 곳이에요.</p>' +
-      '<div class="tk-chips" id="tkC">' + ['전체'].concat(CATS).map(c => '<button type="button" data-c="' + c + '"' + (c === cat ? ' class="on"' : '') + '>' + c + '</button>').join('') + '</div>' +
+      '<div class="tk-chips" id="tkC">' + ['전체'].concat(CATS, ['새 글']).map(c => '<button type="button" data-c="' + c + '"' + (c === cat ? ' class="on"' : '') + '>' + c + '</button>').join('') + '</div>' +
       '<div class="tk-s">' + MAG + '<input id="tkQ" type="search" placeholder="대회: 대회 이름으로 찾기" aria-label="대회 이름으로 찾기"></div></div>' +
       '<div class="tk-log" id="tkL" aria-live="polite"><div class="tk-empty">대화를 불러오는 중...</div></div><button type="button" class="tk-new" id="tkN" hidden>새 메시지 ↓</button>' +
       '<div class="tk-in" id="tkI">' + inputHtml() + '</div></aside>';
@@ -98,6 +99,11 @@
   const nearBottom = () => { const l = logEl(); return l.scrollHeight - l.scrollTop - l.clientHeight < 80; };
   const toBottom = () => { const l = logEl(); l.scrollTop = l.scrollHeight; box.querySelector('#tkN').hidden = true; };
   function rowHtml(x, pend) {
+    if (x.sys && !x.del) {   /* 2026-11-15: 홈페이지 새 글 알림 한 줄 (서버가 새 기사·조인·독자칼럼 게시 때 남김), 누르면 그 글로 이동 */
+      const u = /^[a-z]+\.html\?[\w=&%.-]*$/i.test(x.url || '') ? '/' + x.url : '';
+      return '<div class="tk-m sys">' + (u ? '<a class="tk-sl" href="' + esc2(u) + '">' : '<span class="tk-sl">') + '<span class="tk-tag">새 글</span><span class="tk-sx">' + esc2(x.text) + '</span>' + (u ? '<span class="tk-sg">보기 ›</span></a>' : '</span>') +
+        '<span class="tk-st">' + timeOf(x.at) + (admin ? ' <button type="button" class="tk-del" data-id="' + esc2(x.id) + '">삭제</button>' : '') + '</span></div>';
+    }
     const can = !x.del && !pend && (x.mine || admin);
     return '<div class="tk-m' + (x.mine ? ' me' : '') + (x.del ? ' del' : '') + (pend ? ' pend' : '') + '"><div class="tk-t"><span class="tk-tag">' + esc2(x.cat || '자유') + '</span><b>' + (x.del ? '삭제된 메시지입니다.' : esc2(x.text)) + '</b></div>' +
       '<div class="tk-meta"><span class="nk">' + esc2(x.nick) + (x.adm ? '<span class="tk-adm">운영자</span>' : '') + '</span><span>' + (pend ? '보내는 중...' : timeOf(x.at)) + '</span>' + (can ? '<button type="button" class="tk-del" data-id="' + esc2(x.id) + '">삭제</button>' : '') + '</div></div>';
