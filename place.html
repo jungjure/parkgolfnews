@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>장소 보기 · 파크골프뉴스</title>
+<title>길안내 · 파크골프뉴스</title>
 <link rel="preconnect" href="https://tile.openstreetmap.org">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
@@ -11,97 +11,67 @@
 body{font-family:'Pretendard Variable',Pretendard,'Noto Sans KR',sans-serif;background:#F7F3EA;color:#14342A;-webkit-text-size-adjust:100%}
 .top{background:#14342A;color:#F0D9A6;padding:14px 18px;font-size:14px;font-weight:700;letter-spacing:.02em}
 .wrap{max-width:480px;margin:0 auto;padding:16px}
-h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 12px}
-.map{position:relative;width:100%;height:260px;overflow:hidden;border-radius:14px;background:#e6e2d8;border:1px solid #d9d2c3}
+h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 4px}
+.addr{font-size:14px;color:#5b6b63;margin:0 0 12px;min-height:1px}
+.map{position:relative;width:100%;height:240px;overflow:hidden;border-radius:14px;background:#e6e2d8;border:1px solid #d9d2c3}
 .tiles{position:absolute;left:0;top:0;width:768px;height:768px}
 .tiles img{position:absolute;width:256px;height:256px;display:block}
 .pin{position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-28px 0 0 -14px;border-radius:50% 50% 50% 0;background:#B5543C;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,.35)}
 .pin::after{content:'';position:absolute;left:9px;top:9px;width:10px;height:10px;border-radius:50%;background:#fff}
 .attr{position:absolute;right:6px;bottom:4px;font-size:10px;background:rgba(255,255,255,.85);padding:1px 5px;border-radius:4px;color:#333}
-.btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:54px;margin-top:10px;border-radius:12px;font-size:17px;font-weight:700;text-decoration:none}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;margin-top:10px;border-radius:12px;font-size:18px;font-weight:800;text-decoration:none;-webkit-tap-highlight-color:transparent}
 .b1{background:#03C75A;color:#fff}
 .b2{background:#FEE500;color:#191919}
-.b3{background:#fff;color:#14342A;border:1px solid #cfc7b6}
-.pick{font-size:14px;color:#14342A;line-height:1.55;margin-top:12px;background:#fff;border:1px solid #e3dccd;border-radius:10px;padding:10px 12px}
-.pick b{color:#B5543C}
-body.going .btn{opacity:.45}
+.msg{font-size:15px;color:#14342A;line-height:1.55;margin-top:12px;background:#fff;border:1px solid #e3dccd;border-radius:10px;padding:10px 12px}
+.msg b{color:#B5543C}
 .note{font-size:12.5px;color:#5b6b63;line-height:1.6;margin-top:14px}
 </style>
 </head>
 <body>
-<div class="top">PARKGOLF NEWS · 장소 보기</div>
+<div class="top">PARKGOLF NEWS · 길안내</div>
 <div class="wrap">
   <h1 id="nm">장소</h1>
-  <div class="map" id="map"><div class="tiles" id="tiles"></div><div class="pin"></div><div class="attr">© OpenStreetMap contributors</div></div>
-  <a class="btn b1" id="nav">네이버 지도에서 보기</a>
-  <a class="btn b2" id="kko">카카오맵으로 보기</a>
-  <p class="pick" id="pick"></p>
-  <p class="note">네이버 지도에서 이 장소에 핀이 꽂힌 지도가 열립니다. 네이버 지도 앱으로 보려면 열린 화면 아래의 '지도앱으로 보기'를 누르세요. 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright</p>
+  <p class="addr" id="addr"></p>
+  <div class="map" id="map" style="display:none"><div class="tiles" id="tiles"></div><div class="pin"></div><div class="attr">© OpenStreetMap contributors</div></div>
+  <a class="btn b1" id="bN" href="#">네이버 지도로 길안내</a>
+  <a class="btn b2" id="bK" href="#">카카오맵으로 길안내</a>
+  <p class="msg" id="msg" style="display:none"></p>
+  <p class="note" id="note"></p>
 </div>
-<script src="/assets/mapapp.js?v=20261115a"></script>
 <script>
+/* 장소 길안내 (2026-11-16 새로 만듦. 사용자 지시 "장소를 누르면 네비게이션이 열리는 코드는 전체 다 지워주고 다시 만들자",
+   "홈페이지와 휴대폰에서 기사나 뉴스레터에서 항상 장소를 누르면 네이버지도 카카오지도에서 자동차경로를 찾아 이동경로를 찾게해줘", "항상 장소를 부르면 그 장소값을 불러오게")
+   홈페이지(일정·기사·기사 속 뉴스레터·구장정보)와 뉴스레터의 모든 장소 링크는 이 화면 하나로 옴: place.html?n=이름&lat=위도&lng=경도&id=네이버장소번호
+   길안내 코드는 이 파일에만 있음. 도착지 = 장소, 출발 = 현재 위치, 이동수단 = 자동차.
+   1) 카톡 안 브라우저: 여기서 지도 앱을 열면 장소가 빠지므로, 먼저 휴대폰 기본 인터넷 앱으로 이 화면을 다시 엶(kakaotalk://web/openExternal, ext=1)
+   2) 좌표가 없으면 회원 서버(geo)로 이름·주소의 좌표를 찾음
+   3) 휴대폰: 네이버 지도 앱 nmap://route/car / 카카오맵 앱 kakaomap://route?by=CAR (안드로이드는 intent://). 앱이 없으면 모바일 웹 자동차 길찾기
+   4) 컴퓨터(지도 앱 없음): 브라우저 현재 위치 -> 네이버 지도 / 카카오맵 웹 자동차 길찾기. 위치를 못 받으면 도착지만 채운 길찾기
+   5) 처음 고른 지도(pgn_mapPick)를 기억해 다음부터 바로 그 지도로. 주소에 pick=1 이 있거나 '뒤로'로 돌아오면 다시 고름 */
 (function(){
-  var q=new URLSearchParams(location.search);
-  /* 2026-11-16 사용자 "휴대폰에서 안돼", "항상 장소를 부르면 그 장소값을 불러오게": 카톡 안 브라우저에서 지도 앱을 바로 열면 앱에 장소(도착지)가 빠진 채 열림.
-     -> 카톡 안에서 열리면 먼저 이 화면을 휴대폰 기본 인터넷 앱(크롬·삼성 인터넷·사파리)으로 다시 열고(kakaotalk://web/openExternal, ext=1),
-        거기서 네이버 지도 앱/카카오맵 앱 자동차 길안내를 엶(도착지 = 구장). 1.5초 안에 바깥으로 안 열리면 카톡 안에서 웹 길찾기로 안내. */
-  var KK=/KAKAOTALK/i.test(navigator.userAgent||'')&&/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'');
-  if(KK&&q.get('ext')!=='1'){
-    var q2=new URLSearchParams(location.search); q2.set('ext','1');
-    var left=false; document.addEventListener('visibilitychange',function(){if(document.hidden)left=true;});
-    try{ document.getElementById('pick').textContent='휴대폰 인터넷 앱에서 지도를 엽니다…'; }catch(e){}
-    location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(location.origin+location.pathname+'?'+q2.toString());
-    setTimeout(function(){ if(!left&&!document.hidden){ window.__pgnStay=1; start(); } },1500);
-    window.addEventListener('pageshow',function(e){ if(e.persisted&&left){ try{ document.getElementById('pick').textContent='지도는 휴대폰 인터넷 앱에서 열렸습니다. 다시 보려면 아래 버튼을 누르세요.'; }catch(x){} } });
-    return;
+  var GEO='https://script.google.com/macros/s/AKfycby4zEPx3AB25E7x4peqc9UTlYsGgywDjew64Xh8Va7VhM4zMG8clQGM0eCUZIQqsW2tVg/exec';
+  var q=new URLSearchParams(location.search), ua=navigator.userAgent||'';
+  var ios=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  var android=/Android/i.test(ua), phone=ios||android||/Mobile/i.test(ua), inKakao=phone&&/KAKAOTALK/i.test(ua);
+  var P={n:(q.get('n')||'').trim()||'장소', lat:parseFloat(q.get('lat')), lng:parseFloat(q.get('lng')), id:q.get('id')||''};
+  var NM={naver:'네이버 지도',kakao:'카카오맵'}, APPNAME='parkgolfnews.org';
+  function $(i){return document.getElementById(i);}
+  function msg(h){$('msg').innerHTML=h||'';$('msg').style.display=h?'':'none';}
+  function has(){return isFinite(P.lat)&&isFinite(P.lng);}
+  function en(){return encodeURIComponent(P.n.replace(/[,\/;^|]/g,' '));}
+  function getPref(){try{var v=localStorage.getItem('pgn_mapPick');return (v==='naver'||v==='kakao')?v:'';}catch(e){return '';}}
+  function setPref(k){try{localStorage.setItem('pgn_mapPick',k);}catch(e){}}
+  function self(extra){var u=new URLSearchParams(location.search);for(var k in extra)u.set(k,extra[k]);return location.origin+location.pathname+'?'+u.toString();}
+  $('nm').textContent=P.n;
+
+  /* ---- 주소 만들기 ---- */
+  function appUrl(kind){
+    var scheme,pkg,path;
+    if(kind==='kakao'){scheme='kakaomap';pkg='net.daum.android.map';path=has()?('route?ep='+P.lat+','+P.lng+'&by=CAR'):('search?q='+en());}
+    else{scheme='nmap';pkg='com.nhn.android.nmap';path=has()?('route/car?dlat='+P.lat+'&dlng='+P.lng+'&dname='+en()+'&appname='+APPNAME):('search?query='+en()+'&appname='+APPNAME);}
+    if(android)return 'intent://'+path+'#Intent;scheme='+scheme+';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package='+pkg+';S.browser_fallback_url='+encodeURIComponent(mobileWeb(kind))+';end';
+    return scheme+'://'+path;
   }
-  start();
-  function start(){
-  /* 2026-11-15 사용자 "뉴스기사안의 장소도 네이버지도와 카카오지도에 연결되게": 기사 본문 장소 링크는 이름만 있음(?n=이름).
-     좌표가 없으면 회원 서버 geo(카카오 로컬 검색)로 좌표를 받아 주소에 붙여 다시 엶 (g=1: 한 번만). 못 찾으면 이름 검색으로 안내. */
-  if(isNaN(parseFloat(q.get('lat')))&&q.get('n')&&!q.get('g')){
-    var done=false, go=function(){ if(done)return; done=true; run(); };
-    try{ document.getElementById('nm').textContent=q.get('n'); document.getElementById('pick').textContent='위치를 찾는 중입니다…'; }catch(e){}
-    setTimeout(go,4500);
-    fetch('https://script.google.com/macros/s/AKfycby4zEPx3AB25E7x4peqc9UTlYsGgywDjew64Xh8Va7VhM4zMG8clQGM0eCUZIQqsW2tVg/exec',{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'geo',q:q.get('n')})})
-      .then(function(r){return r.json();}).then(function(j){
-        if(done)return;
-        if(j&&j.ok&&!j.none&&isFinite(j.lat)&&isFinite(j.lng)){ done=true; q.set('lat',j.lat); q.set('lng',j.lng); if(j.n)q.set('n',j.n); q.set('g','1'); location.replace(location.pathname+'?'+q.toString()+location.hash); }
-        else go();
-      }).catch(go);
-    return;
-  }
-  run();
-  function run(){
-  var n=q.get('n')||'장소', lat=parseFloat(q.get('lat')), lng=parseFloat(q.get('lng')), id=q.get('id')||'';
-  document.getElementById('nm').textContent=n; document.title=n+' · 파크골프뉴스';
-  var en=encodeURIComponent(n), app='org.parkgolfnews';
-  /* 2026-11-07: 어디서 눌러도 반드시 이동하도록 고침 (PC·카톡 안 브라우저·앱 없는 폰에서 앱 주소만 쓰면 아무 일도 안 일어남)
-     - PC: 네이버 지도 웹으로 바로 이동
-     - 휴대폰: 네이버 지도 앱을 먼저 열어 보고, 1.5초 안에 앱이 안 열리면 네이버 지도 웹(모바일)으로 이동 */
-  /* 2026-11-13: 휴대폰에서 '네이버 지도 앱으로 보기'를 누르면 앱이 구장 대신 현재 위치만 보이는 일이 계속됨(11/1·11/7·11/13 재발, 카톡 안 브라우저에서 앱으로 넘길 때 장소 정보가 빠짐)
-     -> 앱으로 넘기는 주소(nmap://, intent://, map.naver.com/p/…)를 아예 쓰지 않고, 구장 자리에 핀이 꽂히는 네이버 지도 웹 화면으로 바로 엶.
-        앱으로 보고 싶으면 열린 네이버 화면 아래의 '지도앱으로 보기'(네이버가 만든 버튼)를 누르면 됨.
-     - 휴대폰: 장소 번호 있으면 m.place.naver.com/place/번호/location (지도 탭, 핀), 없으면 m.map.naver.com/map?lat&lng (좌표 핀), 둘 다 없으면 모바일 웹 검색
-     - PC: map.naver.com/p/entry/place/번호 또는 map.naver.com/p/search/위도,경도 */
-  var ua=navigator.userAgent||'', mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  var hasLL=!isNaN(lat)&&!isNaN(lng);
-  var mWeb=id?('https://m.place.naver.com/place/'+id+'/location'):(hasLL?('https://m.map.naver.com/map?lat='+lat+'&lng='+lng+'&dlevel=12&pinTitle='+en+'&pinType=site'):('https://m.search.naver.com/search.naver?query='+en));
-  var pcWeb=id?('https://map.naver.com/p/entry/place/'+id):(hasLL?('https://map.naver.com/p/search/'+lat+','+lng):('https://map.naver.com/p/search/'+en));
-  var nav=document.getElementById('nav');
-  nav.textContent='네이버 지도에서 보기'; nav.href=mobile?mWeb:pcWeb;
-  /* 2026-11-15 사용자 지시 "휴대폰에서 뉴스레터의 장소를 누르면 네이버지도가 현위치만 나오는데 그 자동차경로가 나오게 바꿔줘":
-     휴대폰은 네이버 '빠른길찾기'(m.search.naver.com, 출발 = 내 위치, 도착 = 구장 좌표, 자동차) 웹 화면으로 바로 엶. 경로와 '안내시작' 버튼이 바로 보임.
-     주소 형식은 네이버가 m.map.naver.com/route.nhn?ename&ex&ey&pathType=0 을 넘겨 보내는 화면과 같음. 앱으로 넘기는 주소는 쓰지 않음. */
-  if(mobile&&hasLL){
-    var cn=n.replace(/[;^|]/g,' ');
-    nav.href='https://m.search.naver.com/search.naver?query='+encodeURIComponent('빠른길찾기')+'&nso_path='+encodeURIComponent('placeType^place;name^;address^;code^;longitude^;latitude^|type^place;name^'+cn+';address^;code^;longitude^'+lng+';latitude^'+lat+'|objtype^path;by^car');
-    nav.textContent='네이버 지도 자동차 길찾기';
-  }
-  /* 2026-11-15 사용자 지시 "휴대폰에서 뉴스레터를 열고 장소를 누르면 네비게이션이 현재위치만 나오게 해 이거 해결해줘":
-     휴대폰에서 map.kakao.com/link/map/… 은 m.map.kakao.com/?urlX… 첫 화면으로 넘어가 구장 대신 기본 위치만 보이고, '앱으로 보기'를 누르면 앱이 장소 없이(현재 위치) 열림.
-     -> 휴대폰은 카카오맵 모바일 웹 길찾기 화면(도착지 = 구장 좌표, 이름 표시)으로 바로 엶. 앱으로 넘기는 주소는 쓰지 않음.
-        좌표 변환: WGS84 -> 카카오 WCONGNAMUL(Bessel TM 중부원점 x2.5, 카카오 link/map 결과와 비교해 보정, 오차 약 4m 이내), exEnc/eyEnc 는 카카오 모바일 지도와 같은 방식으로 인코딩. */
   function wcong(la,lo){
     var d=Math.PI/180,aW=6378137,fW=1/298.257223563,e2W=fW*(2-fW),p=la*d,l=lo*d,N=aW/Math.sqrt(1-e2W*Math.pow(Math.sin(p),2));
     var X=N*Math.cos(p)*Math.cos(l),Y=N*Math.cos(p)*Math.sin(l),Z=N*(1-e2W)*Math.sin(p),sec=Math.PI/648000,s=1+6.43e-6;
@@ -117,100 +87,115 @@ body.going .btn{opacity:.45}
     return [Math.round(x*2.5-472),Math.round(y*2.5+766)];
   }
   function kx(v){v=String(v);var t='432101234',r='';for(var i=0;i<v.length;i++)r+=String.fromCharCode((t.charCodeAt(i%t.length)-48^v.charCodeAt(i)-48)+28+48);return r;}
-  var kko=document.getElementById('kko'), hasXY=!isNaN(lat)&&!isNaN(lng);
-  if(mobile&&hasXY){kko.textContent='카카오맵 길찾기';var wc=wcong(lat,lng);kko.href='https://m.map.kakao.com/actions/routeView?exEnc='+encodeURIComponent(kx(wc[0]))+'&eyEnc='+encodeURIComponent(kx(wc[1]))+'&endLoc='+en;}
-  else if(mobile)kko.href='https://m.map.kakao.com/actions/searchView?q='+en;
-  else kko.href=hasXY?('https://map.kakao.com/link/map/'+en+','+lat+','+lng):('https://map.kakao.com/link/search/'+en);
-  /* 2026-11-15 사용자 지시 "휴대폰에서 네이버 빠른길찾기로 이동하는데 실시간추천의 안내시작을 누르면 현위치만 나옴":
-     빠른길찾기의 '안내시작'은 m.map.naver.com/appLink.naver(도착지 dlat·dlng·dname 포함)로 네이버 지도 앱을 여는데,
-     카톡 안 브라우저에서는 앱으로 넘어갈 때 이 정보가 빠져 앱이 현재 위치만 보임(11/1·11/7·11/13 앱 버튼도 같은 이유로 실패).
-     -> 카톡 안에서 지도 버튼을 누르면 길찾기 화면을 휴대폰 기본 인터넷 앱(크롬·삼성 인터넷·사파리)으로 열어(kakaotalk://web/openExternal),
-        그 화면의 '안내시작'이 도착지(구장)를 앱에 그대로 넘기게 함. 1.5초 안에 바깥 브라우저가 안 열리면 지금 창에서 그대로 엶. */
-  var inKakao=mobile&&/KAKAOTALK/i.test(ua);
-  function go(u){
-    if(!inKakao){location.href=u;return;}
-    var t=setTimeout(function(){if(!document.hidden)location.href=u;},1500);
-    document.addEventListener('visibilitychange',function(){if(document.hidden)clearTimeout(t);});
-    location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(u);
+  function mobileWeb(kind){
+    if(kind==='kakao'){
+      if(!has())return 'https://m.map.kakao.com/actions/searchView?q='+en();
+      var w=wcong(P.lat,P.lng);return 'https://m.map.kakao.com/actions/routeView?exEnc='+encodeURIComponent(kx(w[0]))+'&eyEnc='+encodeURIComponent(kx(w[1]))+'&endLoc='+en();
+    }
+    if(!has())return 'https://m.search.naver.com/search.naver?query='+en();
+    var cn=P.n.replace(/[;^|]/g,' ');
+    return 'https://m.search.naver.com/search.naver?query='+encodeURIComponent('빠른길찾기')+'&nso_path='+encodeURIComponent('placeType^place;name^;address^;code^;longitude^;latitude^|type^place;name^'+cn+';address^;code^;longitude^'+P.lng+';latitude^'+P.lat+'|objtype^path;by^car');
   }
-  /* 2026-11-15 사용자 지시 "주소를 찾을 때 네이버를 선택하든 카카오를 선택하든 한번 정하면 다시 물어보지 말고 그대로 안내":
-     처음 누른 지도(네이버/카카오)를 이 기기에 기억(localStorage pgn_mapPick)하고, 다음부터는 묻지 않고 그 지도로 바로 이동.
-     지도에서 '뒤로'로 돌아오면 다시 고를 수 있게 버튼을 보여 줌(누른 지도로 기억이 바뀜). 주소 끝에 ?pick=1 이어도 고르는 화면. */
-  var PK='pgn_mapPick', pref=''; try{pref=localStorage.getItem(PK)||'';}catch(e){}
-  if(pref!=='naver'&&pref!=='kakao')pref='';
-  function save(v){try{localStorage.setItem(PK,v);}catch(e){}}
-  /* 2026-11-15 사용자 지시 "네이버지도와 카카오지도로 직접 연결하게 해줘", "자동차로 설정하게 해주고":
-     휴대폰에서 버튼을 누르면 네이버 지도 앱 / 카카오맵 앱을 바로 열어 도착지 = 구장, 출발 = 내 위치, 자동차 길찾기를 띄움(assets/mapapp.js).
-     앱이 2초 안에 안 열리면(앱 미설치 등) 지금까지처럼 웹 자동차 길찾기 화면을 엶. */
-  var APP=!!(mobile&&window.pgnMapApp)&&!inKakao;   /* 카톡 안에서는 앱을 직접 열지 않음 (장소가 빠짐) */
-  function appGo(kind,el,onFail){pgnMapApp.open(kind,n,lat,lng,onFail||function(){go(el.href);},el.href);}
-  if(APP){nav.textContent='네이버 지도 앱 자동차 길안내';kko.textContent='카카오맵 앱 자동차 길안내';}
-
-  /* 2026-11-16 사용자 지시 "컴퓨터와 휴대폰에서 장소를 누르면 ... 그 장소를 불러와서 현재위치에서 자동차를 이용하여 갈 수 있게 경로를 표시해줘":
-     컴퓨터에는 네이버 지도·카카오맵 앱이 없으므로 웹 지도의 자동차 길찾기를 엶. 출발 = 브라우저 현재 위치(처음 한 번 '위치 허용'), 도착 = 구장.
-     - 네이버: map.naver.com/p/directions/출발x,y,내 위치,,/도착x,y,이름,장소번호,PLACE_POI/-/car (x,y = 웹 메르카토르 좌표)
-     - 카카오: map.kakao.com/link/by/car/내 위치,위도,경도/이름,위도,경도
-     위치를 못 받으면(거부·시간 초과) 도착지만 채운 길찾기를 엶. 휴대폰은 위의 앱 바로 열기 그대로. */
-  var PC=!mobile&&hasLL, cn=n.replace(/[,\/]/g,' '), ecn=encodeURIComponent(cn), ME=encodeURIComponent('내 위치');
   function merc(la,lo){return [lo*20037508.34/180, Math.log(Math.tan((90+la)*Math.PI/360))/(Math.PI/180)*20037508.34/180];}
-  function pcRoute(kind,p){
-    if(kind==='kakao')return p?('https://map.kakao.com/link/by/car/'+ME+','+p.lat+','+p.lng+'/'+ecn+','+lat+','+lng):('https://map.kakao.com/link/to/'+ecn+','+lat+','+lng);
-    var d=merc(lat,lng), s=p?merc(p.lat,p.lng):null;
-    return 'https://map.naver.com/p/directions/'+(s?(s[0]+','+s[1]+','+ME+',,'):'-')+'/'+d[0]+','+d[1]+','+ecn+','+(id?(id+',PLACE_POI'):',')+'/-/car';
+  function pcUrl(kind,me){
+    var ME=encodeURIComponent('내 위치');
+    if(!has())return kind==='kakao'?('https://map.kakao.com/link/search/'+en()):('https://map.naver.com/p/search/'+en());
+    if(kind==='kakao')return me?('https://map.kakao.com/link/by/car/'+ME+','+me.lat+','+me.lng+'/'+en()+','+P.lat+','+P.lng):('https://map.kakao.com/link/to/'+en()+','+P.lat+','+P.lng);
+    var d=merc(P.lat,P.lng), s=me?merc(me.lat,me.lng):null;
+    return 'https://map.naver.com/p/directions/'+(s?(s[0]+','+s[1]+','+ME+',,'):'-')+'/'+d[0]+','+d[1]+','+en()+','+(P.id?(P.id+',PLACE_POI'):',')+'/-/car';
   }
+
+  /* ---- 컴퓨터: 현재 위치 ---- */
   function myPos(cb){
-    var done=false, fin=function(p){if(done)return;done=true;cb(p);};
+    var done=false; function fin(p){if(!done){done=true;cb(p);}}
     try{var c=JSON.parse(localStorage.getItem('pgn_pos')||'null');if(c&&Date.now()-c.t<600000)return fin(c);}catch(e){}
     if(!navigator.geolocation)return fin(null);
-    var ok=function(g){var p={lat:+g.coords.latitude.toFixed(6),lng:+g.coords.longitude.toFixed(6),t:Date.now()};try{localStorage.setItem('pgn_pos',JSON.stringify(p));}catch(e){}fin(p);};
-    var ask=function(ms){setTimeout(function(){fin(null);},ms);navigator.geolocation.getCurrentPosition(ok,function(){fin(null);},{timeout:ms-500,maximumAge:600000});};
-    try{
-      if(navigator.permissions&&navigator.permissions.query){
-        navigator.permissions.query({name:'geolocation'}).then(function(s){
-          if(s.state==='denied')return fin(null);
-          if(s.state==='prompt')document.getElementById('pick').innerHTML='브라우저 위쪽에 뜬 창에서 <b>위치 정보 허용</b>을 눌러 주세요. 지금 계신 곳에서 출발하는 자동차 길찾기를 엽니다.';
-          ask(s.state==='prompt'?30000:8000);
-        },function(){ask(10000);});
-        return;
-      }
-    }catch(e){}
-    ask(10000);
+    function ok(g){var p={lat:+g.coords.latitude.toFixed(6),lng:+g.coords.longitude.toFixed(6),t:Date.now()};try{localStorage.setItem('pgn_pos',JSON.stringify(p));}catch(e){}fin(p);}
+    function ask(ms){setTimeout(function(){fin(null);},ms);navigator.geolocation.getCurrentPosition(ok,function(){fin(null);},{timeout:ms-500,maximumAge:600000});}
+    if(navigator.permissions&&navigator.permissions.query){
+      navigator.permissions.query({name:'geolocation'}).then(function(s){
+        if(s.state==='denied'){msg('이 브라우저에서 위치 정보가 차단돼 있어 출발지를 채우지 못했습니다. 주소창 왼쪽 아이콘 → 위치 → <b>허용</b>으로 바꾸면 다음부터 내 위치에서 출발하는 경로가 나옵니다.');return setTimeout(function(){fin(null);},2500);}
+        if(s.state==='prompt')msg('브라우저 위쪽에 뜬 창에서 <b>위치 정보 허용</b>을 눌러 주세요. 지금 계신 곳에서 출발하는 자동차 경로를 엽니다.');
+        ask(s.state==='prompt'?30000:8000);
+      },function(){ask(10000);});
+    }else ask(10000);
   }
-  function pcGo(kind){
-    document.body.classList.add('going');
-    document.getElementById('pick').innerHTML='지금 계신 곳을 확인하고 <b>'+(kind==='kakao'?'카카오맵':'네이버 지도')+'</b> 자동차 길찾기를 엽니다…';
-    myPos(function(p){location.href=pcRoute(kind,p);});
+
+  /* ---- 길안내 시작 ---- */
+  function go(kind,tap){
+    setPref(kind);
+    if(inKakao){   // 카톡 안: 기본 인터넷 앱으로 넘겨서 엶. 안 넘어가면 카톡 안에서 웹 길찾기
+      var left=false; document.addEventListener('visibilitychange',function(){if(document.hidden)left=true;});
+      location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(self({ext:'1',go:kind}));
+      setTimeout(function(){if(!left&&!document.hidden)location.href=mobileWeb(kind);},1500);
+      return;
+    }
+    if(phone){
+      var gone=false; function g(){gone=true;}
+      document.addEventListener('visibilitychange',function(){if(document.hidden)g();});
+      window.addEventListener('pagehide',g); window.addEventListener('blur',g);
+      msg('<b>'+NM[kind]+'</b> 앱을 여는 중입니다…');
+      location.href=appUrl(kind);
+      setTimeout(function(){
+        if(gone||document.hidden){msg('');return;}
+        if(tap)location.href=mobileWeb(kind);   // 눌렀는데도 앱이 안 열림 = 앱 없음 -> 웹 자동차 길찾기
+        else msg('아래 <b>'+(kind==='kakao'?'카카오맵으로':'네이버 지도로')+' 길안내</b> 버튼을 누르면 이 장소까지 자동차 길안내가 시작됩니다.');
+      },2500);
+      return;
+    }
+    msg('지금 계신 곳을 확인하고 <b>'+NM[kind]+'</b> 자동차 길찾기를 엽니다…');
+    if(!has()){location.href=pcUrl(kind,null);return;}
+    myPos(function(me){location.href=pcUrl(kind,me);});
   }
-  if(PC){nav.textContent='네이버 지도 자동차 길찾기';kko.textContent='카카오맵 자동차 길찾기';nav.href=pcRoute('naver',null);kko.href=pcRoute('kakao',null);}
-  nav.addEventListener('click',function(e){save('naver');if(APP){e.preventDefault();appGo('naver',nav);}else if(PC){e.preventDefault();pcGo('naver');}else if(inKakao){e.preventDefault();go(nav.href);}});
-  kko.addEventListener('click',function(e){save('kakao');if(APP){e.preventDefault();appGo('kakao',kko);}else if(PC){e.preventDefault();pcGo('kakao');}else if(inKakao){e.preventDefault();go(kko.href);}});
-  var pk=document.getElementById('pick'), NM={naver:'네이버 지도',kakao:'카카오맵'};
-  function chooser(){
-    pk.innerHTML=pref?('지난번에 고른 지도: <b>'+NM[pref]+'</b> · 다른 지도를 누르면 다음부터는 그 지도로 바로 안내합니다.'):'처음 한 번만 고르시면 다음부터는 묻지 않고 고른 지도로 바로 안내합니다.';
-    document.body.classList.remove('going');
+
+  /* ---- 화면 ---- */
+  function render(){
+    document.title=P.n+' 길안내 · 파크골프뉴스';
+    $('nm').textContent=P.n;
+    $('bN').href=phone?mobileWeb('naver'):pcUrl('naver',null);
+    $('bK').href=phone?mobileWeb('kakao'):pcUrl('kakao',null);
+    $('bN').onclick=function(e){e.preventDefault();go('naver',true);};
+    $('bK').onclick=function(e){e.preventDefault();go('kakao',true);};
+    $('note').textContent=(phone
+      ?'버튼을 누르면 네이버 지도 앱 또는 카카오맵 앱이 열리고, 출발 = 내 위치, 도착 = 이 장소, 자동차 경로가 나옵니다. 앱이 없으면 웹 길찾기가 열립니다. 처음 고른 지도는 기억해 다음부터 바로 엽니다.'
+      :'버튼을 누르면 지금 계신 곳에서 이 장소까지 자동차 경로가 열립니다(컴퓨터에는 지도 앱이 없어 웹 지도로 엽니다). 처음 한 번 브라우저가 위치 정보를 물으면 \'허용\'을 눌러 주세요. 처음 고른 지도는 기억해 다음부터 바로 엽니다.')
+      +(has()?' 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright':' 이 장소의 정확한 위치를 찾지 못해 이름으로 검색한 화면이 열립니다.');
+    if(has())drawMap();
+    var nt='';try{var ne=performance.getEntriesByType('navigation')[0];nt=ne?ne.type:'';}catch(e){}
+    var want=q.get('go')||getPref();
+    if((want==='naver'||want==='kakao')&&q.get('pick')!=='1'&&nt!=='back_forward'){go(want,false);}
+    else msg(getPref()?('지난번에 고른 지도: <b>'+NM[getPref()]+'</b> · 다른 지도를 누르면 다음부터 그 지도로 바로 안내합니다.'):'처음 한 번만 지도를 고르시면 다음부터는 묻지 않고 바로 길안내를 엽니다.');
   }
-  var nt=''; try{var ne=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0]; nt=ne?ne.type:'';}catch(e){}
-  if(pref&&q.get('pick')!=='1'&&nt!=='back_forward'){
-    pk.innerHTML='<b>'+NM[pref]+'</b>로 바로 안내합니다…';
-    document.body.classList.add('going');
-    if(APP)appGo(pref,pref==='kakao'?kko:nav,function(){pk.innerHTML='아래 <b>'+NM[pref]+' 앱 자동차 길안내</b> 버튼을 누르면 이 구장까지 길안내가 시작됩니다.';document.body.classList.remove('going');});
-    else if(PC)pcGo(pref);
-    else go((pref==='kakao')?kko.href:nav.href);
-  } else chooser();
-  window.addEventListener('pageshow',function(e){if(e.persisted)chooser();});
-  if(mobile){var nt0=document.querySelector('.note');if(nt0)nt0.textContent='누르면 네이버 지도 앱 또는 카카오맵 앱이 바로 열리고, 도착지가 이 구장, 출발이 내 위치, 이동수단이 자동차로 잡힌 길찾기가 나옵니다. 앱의 \'안내시작\'을 누르면 길안내가 시작됩니다. 앱이 없으면 웹 길찾기 화면이 열립니다. 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright';}
-  if(PC){var ntp=document.querySelector('.note');if(ntp)ntp.textContent='버튼을 누르면 지금 계신 곳에서 이 구장까지 자동차 길찾기 경로가 열립니다(출발 = 내 위치, 도착 = 구장). 처음 한 번 브라우저가 위치 정보를 물으면 \'허용\'을 눌러 주세요. 컴퓨터에는 네이버 지도·카카오맵 앱이 없어 웹 지도로 엽니다. 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright';}
-  if(isNaN(lat)||isNaN(lng)){var nt1=document.querySelector('.note');if(nt1)nt1.textContent='이 장소의 정확한 위치를 찾지 못해 이름으로 검색한 화면이 열립니다. 검색 결과에서 장소를 골라 주세요.';document.getElementById('map').style.display='none';return;}
-  var z=16, N=Math.pow(2,z), r=lat*Math.PI/180;
-  var fx=(lng+180)/360*N, fy=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*N;
-  var tx=Math.floor(fx), ty=Math.floor(fy), tiles=document.getElementById('tiles');
-  for(var dx=-1;dx<=1;dx++)for(var dy=-1;dy<=1;dy++){var im=new Image();im.alt='';im.src='https://tile.openstreetmap.org/'+z+'/'+(tx+dx)+'/'+(ty+dy)+'.png';im.style.left=((dx+1)*256)+'px';im.style.top=((dy+1)*256)+'px';tiles.appendChild(im);}
-  function place(){var m=document.getElementById('map');var px=256+(fx-tx)*256, py=256+(fy-ty)*256;tiles.style.left=(m.clientWidth/2-px)+'px';tiles.style.top=(m.clientHeight/2-py)+'px';}
-  place(); window.addEventListener('resize',place);
+  window.addEventListener('pageshow',function(e){if(e.persisted)msg(getPref()?('다른 지도로 보려면 아래 버튼을 누르세요.'):'');});
+  function drawMap(){
+    var z=16,N=Math.pow(2,z),r=P.lat*Math.PI/180,fx=(P.lng+180)/360*N,fy=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*N,tx=Math.floor(fx),ty=Math.floor(fy),t=$('tiles');
+    $('map').style.display='';t.innerHTML='';
+    for(var dx=-1;dx<=1;dx++)for(var dy=-1;dy<=1;dy++){var im=new Image();im.alt='';im.src='https://tile.openstreetmap.org/'+z+'/'+(tx+dx)+'/'+(ty+dy)+'.png';im.style.left=((dx+1)*256)+'px';im.style.top=((dy+1)*256)+'px';t.appendChild(im);}
+    function pos(){var m=$('map');t.style.left=(m.clientWidth/2-(256+(fx-tx)*256))+'px';t.style.top=(m.clientHeight/2-(256+(fy-ty)*256))+'px';}
+    pos();window.addEventListener('resize',pos);
   }
+  function lookup(cb){   // 좌표 찾기 (회원 서버 geo: 장소 이름·주소 -> 위도·경도)
+    var done=false;function fin(){if(!done){done=true;cb();}}
+    msg('장소 위치를 찾는 중입니다…');setTimeout(fin,4500);
+    fetch(GEO,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'geo',q:P.n})})
+      .then(function(r){return r.json();}).then(function(j){
+        if(!done&&j&&j.ok&&!j.none&&isFinite(j.lat)&&isFinite(j.lng)){P.lat=+j.lat;P.lng=+j.lng;if(j.n&&/파크골프|구장|공원|체육/.test(j.n))P.n=j.n;if(j.addr)$('addr').textContent=j.addr;}
+        fin();
+      }).catch(fin);
   }
+  function start(){ if(has())render(); else lookup(render); }
+
+  /* ---- 1) 카톡 안이면 먼저 기본 인터넷 앱으로 ---- */
+  if(inKakao&&q.get('ext')!=='1'){
+    var left=false; document.addEventListener('visibilitychange',function(){if(document.hidden)left=true;});
+    msg('휴대폰 인터넷 앱에서 길안내를 엽니다…');
+    location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(self({ext:'1'}));
+    setTimeout(function(){ if(left||document.hidden){ q.set('pick','1'); } start(); },1500);   // 넘어갔으면 이 화면은 고르기만(자동 이동 없음)
+    return;
+  }
+  start();
 })();
 </script>
-<script src="/assets/nlwin.js?v=20261115a"></script>
+<script src="/assets/nlwin.js?v=20261116n"></script>
 </body>
 </html>
