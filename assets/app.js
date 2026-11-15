@@ -814,7 +814,7 @@ function showEv(i) {
   document.addEventListener('keydown', onKey);
 }
 (function () { if (document.getElementById('evt-css')) return; const st = document.createElement('style'); st.id = 'evt-css'; st.textContent = 'h4.evt{cursor:pointer}h4.evt:hover,h4.evt:focus-visible{text-decoration:underline}a.pgmap{color:inherit;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer}a.pgmap:hover,a.pgmap:focus-visible{color:var(--g700);text-decoration-style:solid}'; document.head.appendChild(st); })();
-/* 장소 클릭 -> 네이버지도 검색을 팝업 창으로 (홈페이지·온라인·밴드 등 실제 장소가 아닌 것은 글자만, 팝업이 막히면 현재 창에서 이동) */
+/* 일정 장소 글자 -> 길안내 검색어 (홈페이지·온라인·밴드 등 실제 장소가 아닌 것은 글자만) */
 function mapQ(e) {
   const s = String(e.place || '');
   if (/홈페이지|온라인|네이버\s*폼|구글\s*폼|어플|대리점|총판|밴드|카페|이메일|메일|전화|문자|www\.|https?:|일괄|미정|추후/.test(s)) return '';
@@ -844,9 +844,9 @@ function mapQ(e) {
   if (!/[가-힣](시|군|구)(\s|$)/.test(name)) { const r = String(e.region || '').trim(); if (loc && !name.includes(loc)) name = loc + ' ' + name; else if (!loc && r && !name.includes(r)) name = r + ' ' + name; }
   return name;
 }
-/* 네이버 검색으로 위치가 안 나오는 구장(캘린더 주소 오류·네이버 미등록 이름): 네이버 장소 번호 또는 좌표로 바로 연다 (2026-11-07)
-   PC: 장소 번호 있으면 map.naver.com/p/entry/place/번호, 없으면 map.naver.com/p/search/위도,경도 (핀)
-   휴대폰: 우리 장소 페이지 place.html (지도 + 네이버 지도 앱/웹 버튼) */
+/* 장소 길안내 (2026-11-16 새로 만듦): 장소 링크는 모두 장소 길안내 화면(place.html?n=&lat=&lng=&id=)으로, 같은 창에서 엶.
+   네이버 지도·카카오맵 앱/웹 자동차 길찾기(출발 = 현재 위치, 도착 = 장소)는 place.html 한 곳에서만 처리함.
+   PLACE_FIX: 네이버 검색으로 위치가 안 나오는 구장(캘린더 주소 오류·네이버 미등록 이름)의 이름·장소번호·좌표 (2026-11-07) */
 const PLACE_FIX = [
   [/순창군.*(섬진강|풍산면\s*오공리\s*524)/, { n: '유등섬진강파크골프장', id: '2140160094', lat: 35.3729697, lng: 127.1959173 }],
   [/부귀파크골프장|부귀면\s*(당곡|두남)리\s*731/, { n: '부귀파크골프장', id: '1840377636', lat: 35.8448985, lng: 127.4212161 }],
@@ -856,32 +856,16 @@ const PLACE_FIX = [
   [/노을빛\s*파크골프장|줄포\s*파크골프장|줄포면\s*생태공원로\s*170/, { n: '줄포파크골프장 (노을빛 파크골프장)', id: '1389202044', lat: 35.5791236, lng: 126.6669581 }], /* 네이버 이름은 줄포파크골프장 (2026-11-12) */
   [/충북보건과학대/, { n: '충북보건과학대학교', id: '11591453', lat: 36.7016738, lng: 127.5515784 }]
 ];
-/* 2026-11-15: 장소 보기(place.html)에서 한 번 고른 지도(네이버/카카오)를 기억해 다음부터 그 지도로 바로 안내 (localStorage pgn_mapPick) */
-function mapPick() { try { return localStorage.getItem('pgn_mapPick') === 'kakao' ? 'kakao' : 'naver'; } catch (e) { return 'naver'; } }
+
 function mapUrl(q) {
   const f = (PLACE_FIX.find(x => x[0].test(q)) || [])[1];
-  /* 2026-11-16 사용자 지시 "컴퓨터와 휴대폰에서 장소를 누르면 ... 현재위치에서 자동차를 이용하여 갈 수 있게 경로를 표시해줘":
-     컴퓨터·휴대폰 모두 장소 보기(place.html)를 거침. 휴대폰 = 네이버 지도 앱·카카오맵 앱 자동차 길안내(고른 지도 기억), 컴퓨터 = 현재 위치 -> 구장 자동차 길찾기(네이버/카카오 웹) */
   if (!f) return '/place.html?n=' + encodeURIComponent(q);
   return '/place.html?n=' + encodeURIComponent(f.n) + '&lat=' + f.lat + '&lng=' + f.lng + (f.id ? '&id=' + f.id : '');
 }
 function mapLink(e) {
   const q = mapQ(e); if (!q) return esc(e.place);
-  return '<a class="pgmap" href="' + mapUrl(q) + '" title="지도에서 위치 보기">' + esc(e.place) + '</a>';
+  return '<a class="pgmap" href="' + mapUrl(q) + '" title="눌러서 자동차 길안내 (네이버 지도·카카오맵)">' + esc(e.place) + '</a>';
 }
-function openMap(u) {
-  if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) { if (/\/place\.html\?/.test(u)) pgnPlaceGo(u); else location.href = u; return; } /* 휴대폰(카톡 안 브라우저 포함)은 팝업 대신 같은 창에서 이동 (2026-11-12) */
-  const sw = screen.availWidth || 1280, sh = screen.availHeight || 800;
-  const w = Math.min(1000, sw - 40), h = Math.min(820, sh - 60);
-  const win = window.open(u, 'pgnmap', 'popup=yes,width=' + w + ',height=' + h + ',left=' + Math.max(0, Math.round((sw - w) / 2)) + ',top=' + Math.max(0, Math.round((sh - h) / 2)));
-  if (win) { try { win.opener = null; win.focus(); } catch (x) {} } else location.href = u;
-}
-document.addEventListener('click', ev => {
-  const a = ev.target.closest && ev.target.closest('a.pgmap');
-  if (!a || ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
-  ev.preventDefault(); ev.stopPropagation();
-  openMap(a.href);
-}, true);
 /* 접수처·상세 팝업 링크: 새 창으로 열고 바로 앞으로 가져오기 (막히면 현재 창에서 이동) */
 document.addEventListener('click', ev => {
   const a = ev.target.closest && ev.target.closest('.ev a.go, .evd-link a, .evd-body a');
@@ -1435,7 +1419,7 @@ function pgnLinkCore(doc, inFrame) {
       const a = doc.createElement('a');
       if (k.t === 't') { a.href = 'tel:' + k.no.replace(/\D/g, ''); a.className = 'pgtel'; a.textContent = k.no; a.title = '눌러서 전화 걸기'; }
       else if (k.t === 'w') { a.href = k.url; a.className = 'pgweb'; a.textContent = k.txt; a.title = '눌러서 홈페이지로 이동'; }
-      else if (k.t === 'p') { a.href = k.url; a.className = 'pgweb pgplace'; a.textContent = k.txt; a.title = '눌러서 네이버 지도·카카오맵으로 위치 보기'; if (!inFrame && typeof pgnGeoFill === 'function') pgnGeoFill(a); }
+      else if (k.t === 'p') { a.href = k.url; a.className = 'pgweb pgplace'; a.textContent = k.txt; a.title = '눌러서 자동차 길안내 (네이버 지도·카카오맵)'; }
       else { a.href = '#'; a.className = 'pgacct'; a.dataset.bank = k.bank; a.dataset.no = k.no; a.textContent = k.txt; a.title = '눌러서 계좌번호 복사·송금'; }
       a.style.cssText = css;
       f.appendChild(a); last = k.e;
@@ -1462,46 +1446,12 @@ function pgnLinkCore(doc, inFrame) {
     .observe(doc.body, { childList: true, subtree: true, characterData: true });
   doc.addEventListener('click', ev => {
     const a = ev.target.closest && ev.target.closest('a.pgtel, a.pgacct, a.pgweb'); if (!a) return;
-    if (a.classList.contains('pgweb')) { if (ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey) return; ev.preventDefault(); ev.stopPropagation(); if (inFrame) parent.postMessage({ pgnWeb: a.href }, '*'); else if (a.classList.contains('pgplace') && typeof pgnPlaceGo === 'function') pgnPlaceGo(a.href); else location.href = a.href; return; }   /* 같은 창에서 이동 */
+    if (a.classList.contains('pgweb')) { if (ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey) return; ev.preventDefault(); ev.stopPropagation(); if (inFrame) parent.postMessage({ pgnWeb: a.href }, '*'); else location.href = a.href; return; }   /* 같은 창에서 이동 */
     if (a.classList.contains('pgtel')) { if (inFrame) { ev.preventDefault(); parent.postMessage({ pgnTel: a.getAttribute('href').slice(4) }, '*'); } return; }
     ev.preventDefault(); ev.stopPropagation();
     if (inFrame) parent.postMessage({ pgnAcct: { bank: a.dataset.bank, no: a.dataset.no } }, '*'); else pgnAcctBox(a.dataset.bank, a.dataset.no);
   }, true);
 }
-/* 2026-11-15 사용자 "네이버지도앱 카카오지도앱에 바로 연결되게": 휴대폰에서 기사 속 장소·일정 장소를 누르면
-   이미 고른 지도(pgn_mapPick)가 있으면 장소 화면을 거치지 않고 그 지도 앱(assets/mapapp.js)을 바로 열어 자동차 길찾기(도착지 = 장소).
-   좌표가 없는 이름은 회원 서버 geo 로 찾음(기사 본문 장소는 화면에 그릴 때 미리 찾아 둠). 고른 지도가 없거나 앱이 안 열리면 장소 보기(place.html)로. */
-const PGN_GEO = {};
-const pgnPhone = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-function pgnGeo(n) { n = String(n || '').trim(); if (!n) return Promise.resolve(null); if (!PGN_GEO[n]) PGN_GEO[n] = api('geo', { q: n }).then(j => (j && !j.none && isFinite(j.lat) && isFinite(j.lng)) ? j : null).catch(() => null); return PGN_GEO[n]; }
-function pgnMapAppLoad() { if (window.pgnMapApp) return Promise.resolve(); return new Promise(r => { const s = document.createElement('script'); s.src = '/assets/mapapp.js?v=20261115a'; s.onload = s.onerror = () => r(); (document.head || document.documentElement).appendChild(s); }); }
-function pgnGeoFill(a) {
-  if (!pgnPhone()) return;
-  pgnMapAppLoad();
-  let u; try { u = new URL(a.href, location.href); } catch (e) { return; }
-  const sp = u.searchParams; if (!isNaN(parseFloat(sp.get('lat')))) return;
-  pgnGeo(sp.get('n')).then(j => { if (!j) return; sp.set('n', j.n || sp.get('n')); sp.set('lat', j.lat); sp.set('lng', j.lng); sp.set('g', '1'); a.href = u.pathname + '?' + sp.toString(); });
-}
-async function pgnPlaceGo(href) {
-  let u; try { u = new URL(href, location.href); } catch (e) { location.href = href; return; }
-  if (!/\/place\.html$/.test(u.pathname)) { location.href = href; return; }
-  const sp = u.searchParams, mob = pgnPhone();
-  let pref = ''; try { pref = localStorage.getItem('pgn_mapPick') || ''; } catch (e) {}
-  let n = sp.get('n') || '', lat = parseFloat(sp.get('lat')), lng = parseFloat(sp.get('lng'));
-  const toPage = () => { location.href = '/place.html?' + sp.toString(); };
-  if (!mob || /KAKAOTALK/i.test(navigator.userAgent) || (pref !== 'naver' && pref !== 'kakao')) { toPage(); return; }   // 지도를 아직 안 골랐거나 카톡 안(앱을 직접 열면 장소가 빠짐, 2026-11-16)이면 장소 보기로   // 지도를 아직 안 골랐으면 장소 보기에서 고르기
-  const ld = pgnMapAppLoad();
-  if (isNaN(lat) && n) {
-    const j = await Promise.race([pgnGeo(n), new Promise(r => setTimeout(() => r(null), 3000))]);   // 누른 뒤 5초 안에 앱을 열어야 하므로 3초까지만 기다림
-    if (j) { n = j.n || n; lat = +j.lat; lng = +j.lng; sp.set('n', n); sp.set('lat', lat); sp.set('lng', lng); sp.set('g', '1'); }
-  }
-  if (isNaN(lat) || isNaN(lng)) { toPage(); return; }
-  await ld;
-  if (!window.pgnMapApp) { toPage(); return; }
-  sp.set('pick', '1');
-  window.pgnMapApp.open(pref, n, lat, lng, toPage);
-}
-if (pgnPhone()) { try { pgnMapAppLoad(); } catch (e) {} }
 
 function pgnAcctBox(bank, no) {
   const digits = String(no).replace(/\D/g, '');
@@ -1531,7 +1481,7 @@ function pgnAcctBox(bank, no) {
 window.addEventListener('message', ev => {
   const d = ev.data; if (!d) return;
   if (d.pgnTel && /^\d{7,12}$/.test(d.pgnTel)) location.href = 'tel:' + d.pgnTel;
-  else if (d.pgnWeb && /^https?:\/\/[^\s"'<>]+$/.test(String(d.pgnWeb))) { if (/^https:\/\/parkgolfnews\.org\/place\.html\?/.test(String(d.pgnWeb))) pgnPlaceGo(String(d.pgnWeb)); else location.href = String(d.pgnWeb); }   /* 기사 속 홈페이지 주소 */
+  else if (d.pgnWeb && /^https?:\/\/[^\s"'<>]+$/.test(String(d.pgnWeb))) location.href = String(d.pgnWeb);   /* 기사 속 홈페이지 주소 */
   else if (d.pgnAcct && d.pgnAcct.no) pgnAcctBox(String(d.pgnAcct.bank || ''), String(d.pgnAcct.no));
 });
 if (document.body) pgnLinkCore(document, false); else document.addEventListener('DOMContentLoaded', () => pgnLinkCore(document, false));
