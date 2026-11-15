@@ -862,8 +862,8 @@ function mapUrl(q) {
   const f = (PLACE_FIX.find(x => x[0].test(q)) || [])[1];
   const mob = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent), kk = mapPick() === 'kakao';
   /* 휴대폰: map.naver.com 검색 주소는 네이버 지도 앱으로 넘어가며 검색어가 빠져 현재 위치만 보여서, 앱으로 넘어가지 않는 모바일 웹 지도 검색으로 연다 (2026-11-12) */
-  if (!f) return kk ? (mob ? 'https://m.map.kakao.com/actions/searchView?q=' : 'https://map.kakao.com/?q=') + encodeURIComponent(q)
-    : (mob ? 'https://m.map.naver.com/search?query=' : 'https://map.naver.com/p/search/') + encodeURIComponent(q);
+  if (!f && mob) return '/place.html?n=' + encodeURIComponent(q);   /* 2026-11-15: 휴대폰은 장소 보기를 거쳐(좌표 찾기) 네이버 지도 앱·카카오맵 앱 자동차 길찾기로 */
+  if (!f) return kk ? 'https://map.kakao.com/?q=' + encodeURIComponent(q) : 'https://map.naver.com/p/search/' + encodeURIComponent(q);
   if (mob) return '/place.html?n=' + encodeURIComponent(f.n) + '&lat=' + f.lat + '&lng=' + f.lng + (f.id ? '&id=' + f.id : '');
   if (kk) return 'https://map.kakao.com/link/map/' + encodeURIComponent(f.n) + ',' + f.lat + ',' + f.lng;
   return f.id ? 'https://map.naver.com/p/entry/place/' + f.id : 'https://map.naver.com/p/search/' + f.lat + ',' + f.lng;
@@ -873,7 +873,7 @@ function mapLink(e) {
   return '<a class="pgmap" href="' + mapUrl(q) + '" title="지도에서 위치 보기">' + esc(e.place) + '</a>';
 }
 function openMap(u) {
-  if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) { location.href = u; return; } /* 휴대폰(카톡 안 브라우저 포함)은 팝업 대신 같은 창에서 이동 (2026-11-12) */
+  if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) { if (/\/place\.html\?/.test(u)) pgnPlaceGo(u); else location.href = u; return; } /* 휴대폰(카톡 안 브라우저 포함)은 팝업 대신 같은 창에서 이동 (2026-11-12) */
   const sw = screen.availWidth || 1280, sh = screen.availHeight || 800;
   const w = Math.min(1000, sw - 40), h = Math.min(820, sh - 60);
   const win = window.open(u, 'pgnmap', 'popup=yes,width=' + w + ',height=' + h + ',left=' + Math.max(0, Math.round((sw - w) / 2)) + ',top=' + Math.max(0, Math.round((sh - h) / 2)));
@@ -1438,7 +1438,7 @@ function pgnLinkCore(doc, inFrame) {
       const a = doc.createElement('a');
       if (k.t === 't') { a.href = 'tel:' + k.no.replace(/\D/g, ''); a.className = 'pgtel'; a.textContent = k.no; a.title = '눌러서 전화 걸기'; }
       else if (k.t === 'w') { a.href = k.url; a.className = 'pgweb'; a.textContent = k.txt; a.title = '눌러서 홈페이지로 이동'; }
-      else if (k.t === 'p') { a.href = k.url; a.className = 'pgweb pgplace'; a.textContent = k.txt; a.title = '눌러서 네이버 지도·카카오맵으로 위치 보기'; }
+      else if (k.t === 'p') { a.href = k.url; a.className = 'pgweb pgplace'; a.textContent = k.txt; a.title = '눌러서 네이버 지도·카카오맵으로 위치 보기'; if (!inFrame && typeof pgnGeoFill === 'function') pgnGeoFill(a); }
       else { a.href = '#'; a.className = 'pgacct'; a.dataset.bank = k.bank; a.dataset.no = k.no; a.textContent = k.txt; a.title = '눌러서 계좌번호 복사·송금'; }
       a.style.cssText = css;
       f.appendChild(a); last = k.e;
@@ -1465,12 +1465,47 @@ function pgnLinkCore(doc, inFrame) {
     .observe(doc.body, { childList: true, subtree: true, characterData: true });
   doc.addEventListener('click', ev => {
     const a = ev.target.closest && ev.target.closest('a.pgtel, a.pgacct, a.pgweb'); if (!a) return;
-    if (a.classList.contains('pgweb')) { if (ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey) return; ev.preventDefault(); ev.stopPropagation(); if (inFrame) parent.postMessage({ pgnWeb: a.href }, '*'); else location.href = a.href; return; }   /* 같은 창에서 이동 */
+    if (a.classList.contains('pgweb')) { if (ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey) return; ev.preventDefault(); ev.stopPropagation(); if (inFrame) parent.postMessage({ pgnWeb: a.href }, '*'); else if (a.classList.contains('pgplace') && typeof pgnPlaceGo === 'function') pgnPlaceGo(a.href); else location.href = a.href; return; }   /* 같은 창에서 이동 */
     if (a.classList.contains('pgtel')) { if (inFrame) { ev.preventDefault(); parent.postMessage({ pgnTel: a.getAttribute('href').slice(4) }, '*'); } return; }
     ev.preventDefault(); ev.stopPropagation();
     if (inFrame) parent.postMessage({ pgnAcct: { bank: a.dataset.bank, no: a.dataset.no } }, '*'); else pgnAcctBox(a.dataset.bank, a.dataset.no);
   }, true);
 }
+/* 2026-11-15 사용자 "네이버지도앱 카카오지도앱에 바로 연결되게": 휴대폰에서 기사 속 장소·일정 장소를 누르면
+   이미 고른 지도(pgn_mapPick)가 있으면 장소 화면을 거치지 않고 그 지도 앱(assets/mapapp.js)을 바로 열어 자동차 길찾기(도착지 = 장소).
+   좌표가 없는 이름은 회원 서버 geo 로 찾음(기사 본문 장소는 화면에 그릴 때 미리 찾아 둠). 고른 지도가 없거나 앱이 안 열리면 장소 보기(place.html)로. */
+const PGN_GEO = {};
+const pgnPhone = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+function pgnGeo(n) { n = String(n || '').trim(); if (!n) return Promise.resolve(null); if (!PGN_GEO[n]) PGN_GEO[n] = api('geo', { q: n }).then(j => (j && !j.none && isFinite(j.lat) && isFinite(j.lng)) ? j : null).catch(() => null); return PGN_GEO[n]; }
+function pgnMapAppLoad() { if (window.pgnMapApp) return Promise.resolve(); return new Promise(r => { const s = document.createElement('script'); s.src = '/assets/mapapp.js?v=20261115a'; s.onload = s.onerror = () => r(); (document.head || document.documentElement).appendChild(s); }); }
+function pgnGeoFill(a) {
+  if (!pgnPhone()) return;
+  pgnMapAppLoad();
+  let u; try { u = new URL(a.href, location.href); } catch (e) { return; }
+  const sp = u.searchParams; if (!isNaN(parseFloat(sp.get('lat')))) return;
+  pgnGeo(sp.get('n')).then(j => { if (!j) return; sp.set('n', j.n || sp.get('n')); sp.set('lat', j.lat); sp.set('lng', j.lng); sp.set('g', '1'); a.href = u.pathname + '?' + sp.toString(); });
+}
+async function pgnPlaceGo(href) {
+  let u; try { u = new URL(href, location.href); } catch (e) { location.href = href; return; }
+  if (!/\/place\.html$/.test(u.pathname)) { location.href = href; return; }
+  const sp = u.searchParams, mob = pgnPhone();
+  let pref = ''; try { pref = localStorage.getItem('pgn_mapPick') || ''; } catch (e) {}
+  let n = sp.get('n') || '', lat = parseFloat(sp.get('lat')), lng = parseFloat(sp.get('lng'));
+  const toPage = () => { location.href = '/place.html?' + sp.toString(); };
+  if (!mob || (pref !== 'naver' && pref !== 'kakao')) { toPage(); return; }   // 지도를 아직 안 골랐으면 장소 보기에서 고르기
+  const ld = pgnMapAppLoad();
+  if (isNaN(lat) && n) {
+    const j = await Promise.race([pgnGeo(n), new Promise(r => setTimeout(() => r(null), 3000))]);   // 누른 뒤 5초 안에 앱을 열어야 하므로 3초까지만 기다림
+    if (j) { n = j.n || n; lat = +j.lat; lng = +j.lng; sp.set('n', n); sp.set('lat', lat); sp.set('lng', lng); sp.set('g', '1'); }
+  }
+  if (isNaN(lat) || isNaN(lng)) { toPage(); return; }
+  await ld;
+  if (!window.pgnMapApp) { toPage(); return; }
+  sp.set('pick', '1');
+  window.pgnMapApp.open(pref, n, lat, lng, toPage);
+}
+if (pgnPhone()) { try { pgnMapAppLoad(); } catch (e) {} }
+
 function pgnAcctBox(bank, no) {
   const digits = String(no).replace(/\D/g, '');
   const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -1499,7 +1534,7 @@ function pgnAcctBox(bank, no) {
 window.addEventListener('message', ev => {
   const d = ev.data; if (!d) return;
   if (d.pgnTel && /^\d{7,12}$/.test(d.pgnTel)) location.href = 'tel:' + d.pgnTel;
-  else if (d.pgnWeb && /^https?:\/\/[^\s"'<>]+$/.test(String(d.pgnWeb))) location.href = String(d.pgnWeb);   /* 기사 속 홈페이지 주소 */
+  else if (d.pgnWeb && /^https?:\/\/[^\s"'<>]+$/.test(String(d.pgnWeb))) { if (/^https:\/\/parkgolfnews\.org\/place\.html\?/.test(String(d.pgnWeb))) pgnPlaceGo(String(d.pgnWeb)); else location.href = String(d.pgnWeb); }   /* 기사 속 홈페이지 주소 */
   else if (d.pgnAcct && d.pgnAcct.no) pgnAcctBox(String(d.pgnAcct.bank || ''), String(d.pgnAcct.no));
 });
 if (document.body) pgnLinkCore(document, false); else document.addEventListener('DOMContentLoaded', () => pgnLinkCore(document, false));
