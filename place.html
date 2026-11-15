@@ -58,8 +58,29 @@ body.going .btn{opacity:.45}
   var pcWeb=id?('https://map.naver.com/p/entry/place/'+id):(hasLL?('https://map.naver.com/p/search/'+lat+','+lng):('https://map.naver.com/p/search/'+en));
   var nav=document.getElementById('nav');
   nav.textContent='네이버 지도에서 보기'; nav.href=mobile?mWeb:pcWeb;
-  var kko=document.getElementById('kko');
-  kko.href=(!isNaN(lat)&&!isNaN(lng))?('https://map.kakao.com/link/map/'+en+','+lat+','+lng):('https://map.kakao.com/link/search/'+en);
+  /* 2026-11-15 사용자 지시 "휴대폰에서 뉴스레터를 열고 장소를 누르면 네비게이션이 현재위치만 나오게 해 이거 해결해줘":
+     휴대폰에서 map.kakao.com/link/map/… 은 m.map.kakao.com/?urlX… 첫 화면으로 넘어가 구장 대신 기본 위치만 보이고, '앱으로 보기'를 누르면 앱이 장소 없이(현재 위치) 열림.
+     -> 휴대폰은 카카오맵 모바일 웹 길찾기 화면(도착지 = 구장 좌표, 이름 표시)으로 바로 엶. 앱으로 넘기는 주소는 쓰지 않음.
+        좌표 변환: WGS84 -> 카카오 WCONGNAMUL(Bessel TM 중부원점 x2.5, 카카오 link/map 결과와 비교해 보정, 오차 약 4m 이내), exEnc/eyEnc 는 카카오 모바일 지도와 같은 방식으로 인코딩. */
+  function wcong(la,lo){
+    var d=Math.PI/180,aW=6378137,fW=1/298.257223563,e2W=fW*(2-fW),p=la*d,l=lo*d,N=aW/Math.sqrt(1-e2W*Math.pow(Math.sin(p),2));
+    var X=N*Math.cos(p)*Math.cos(l),Y=N*Math.cos(p)*Math.sin(l),Z=N*(1-e2W)*Math.sin(p),sec=Math.PI/648000,s=1+6.43e-6;
+    var rx=1.16*sec,ry=-2.31*sec,rz=-1.63*sec; X=(X+115.80)/s; Y=(Y-474.99)/s; Z=(Z-674.11)/s;
+    var Xb=X+rz*Y-ry*Z,Yb=-rz*X+Y+rx*Z,Zb=ry*X-rx*Y+Z;
+    var aB=6377397.155,fB=1/299.1528128,e2=fB*(2-fB),lon=Math.atan2(Yb,Xb),pp=Math.sqrt(Xb*Xb+Yb*Yb),lt=Math.atan2(Zb,pp*(1-e2));
+    for(var i=0;i<8;i++){var Nb=aB/Math.sqrt(1-e2*Math.pow(Math.sin(lt),2));lt=Math.atan2(Zb,pp*(1-e2*Nb/(Nb+(pp/Math.cos(lt)-Nb))));}
+    var ep=e2/(1-e2);
+    function M(f){return aB*((1-e2/4-3*e2*e2/64-5*Math.pow(e2,3)/256)*f-(3*e2/8+3*e2*e2/32+45*Math.pow(e2,3)/1024)*Math.sin(2*f)+(15*e2*e2/256+45*Math.pow(e2,3)/1024)*Math.sin(4*f)-(35*Math.pow(e2,3)/3072)*Math.sin(6*f));}
+    var Nn=aB/Math.sqrt(1-e2*Math.pow(Math.sin(lt),2)),T=Math.pow(Math.tan(lt),2),C=ep*Math.pow(Math.cos(lt),2),A=(lon-127*d)*Math.cos(lt);
+    var x=200000+Nn*(A+(1-T+C)*Math.pow(A,3)/6+(5-18*T+T*T+72*C-58*ep)*Math.pow(A,5)/120);
+    var y=500000+(M(lt)-M(38*d)+Nn*Math.tan(lt)*(A*A/2+(5-T+9*C+4*C*C)*Math.pow(A,4)/24+(61-58*T+T*T+600*C-330*ep)*Math.pow(A,6)/720));
+    return [Math.round(x*2.5-472),Math.round(y*2.5+766)];
+  }
+  function kx(v){v=String(v);var t='432101234',r='';for(var i=0;i<v.length;i++)r+=String.fromCharCode((t.charCodeAt(i%t.length)-48^v.charCodeAt(i)-48)+28+48);return r;}
+  var kko=document.getElementById('kko'), hasXY=!isNaN(lat)&&!isNaN(lng);
+  if(mobile&&hasXY){var wc=wcong(lat,lng);kko.href='https://m.map.kakao.com/actions/routeView?exEnc='+encodeURIComponent(kx(wc[0]))+'&eyEnc='+encodeURIComponent(kx(wc[1]))+'&endLoc='+en;}
+  else if(mobile)kko.href='https://m.map.kakao.com/actions/searchView?q='+en;
+  else kko.href=hasXY?('https://map.kakao.com/link/map/'+en+','+lat+','+lng):('https://map.kakao.com/link/search/'+en);
   /* 2026-11-15 사용자 지시 "주소를 찾을 때 네이버를 선택하든 카카오를 선택하든 한번 정하면 다시 물어보지 말고 그대로 안내":
      처음 누른 지도(네이버/카카오)를 이 기기에 기억(localStorage pgn_mapPick)하고, 다음부터는 묻지 않고 그 지도로 바로 이동.
      지도에서 '뒤로'로 돌아오면 다시 고를 수 있게 버튼을 보여 줌(누른 지도로 기억이 바뀜). 주소 끝에 ?pick=1 이어도 고르는 화면. */
