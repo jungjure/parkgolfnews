@@ -58,6 +58,14 @@ body.going .btn{opacity:.45}
   var pcWeb=id?('https://map.naver.com/p/entry/place/'+id):(hasLL?('https://map.naver.com/p/search/'+lat+','+lng):('https://map.naver.com/p/search/'+en));
   var nav=document.getElementById('nav');
   nav.textContent='네이버 지도에서 보기'; nav.href=mobile?mWeb:pcWeb;
+  /* 2026-11-15 사용자 지시 "휴대폰에서 뉴스레터의 장소를 누르면 네이버지도가 현위치만 나오는데 그 자동차경로가 나오게 바꿔줘":
+     휴대폰은 네이버 '빠른길찾기'(m.search.naver.com, 출발 = 내 위치, 도착 = 구장 좌표, 자동차) 웹 화면으로 바로 엶. 경로와 '안내시작' 버튼이 바로 보임.
+     주소 형식은 네이버가 m.map.naver.com/route.nhn?ename&ex&ey&pathType=0 을 넘겨 보내는 화면과 같음. 앱으로 넘기는 주소는 쓰지 않음. */
+  if(mobile&&hasLL){
+    var cn=n.replace(/[;^|]/g,' ');
+    nav.href='https://m.search.naver.com/search.naver?query='+encodeURIComponent('빠른길찾기')+'&nso_path='+encodeURIComponent('placeType^place;name^;address^;code^;longitude^;latitude^|type^place;name^'+cn+';address^;code^;longitude^'+lng+';latitude^'+lat+'|objtype^path;by^car');
+    nav.textContent='네이버 지도 자동차 길찾기';
+  }
   /* 2026-11-15 사용자 지시 "휴대폰에서 뉴스레터를 열고 장소를 누르면 네비게이션이 현재위치만 나오게 해 이거 해결해줘":
      휴대폰에서 map.kakao.com/link/map/… 은 m.map.kakao.com/?urlX… 첫 화면으로 넘어가 구장 대신 기본 위치만 보이고, '앱으로 보기'를 누르면 앱이 장소 없이(현재 위치) 열림.
      -> 휴대폰은 카카오맵 모바일 웹 길찾기 화면(도착지 = 구장 좌표, 이름 표시)으로 바로 엶. 앱으로 넘기는 주소는 쓰지 않음.
@@ -78,7 +86,7 @@ body.going .btn{opacity:.45}
   }
   function kx(v){v=String(v);var t='432101234',r='';for(var i=0;i<v.length;i++)r+=String.fromCharCode((t.charCodeAt(i%t.length)-48^v.charCodeAt(i)-48)+28+48);return r;}
   var kko=document.getElementById('kko'), hasXY=!isNaN(lat)&&!isNaN(lng);
-  if(mobile&&hasXY){var wc=wcong(lat,lng);kko.href='https://m.map.kakao.com/actions/routeView?exEnc='+encodeURIComponent(kx(wc[0]))+'&eyEnc='+encodeURIComponent(kx(wc[1]))+'&endLoc='+en;}
+  if(mobile&&hasXY){kko.textContent='카카오맵 길찾기';var wc=wcong(lat,lng);kko.href='https://m.map.kakao.com/actions/routeView?exEnc='+encodeURIComponent(kx(wc[0]))+'&eyEnc='+encodeURIComponent(kx(wc[1]))+'&endLoc='+en;}
   else if(mobile)kko.href='https://m.map.kakao.com/actions/searchView?q='+en;
   else kko.href=hasXY?('https://map.kakao.com/link/map/'+en+','+lat+','+lng):('https://map.kakao.com/link/search/'+en);
   /* 2026-11-15 사용자 지시 "주소를 찾을 때 네이버를 선택하든 카카오를 선택하든 한번 정하면 다시 물어보지 말고 그대로 안내":
@@ -101,6 +109,7 @@ body.going .btn{opacity:.45}
     location.href=(pref==='kakao')?kko.href:nav.href;
   } else chooser();
   window.addEventListener('pageshow',function(e){if(e.persisted)chooser();});
+  if(mobile&&hasLL){var nt0=document.querySelector('.note');if(nt0)nt0.textContent='도착지가 이 구장으로 잡힌 길찾기 화면이 열립니다. 출발은 내 위치이며, 화면의 \'안내시작\'을 누르면 길안내가 시작됩니다. 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright';}
   if(isNaN(lat)||isNaN(lng)){document.getElementById('map').style.display='none';return;}
   var z=16, N=Math.pow(2,z), r=lat*Math.PI/180;
   var fx=(lng+180)/360*N, fy=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*N;
