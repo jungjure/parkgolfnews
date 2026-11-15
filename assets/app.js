@@ -860,13 +860,10 @@ const PLACE_FIX = [
 function mapPick() { try { return localStorage.getItem('pgn_mapPick') === 'kakao' ? 'kakao' : 'naver'; } catch (e) { return 'naver'; } }
 function mapUrl(q) {
   const f = (PLACE_FIX.find(x => x[0].test(q)) || [])[1];
-  const mob = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent), kk = mapPick() === 'kakao';
-  /* 휴대폰: map.naver.com 검색 주소는 네이버 지도 앱으로 넘어가며 검색어가 빠져 현재 위치만 보여서, 앱으로 넘어가지 않는 모바일 웹 지도 검색으로 연다 (2026-11-12) */
-  if (!f && mob) return '/place.html?n=' + encodeURIComponent(q);   /* 2026-11-15: 휴대폰은 장소 보기를 거쳐(좌표 찾기) 네이버 지도 앱·카카오맵 앱 자동차 길찾기로 */
-  if (!f) return kk ? 'https://map.kakao.com/?q=' + encodeURIComponent(q) : 'https://map.naver.com/p/search/' + encodeURIComponent(q);
-  if (mob) return '/place.html?n=' + encodeURIComponent(f.n) + '&lat=' + f.lat + '&lng=' + f.lng + (f.id ? '&id=' + f.id : '');
-  if (kk) return 'https://map.kakao.com/link/map/' + encodeURIComponent(f.n) + ',' + f.lat + ',' + f.lng;
-  return f.id ? 'https://map.naver.com/p/entry/place/' + f.id : 'https://map.naver.com/p/search/' + f.lat + ',' + f.lng;
+  /* 2026-11-16 사용자 지시 "컴퓨터와 휴대폰에서 장소를 누르면 ... 현재위치에서 자동차를 이용하여 갈 수 있게 경로를 표시해줘":
+     컴퓨터·휴대폰 모두 장소 보기(place.html)를 거침. 휴대폰 = 네이버 지도 앱·카카오맵 앱 자동차 길안내(고른 지도 기억), 컴퓨터 = 현재 위치 -> 구장 자동차 길찾기(네이버/카카오 웹) */
+  if (!f) return '/place.html?n=' + encodeURIComponent(q);
+  return '/place.html?n=' + encodeURIComponent(f.n) + '&lat=' + f.lat + '&lng=' + f.lng + (f.id ? '&id=' + f.id : '');
 }
 function mapLink(e) {
   const q = mapQ(e); if (!q) return esc(e.place);
