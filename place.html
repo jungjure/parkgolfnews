@@ -42,6 +42,22 @@ body.going .btn{opacity:.45}
 <script>
 (function(){
   var q=new URLSearchParams(location.search);
+  /* 2026-11-15 사용자 "뉴스기사안의 장소도 네이버지도와 카카오지도에 연결되게": 기사 본문 장소 링크는 이름만 있음(?n=이름).
+     좌표가 없으면 회원 서버 geo(카카오 로컬 검색)로 좌표를 받아 주소에 붙여 다시 엶 (g=1: 한 번만). 못 찾으면 이름 검색으로 안내. */
+  if(isNaN(parseFloat(q.get('lat')))&&q.get('n')&&!q.get('g')){
+    var done=false, go=function(){ if(done)return; done=true; run(); };
+    try{ document.getElementById('nm').textContent=q.get('n'); document.getElementById('pick').textContent='위치를 찾는 중입니다…'; }catch(e){}
+    setTimeout(go,4500);
+    fetch('https://script.google.com/macros/s/AKfycby4zEPx3AB25E7x4peqc9UTlYsGgywDjew64Xh8Va7VhM4zMG8clQGM0eCUZIQqsW2tVg/exec',{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'geo',q:q.get('n')})})
+      .then(function(r){return r.json();}).then(function(j){
+        if(done)return;
+        if(j&&j.ok&&!j.none&&isFinite(j.lat)&&isFinite(j.lng)){ done=true; q.set('lat',j.lat); q.set('lng',j.lng); if(j.n)q.set('n',j.n); q.set('g','1'); location.replace(location.pathname+'?'+q.toString()+location.hash); }
+        else go();
+      }).catch(go);
+    return;
+  }
+  run();
+  function run(){
   var n=q.get('n')||'장소', lat=parseFloat(q.get('lat')), lng=parseFloat(q.get('lng')), id=q.get('id')||'';
   document.getElementById('nm').textContent=n; document.title=n+' · 파크골프뉴스';
   var en=encodeURIComponent(n), app='org.parkgolfnews';
@@ -55,7 +71,7 @@ body.going .btn{opacity:.45}
      - PC: map.naver.com/p/entry/place/번호 또는 map.naver.com/p/search/위도,경도 */
   var ua=navigator.userAgent||'', mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   var hasLL=!isNaN(lat)&&!isNaN(lng);
-  var mWeb=id?('https://m.place.naver.com/place/'+id+'/location'):(hasLL?('https://m.map.naver.com/map?lat='+lat+'&lng='+lng+'&dlevel=12&pinTitle='+en+'&pinType=site'):('https://m.map.naver.com/search?query='+en));
+  var mWeb=id?('https://m.place.naver.com/place/'+id+'/location'):(hasLL?('https://m.map.naver.com/map?lat='+lat+'&lng='+lng+'&dlevel=12&pinTitle='+en+'&pinType=site'):('https://m.search.naver.com/search.naver?query='+en));
   var pcWeb=id?('https://map.naver.com/p/entry/place/'+id):(hasLL?('https://map.naver.com/p/search/'+lat+','+lng):('https://map.naver.com/p/search/'+en));
   var nav=document.getElementById('nav');
   nav.textContent='네이버 지도에서 보기'; nav.href=mobile?mWeb:pcWeb;
@@ -130,13 +146,14 @@ body.going .btn{opacity:.45}
   } else chooser();
   window.addEventListener('pageshow',function(e){if(e.persisted)chooser();});
   if(mobile){var nt0=document.querySelector('.note');if(nt0)nt0.textContent='누르면 네이버 지도 앱 또는 카카오맵 앱이 바로 열리고, 도착지가 이 구장, 출발이 내 위치, 이동수단이 자동차로 잡힌 길찾기가 나옵니다. 앱의 \'안내시작\'을 누르면 길안내가 시작됩니다. 앱이 없으면 웹 길찾기 화면이 열립니다. 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright';}
-  if(isNaN(lat)||isNaN(lng)){document.getElementById('map').style.display='none';return;}
+  if(isNaN(lat)||isNaN(lng)){var nt1=document.querySelector('.note');if(nt1)nt1.textContent='이 장소의 정확한 위치를 찾지 못해 이름으로 검색한 화면이 열립니다. 검색 결과에서 장소를 골라 주세요.';document.getElementById('map').style.display='none';return;}
   var z=16, N=Math.pow(2,z), r=lat*Math.PI/180;
   var fx=(lng+180)/360*N, fy=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*N;
   var tx=Math.floor(fx), ty=Math.floor(fy), tiles=document.getElementById('tiles');
   for(var dx=-1;dx<=1;dx++)for(var dy=-1;dy<=1;dy++){var im=new Image();im.alt='';im.src='https://tile.openstreetmap.org/'+z+'/'+(tx+dx)+'/'+(ty+dy)+'.png';im.style.left=((dx+1)*256)+'px';im.style.top=((dy+1)*256)+'px';tiles.appendChild(im);}
   function place(){var m=document.getElementById('map');var px=256+(fx-tx)*256, py=256+(fy-ty)*256;tiles.style.left=(m.clientWidth/2-px)+'px';tiles.style.top=(m.clientHeight/2-py)+'px';}
   place(); window.addEventListener('resize',place);
+  }
 })();
 </script>
 <script src="/assets/nlwin.js?v=20261115a"></script>
