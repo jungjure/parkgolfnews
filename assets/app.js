@@ -535,6 +535,10 @@ function pgnDateLine() { const d = new Date(); return d.getFullYear() + '년 ' +
   addEventListener('DOMContentLoaded', () => document.querySelectorAll('iframe').forEach(f => { try { if (f.contentDocument && f.contentDocument.readyState === 'complete') hook(f); } catch (e) {} }));
 })();
 
+/* ---------- 뉴스레터에서 열린 창 정리 (2026-11-15) ----------
+   뉴스레터에서 열린 화면에 '뉴스레터 원문으로' 단추를 붙이고, 누르면 뉴스레터에서 열린 창을 모두 닫고 원문으로 돌아감 (assets/nlwin.js) */
+(function () { try { if (document.querySelector('script[src*="assets/nlwin.js"]')) return; const s = document.createElement('script'); s.src = '/assets/nlwin.js?v=20261115a'; s.async = true; (document.head || document.documentElement).appendChild(s); } catch (e) {} })();
+
 /* ---------- 공통 레이아웃 ---------- */
 async function layout(active, opts) {
   opts = opts || {};
