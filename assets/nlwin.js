@@ -18,23 +18,12 @@
   if (NL_RE.test(location.pathname)) {
     /* ---- 1) 뉴스레터 화면 ---- */
     var win = null, openedAt = 0;
-    /* 2026-11-15 사용자 지시 "네이버지도와 카카오지도로 직접 연결하게 해줘", "자동차로 설정하게 해주고":
-       휴대폰에서 장소(place.html) 링크를 누를 때 이미 고른 지도(pgn_mapPick)가 있으면 장소 화면을 거치지 않고
-       그 지도 앱을 바로 열어 자동차 길찾기(도착지 = 구장)를 띄움. 앱이 안 열리면 장소 화면(고르기)을 엶. */
-    try { var ms = document.createElement('script'); ms.src = '/assets/mapapp.js?v=20261115a'; (document.head || document.documentElement).appendChild(ms); } catch (e) {}
     document.addEventListener('click', function (ev) {
       if (ev.defaultPrevented || ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
       var a = ev.target && ev.target.closest && ev.target.closest('a[href]'); if (!a) return;
       var h = a.getAttribute('href') || '';
       if (!h || h.charAt(0) === '#' || /^(javascript|tel|sms|mailto|intent|kakaotalk|nmap):/i.test(h)) return;
       ev.preventDefault();
-      var pm = window.pgnMapApp, pref = '';
-      try { pref = localStorage.getItem('pgn_mapPick') || ''; } catch (e) {}
-      if (pm && pm.mobile && !/KAKAOTALK/i.test(navigator.userAgent) && (pref === 'naver' || pref === 'kakao') && /\/place\.html\?/.test(a.href)) {   /* 2026-11-16: 카톡 안에서는 앱을 직접 열지 않고 장소 화면이 기본 인터넷 앱으로 넘겨서 엶 */
-        var u = new URL(a.href), sp = u.searchParams, fb = a.href + (a.href.indexOf('?') >= 0 ? '&' : '?') + 'pick=1';
-        pm.open(pref, sp.get('n') || '', parseFloat(sp.get('lat')), parseFloat(sp.get('lng')), function () { location.href = fb; });
-        return;
-      }
       var w = null; try { w = window.open(a.href, NAME); } catch (e) {}
       if (w) { win = w; openedAt = Date.now(); try { w.focus(); } catch (e) {} }
       else location.href = a.href;   // 새 창이 막힌 브라우저: 이 창에서 열고, 뒤로가기로 돌아옴
