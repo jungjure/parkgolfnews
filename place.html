@@ -42,6 +42,21 @@ body.going .btn{opacity:.45}
 <script>
 (function(){
   var q=new URLSearchParams(location.search);
+  /* 2026-11-16 사용자 "휴대폰에서 안돼", "항상 장소를 부르면 그 장소값을 불러오게": 카톡 안 브라우저에서 지도 앱을 바로 열면 앱에 장소(도착지)가 빠진 채 열림.
+     -> 카톡 안에서 열리면 먼저 이 화면을 휴대폰 기본 인터넷 앱(크롬·삼성 인터넷·사파리)으로 다시 열고(kakaotalk://web/openExternal, ext=1),
+        거기서 네이버 지도 앱/카카오맵 앱 자동차 길안내를 엶(도착지 = 구장). 1.5초 안에 바깥으로 안 열리면 카톡 안에서 웹 길찾기로 안내. */
+  var KK=/KAKAOTALK/i.test(navigator.userAgent||'')&&/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'');
+  if(KK&&q.get('ext')!=='1'){
+    var q2=new URLSearchParams(location.search); q2.set('ext','1');
+    var left=false; document.addEventListener('visibilitychange',function(){if(document.hidden)left=true;});
+    try{ document.getElementById('pick').textContent='휴대폰 인터넷 앱에서 지도를 엽니다…'; }catch(e){}
+    location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(location.origin+location.pathname+'?'+q2.toString());
+    setTimeout(function(){ if(!left&&!document.hidden){ window.__pgnStay=1; start(); } },1500);
+    window.addEventListener('pageshow',function(e){ if(e.persisted&&left){ try{ document.getElementById('pick').textContent='지도는 휴대폰 인터넷 앱에서 열렸습니다. 다시 보려면 아래 버튼을 누르세요.'; }catch(x){} } });
+    return;
+  }
+  start();
+  function start(){
   /* 2026-11-15 사용자 "뉴스기사안의 장소도 네이버지도와 카카오지도에 연결되게": 기사 본문 장소 링크는 이름만 있음(?n=이름).
      좌표가 없으면 회원 서버 geo(카카오 로컬 검색)로 좌표를 받아 주소에 붙여 다시 엶 (g=1: 한 번만). 못 찾으면 이름 검색으로 안내. */
   if(isNaN(parseFloat(q.get('lat')))&&q.get('n')&&!q.get('g')){
@@ -127,7 +142,7 @@ body.going .btn{opacity:.45}
   /* 2026-11-15 사용자 지시 "네이버지도와 카카오지도로 직접 연결하게 해줘", "자동차로 설정하게 해주고":
      휴대폰에서 버튼을 누르면 네이버 지도 앱 / 카카오맵 앱을 바로 열어 도착지 = 구장, 출발 = 내 위치, 자동차 길찾기를 띄움(assets/mapapp.js).
      앱이 2초 안에 안 열리면(앱 미설치 등) 지금까지처럼 웹 자동차 길찾기 화면을 엶. */
-  var APP=!!(mobile&&window.pgnMapApp);
+  var APP=!!(mobile&&window.pgnMapApp)&&!inKakao;   /* 카톡 안에서는 앱을 직접 열지 않음 (장소가 빠짐) */
   function appGo(kind,el,onFail){pgnMapApp.open(kind,n,lat,lng,onFail||function(){go(el.href);},el.href);}
   if(APP){nav.textContent='네이버 지도 앱 자동차 길안내';kko.textContent='카카오맵 앱 자동차 길안내';}
 
@@ -178,7 +193,7 @@ body.going .btn{opacity:.45}
   if(pref&&q.get('pick')!=='1'&&nt!=='back_forward'){
     pk.innerHTML='<b>'+NM[pref]+'</b>로 바로 안내합니다…';
     document.body.classList.add('going');
-    if(APP)appGo(pref,pref==='kakao'?kko:nav,function(){pk.innerHTML='<b>'+NM[pref]+' 앱</b>이 열리지 않으면 아래 버튼을 눌러 주세요.';document.body.classList.remove('going');});
+    if(APP)appGo(pref,pref==='kakao'?kko:nav,function(){pk.innerHTML='아래 <b>'+NM[pref]+' 앱 자동차 길안내</b> 버튼을 누르면 이 구장까지 길안내가 시작됩니다.';document.body.classList.remove('going');});
     else if(PC)pcGo(pref);
     else go((pref==='kakao')?kko.href:nav.href);
   } else chooser();
@@ -192,6 +207,7 @@ body.going .btn{opacity:.45}
   for(var dx=-1;dx<=1;dx++)for(var dy=-1;dy<=1;dy++){var im=new Image();im.alt='';im.src='https://tile.openstreetmap.org/'+z+'/'+(tx+dx)+'/'+(ty+dy)+'.png';im.style.left=((dx+1)*256)+'px';im.style.top=((dy+1)*256)+'px';tiles.appendChild(im);}
   function place(){var m=document.getElementById('map');var px=256+(fx-tx)*256, py=256+(fy-ty)*256;tiles.style.left=(m.clientWidth/2-px)+'px';tiles.style.top=(m.clientHeight/2-py)+'px';}
   place(); window.addEventListener('resize',place);
+  }
   }
 })();
 </script>
