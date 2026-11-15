@@ -1676,4 +1676,4 @@ if (document.body) pgnLinkCore(document, false); else document.addEventListener(
 /* 2026-11-10: 기사 반응 수·댓글 수 파일 (회원 서버가 1분마다 data/counts.json으로 게시). 한 페이지에서 한 번만 받음 */
 function pgnCounts() { return window._pgnCnt || (window._pgnCnt = fetch('data/counts.json?t=' + Math.floor(Date.now() / 60000), { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error('no counts'); return r.json(); })); }
 /* 장소 길안내 공용 코드 불러오기 (2026-11-16): 휴대폰에서 장소를 누르면 네이버 지도 앱 자동차 길안내를 바로 엶 */
-(function () { if (window.pgnNavi || document.querySelector('script[src*="/assets/navi.js"]')) return; const s = document.createElement('script'); s.src = '/assets/navi.js?v=20261116a'; (document.head || document.documentElement).appendChild(s); })();
+(function () { if (window.pgnNavi || document.querySelector('script[src*="/assets/navi.js"]')) return; const s = document.createElement('script'); s.src = '/assets/navi.js?v=20261116b'; (document.head || document.documentElement).appendChild(s); })();
