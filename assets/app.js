@@ -1489,7 +1489,7 @@ async function pgnPlaceGo(href) {
   let pref = ''; try { pref = localStorage.getItem('pgn_mapPick') || ''; } catch (e) {}
   let n = sp.get('n') || '', lat = parseFloat(sp.get('lat')), lng = parseFloat(sp.get('lng'));
   const toPage = () => { location.href = '/place.html?' + sp.toString(); };
-  if (!mob || (pref !== 'naver' && pref !== 'kakao')) { toPage(); return; }   // 지도를 아직 안 골랐으면 장소 보기에서 고르기
+  if (!mob || /KAKAOTALK/i.test(navigator.userAgent) || (pref !== 'naver' && pref !== 'kakao')) { toPage(); return; }   // 지도를 아직 안 골랐거나 카톡 안(앱을 직접 열면 장소가 빠짐, 2026-11-16)이면 장소 보기로   // 지도를 아직 안 골랐으면 장소 보기에서 고르기
   const ld = pgnMapAppLoad();
   if (isNaN(lat) && n) {
     const j = await Promise.race([pgnGeo(n), new Promise(r => setTimeout(() => r(null), 3000))]);   // 누른 뒤 5초 안에 앱을 열어야 하므로 3초까지만 기다림
