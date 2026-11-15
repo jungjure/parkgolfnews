@@ -89,14 +89,26 @@ body.going .btn{opacity:.45}
   if(mobile&&hasXY){kko.textContent='카카오맵 길찾기';var wc=wcong(lat,lng);kko.href='https://m.map.kakao.com/actions/routeView?exEnc='+encodeURIComponent(kx(wc[0]))+'&eyEnc='+encodeURIComponent(kx(wc[1]))+'&endLoc='+en;}
   else if(mobile)kko.href='https://m.map.kakao.com/actions/searchView?q='+en;
   else kko.href=hasXY?('https://map.kakao.com/link/map/'+en+','+lat+','+lng):('https://map.kakao.com/link/search/'+en);
+  /* 2026-11-15 사용자 지시 "휴대폰에서 네이버 빠른길찾기로 이동하는데 실시간추천의 안내시작을 누르면 현위치만 나옴":
+     빠른길찾기의 '안내시작'은 m.map.naver.com/appLink.naver(도착지 dlat·dlng·dname 포함)로 네이버 지도 앱을 여는데,
+     카톡 안 브라우저에서는 앱으로 넘어갈 때 이 정보가 빠져 앱이 현재 위치만 보임(11/1·11/7·11/13 앱 버튼도 같은 이유로 실패).
+     -> 카톡 안에서 지도 버튼을 누르면 길찾기 화면을 휴대폰 기본 인터넷 앱(크롬·삼성 인터넷·사파리)으로 열어(kakaotalk://web/openExternal),
+        그 화면의 '안내시작'이 도착지(구장)를 앱에 그대로 넘기게 함. 1.5초 안에 바깥 브라우저가 안 열리면 지금 창에서 그대로 엶. */
+  var inKakao=mobile&&/KAKAOTALK/i.test(ua);
+  function go(u){
+    if(!inKakao){location.href=u;return;}
+    var t=setTimeout(function(){if(!document.hidden)location.href=u;},1500);
+    document.addEventListener('visibilitychange',function(){if(document.hidden)clearTimeout(t);});
+    location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(u);
+  }
   /* 2026-11-15 사용자 지시 "주소를 찾을 때 네이버를 선택하든 카카오를 선택하든 한번 정하면 다시 물어보지 말고 그대로 안내":
      처음 누른 지도(네이버/카카오)를 이 기기에 기억(localStorage pgn_mapPick)하고, 다음부터는 묻지 않고 그 지도로 바로 이동.
      지도에서 '뒤로'로 돌아오면 다시 고를 수 있게 버튼을 보여 줌(누른 지도로 기억이 바뀜). 주소 끝에 ?pick=1 이어도 고르는 화면. */
   var PK='pgn_mapPick', pref=''; try{pref=localStorage.getItem(PK)||'';}catch(e){}
   if(pref!=='naver'&&pref!=='kakao')pref='';
   function save(v){try{localStorage.setItem(PK,v);}catch(e){}}
-  nav.addEventListener('click',function(){save('naver');});
-  kko.addEventListener('click',function(){save('kakao');});
+  nav.addEventListener('click',function(e){save('naver');if(inKakao){e.preventDefault();go(nav.href);}});
+  kko.addEventListener('click',function(e){save('kakao');if(inKakao){e.preventDefault();go(kko.href);}});
   var pk=document.getElementById('pick'), NM={naver:'네이버 지도',kakao:'카카오맵'};
   function chooser(){
     pk.innerHTML=pref?('지난번에 고른 지도: <b>'+NM[pref]+'</b> · 다른 지도를 누르면 다음부터는 그 지도로 바로 안내합니다.'):'처음 한 번만 고르시면 다음부터는 묻지 않고 고른 지도로 바로 안내합니다.';
@@ -106,10 +118,10 @@ body.going .btn{opacity:.45}
   if(pref&&q.get('pick')!=='1'&&nt!=='back_forward'){
     pk.innerHTML='<b>'+NM[pref]+'</b>로 바로 안내합니다…';
     document.body.classList.add('going');
-    location.href=(pref==='kakao')?kko.href:nav.href;
+    go((pref==='kakao')?kko.href:nav.href);
   } else chooser();
   window.addEventListener('pageshow',function(e){if(e.persisted)chooser();});
-  if(mobile&&hasLL){var nt0=document.querySelector('.note');if(nt0)nt0.textContent='도착지가 이 구장으로 잡힌 길찾기 화면이 열립니다. 출발은 내 위치이며, 화면의 \'안내시작\'을 누르면 길안내가 시작됩니다. 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright';}
+  if(mobile&&hasLL){var nt0=document.querySelector('.note');if(nt0)nt0.textContent='도착지가 이 구장으로 잡힌 길찾기 화면이 열립니다. 출발은 내 위치이며, 화면의 \'안내시작\'을 누르면 길안내가 시작됩니다.'+(inKakao?' 카카오톡에서 누르면 길안내가 제대로 넘어가도록 휴대폰 기본 인터넷 앱에서 열립니다.':'')+' 지도 바탕: OpenStreetMap(ODbL), https://www.openstreetmap.org/copyright';}
   if(isNaN(lat)||isNaN(lng)){document.getElementById('map').style.display='none';return;}
   var z=16, N=Math.pow(2,z), r=lat*Math.PI/180;
   var fx=(lng+180)/360*N, fy=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*N;
