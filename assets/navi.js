@@ -7,6 +7,8 @@
    - 카톡 안 브라우저에서는 앱을 바로 열지 않고, 누른 순간 기본 인터넷 앱으로 장소 화면을 열어 거기서 앱을 엶(카톡이 도착지를 빼먹기 때문)
    - 2.5초 안에 앱이 안 열리면 장소 화면(place.html, 앱 버튼·설치 안내)으로 감. 웹 길찾기로 자동으로 가지 않음
    - 컴퓨터는 지도 앱이 없으므로 그대로 장소 화면(현재 위치 -> 웹 자동차 길찾기)으로 감
+   - (2026-11-16 사용자 "일정에 있는 장소도 네이버지도앱과 카카오앱에 장소를 자동차이동으로 표시하게") 장소 주소에 go=kakao 가 있으면 카카오맵 앱,
+     go=naver(또는 없음)이면 네이버 지도 앱으로 자동차 길안내. 일정 카드의 [네이버] [카카오] 단추가 이 주소를 씀
    쓰는 곳: place.html, 뉴스레터(nlwin.js가 불러옴), 홈페이지(app.js가 불러옴). 길안내 코드는 이 파일과 place.html에만 둠. */
 (function () {
   if (window.pgnNavi) return;
@@ -22,7 +24,7 @@
       if (!/(^|\.)parkgolfnews\.org$/.test(u.hostname) && u.hostname !== location.hostname) return null;
       if (!/\/place\.html$/.test(u.pathname)) return null;
       var s = u.searchParams;
-      return { u: u, n: (s.get('n') || '').trim() || '장소', lat: parseFloat(s.get('lat')), lng: parseFloat(s.get('lng')), id: s.get('id') || '' };
+      return { u: u, n: (s.get('n') || '').trim() || '장소', lat: parseFloat(s.get('lat')), lng: parseFloat(s.get('lng')), id: s.get('id') || '', go: s.get('go') === 'kakao' ? 'kakao' : 'naver' };
     } catch (e) { return null; }
   }
   function has(p) { return isFinite(p.lat) && isFinite(p.lng); }
@@ -68,8 +70,8 @@
   }
   function open(href) {
     var p = parse(href); if (!p || !phone) return false;
-    if (inKakao) { outOfKakao(p, 'naver'); return true; }
-    geo(p).then(function () { launch('naver', p, function () { location.href = placePage(p, { noapp: '1' }); }); });
+    if (inKakao) { outOfKakao(p, p.go); return true; }
+    geo(p).then(function () { launch(p.go, p, function () { location.href = placePage(p, { noapp: '1' }); }); });
     return true;
   }
   if (phone && !/\/place\.html$/.test(location.pathname)) {

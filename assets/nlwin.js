@@ -8,7 +8,7 @@
   if (window.__pgnNlWin) return; window.__pgnNlWin = 1;
   try { if (window.top !== window.self) return; } catch (e) { return; }
   /* 장소 길안내 공용 코드 (2026-11-16): 휴대폰에서 장소를 누르면 네이버 지도 앱 자동차 길안내를 바로 엶 */
-  try { if (!window.pgnNavi && !document.querySelector('script[src*="/assets/navi.js"]')) { var nv = document.createElement('script'); nv.src = '/assets/navi.js?v=20261116b'; (document.head || document.documentElement).appendChild(nv); } } catch (e) {}
+  try { if (!window.pgnNavi && !document.querySelector('script[src*="/assets/navi.js"]')) { var nv = document.createElement('script'); nv.src = '/assets/navi.js?v=20261116c'; (document.head || document.documentElement).appendChild(nv); } } catch (e) {}
   var NAME = 'pgn_nlview', CH = 'pgn_nl', KEY = 'pgn_nlsrc', LS = 'pgn_nl_close';
   var NL_RE = /\/assets\/newsletter_vol\d+_\d{8}(_mobile|_email)?\.html/;
   function bc() { try { return new BroadcastChannel(CH); } catch (e) { return null; } }

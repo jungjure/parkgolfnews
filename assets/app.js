@@ -537,7 +537,7 @@ function pgnDateLine() { const d = new Date(); return d.getFullYear() + '년 ' +
 
 /* ---------- 뉴스레터에서 열린 창 정리 (2026-11-15) ----------
    뉴스레터에서 열린 화면에 '뉴스레터 원문으로' 단추를 붙이고, 누르면 뉴스레터에서 열린 창을 모두 닫고 원문으로 돌아감 (assets/nlwin.js) */
-(function () { try { if (document.querySelector('script[src*="assets/nlwin.js"]')) return; const s = document.createElement('script'); s.src = '/assets/nlwin.js?v=20261115a'; s.async = true; (document.head || document.documentElement).appendChild(s); } catch (e) {} })();
+(function () { try { if (document.querySelector('script[src*="assets/nlwin.js"]')) return; const s = document.createElement('script'); s.src = '/assets/nlwin.js?v=20261116c'; s.async = true; (document.head || document.documentElement).appendChild(s); } catch (e) {} })();
 
 /* ---------- 공통 레이아웃 ---------- */
 async function layout(active, opts) {
@@ -813,7 +813,7 @@ function showEv(i) {
   el.addEventListener('click', ev => { if (ev.target === el || ev.target.closest('.evd-x')) close(); });
   document.addEventListener('keydown', onKey);
 }
-(function () { if (document.getElementById('evt-css')) return; const st = document.createElement('style'); st.id = 'evt-css'; st.textContent = 'h4.evt{cursor:pointer}h4.evt:hover,h4.evt:focus-visible{text-decoration:underline}a.pgmap{color:inherit;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer}a.pgmap:hover,a.pgmap:focus-visible{color:var(--g700);text-decoration-style:solid}'; document.head.appendChild(st); })();
+(function () { if (document.getElementById('evt-css')) return; const st = document.createElement('style'); st.id = 'evt-css'; st.textContent = 'h4.evt{cursor:pointer}h4.evt:hover,h4.evt:focus-visible{text-decoration:underline}a.pgmap{color:inherit;text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer}a.pgmap:hover,a.pgmap:focus-visible{color:var(--g700);text-decoration-style:solid}.pgnav{display:inline-flex;gap:4px;margin-left:6px;vertical-align:1px;white-space:nowrap}.pgnav a{display:inline-block;font-size:.72rem;font-weight:700;line-height:1;padding:4px 7px;border-radius:999px;text-decoration:none;font-family:inherit}.pgnav-n{background:#03C75A;color:#fff}.pgnav-k{background:#FEE500;color:#191919}.pgnav a:hover,.pgnav a:focus-visible{filter:brightness(.93)}'; document.head.appendChild(st); })();
 /* 일정 장소 글자 -> 길안내 검색어 (홈페이지·온라인·밴드 등 실제 장소가 아닌 것은 글자만) */
 function mapQ(e) {
   const s = String(e.place || '');
@@ -864,7 +864,8 @@ function mapUrl(q) {
 }
 function mapLink(e) {
   const q = mapQ(e); if (!q) return esc(e.place);
-  return '<a class="pgmap" href="' + mapUrl(q) + '" title="눌러서 자동차 길안내 (네이버 지도·카카오맵)">' + esc(e.place) + '</a>';
+  const u = mapUrl(q);   /* (2026-11-16 사용자 "일정에 있는 장소도 네이버지도앱과 카카오앱에 장소를 자동차이동으로") 장소 옆 [네이버] [카카오] 단추 = 그 지도 앱 자동차 길안내 (처리는 navi.js·place.html, go=) */
+  return '<a class="pgmap" href="' + u + '" title="눌러서 자동차 길안내 (네이버 지도·카카오맵)">' + esc(e.place) + '</a><span class="pgnav"><a class="pgnav-n" href="' + u + '&go=naver" title="네이버 지도 앱 자동차 길안내">네이버</a><a class="pgnav-k" href="' + u + '&go=kakao" title="카카오맵 앱 자동차 길안내">카카오</a></span>';
 }
 /* 접수처·상세 팝업 링크: 새 창으로 열고 바로 앞으로 가져오기 (막히면 현재 창에서 이동) */
 document.addEventListener('click', ev => {
@@ -1676,4 +1677,4 @@ if (document.body) pgnLinkCore(document, false); else document.addEventListener(
 /* 2026-11-10: 기사 반응 수·댓글 수 파일 (회원 서버가 1분마다 data/counts.json으로 게시). 한 페이지에서 한 번만 받음 */
 function pgnCounts() { return window._pgnCnt || (window._pgnCnt = fetch('data/counts.json?t=' + Math.floor(Date.now() / 60000), { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error('no counts'); return r.json(); })); }
 /* 장소 길안내 공용 코드 불러오기 (2026-11-16): 휴대폰에서 장소를 누르면 네이버 지도 앱 자동차 길안내를 바로 엶 */
-(function () { if (window.pgnNavi || document.querySelector('script[src*="/assets/navi.js"]')) return; const s = document.createElement('script'); s.src = '/assets/navi.js?v=20261116b'; (document.head || document.documentElement).appendChild(s); })();
+(function () { if (window.pgnNavi || document.querySelector('script[src*="/assets/navi.js"]')) return; const s = document.createElement('script'); s.src = '/assets/navi.js?v=20261116c'; (document.head || document.documentElement).appendChild(s); })();
