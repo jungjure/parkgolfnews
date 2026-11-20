@@ -45,18 +45,55 @@
     try { c = JSON.parse(localStorage.getItem('pgn_geo5:' + q) || 'null'); } catch (e) {}
     if (c && !c.none && isFinite(c.lat) && isFinite(c.lng)) { p.lat = +c.lat; p.lng = +c.lng; return Promise.resolve(p); }
     var t = new Promise(function (r) { setTimeout(function () { r(p); }, 4500); });
-    var f = fetch(GEO, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'geo', q: q }) })
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        if (j && j.ok && !j.none && isFinite(j.lat) && isFinite(j.lng)) {
-          p.lat = +j.lat; p.lng = +j.lng;
-          try { localStorage.setItem('pgn_geo5:' + q, JSON.stringify({ lat: p.lat, lng: p.lng, t: Date.now() })); } catch (e) {}
-        }
-        return p;
-      })
-      .catch(function () { return p; });
+    var f = geoAsk(q).then(function (v) { if (v && !v.none) { p.lat = v.lat; p.lng = v.lng; } return p; });
     return Promise.race([f, t]);
   }
+  /* ---- 좌표 미리 채우기 (2026-11-21 사용자 "기사나 뉴스레터 뉴스에서 장소를 네이버지도로 띄우면 현재위치만 나오는데 ... 항상 그 위치를 찾아갈수있도록", "이 코드를 올릴수 있는 가장 상위에 놔줘")
+     이 파일(navi.js)이 모든 화면(홈페이지 app.js·기사 iframe·뉴스레터 nlwin.js·place.html)에 들어가므로 여기 한 곳에만 둠.
+     화면이 열리면 좌표가 없는 장소 링크(place.html?n=이름[&a=괄호 속 다른 이름])의 좌표를 회원 서버 geo로 미리 받아 링크에 lat·lng 를 넣음
+     -> 누르는 순간 좌표가 있으므로 지도 앱·웹이 이름 검색(못 찾으면 현재 위치만 보임) 대신 그 장소로 바로 감.
+     결과는 이 기기에 7일 보관(pgn_geo5:이름), 못 찾은 이름은 1일. 서버에는 한 번에 3개까지만 물어봄 ---- */
+  var geoMem = {}, geoWait = [], geoRun = 0;
+  function geoAsk(q) {
+    if (geoMem[q]) return geoMem[q];
+    return (geoMem[q] = new Promise(function (res) { geoWait.push({ q: q, res: res }); geoNext(); }));
+  }
+  function geoNext() {
+    while (geoRun < 3 && geoWait.length) {
+      (function (it) {
+        geoRun++;
+        fetch(GEO, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'geo', q: it.q }) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            var v = (j && j.ok && !j.none && isFinite(j.lat) && isFinite(j.lng)) ? { lat: +j.lat, lng: +j.lng, t: Date.now() } : (j && j.ok ? { none: 1, t: Date.now() } : null);
+            if (v) { try { localStorage.setItem('pgn_geo5:' + it.q, JSON.stringify(v)); } catch (e) {} }
+            it.res(v);
+          }, function () { delete geoMem[it.q]; it.res(null); })
+          .then(function () { geoRun--; geoNext(); });
+      })(geoWait.shift());
+    }
+  }
+  function warm(root) {
+    var list; try { list = (root || document).querySelectorAll('a[href*="place.html?"]'); } catch (e) { return; }
+    Array.prototype.forEach.call(list, function (a) {
+      var u; try { u = new URL(a.href); } catch (e) { return; }
+      if (!/\/place\.html$/.test(u.pathname) || u.searchParams.get('lat') || a.getAttribute('data-pg-geo')) return;
+      var n = (u.searchParams.get('n') || '').trim(), al = (u.searchParams.get('a') || '').trim(); if (!n) return;
+      var q = al ? n + ' (' + al + ')' : n, c = null;
+      a.setAttribute('data-pg-geo', '1');
+      function put(v) { if (v && !v.none && isFinite(v.lat) && isFinite(v.lng)) { u.searchParams.set('lat', v.lat); u.searchParams.set('lng', v.lng); a.href = u.toString(); } }
+      try { c = JSON.parse(localStorage.getItem('pgn_geo5:' + q) || 'null'); } catch (e) {}
+      if (c && Date.now() - c.t < (c.none ? 864e5 : 7 * 864e5)) { put(c); return; }
+      geoAsk(q).then(function (v) { if (v) put(v); else a.removeAttribute('data-pg-geo'); });
+    });
+  }
+  function warmStart() {
+    if (/\/place\.html$/.test(location.pathname) || !document.body) return;
+    warm(document);
+    var tm = 0;
+    try { new MutationObserver(function () { if (!tm) tm = setTimeout(function () { tm = 0; warm(document); }, 300); }).observe(document.body, { childList: true, subtree: true }); } catch (e) {}
+  }
+  if (document.body) warmStart(); else document.addEventListener('DOMContentLoaded', warmStart);
   /* 앱 열기. 2.5초 안에 이 화면이 가려지지 않으면(앱이 안 열림) onFail */
   function launch(kind, p, onFail) {
     var left = false;

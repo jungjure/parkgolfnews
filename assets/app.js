@@ -219,7 +219,7 @@ function sanitizeFragment(html) {
 }
 let _fid = 0;
 function frameDoc(html, id) {
-  const resizer = '<script>(function(){function s(){parent.postMessage({pgnFrame:"' + id + '",h:document.documentElement.offsetHeight},"*")}addEventListener("load",s);new ResizeObserver(s).observe(document.documentElement);setInterval(s,1500)})()<\/script>' + '<script>(' + pgnLinkCore.toString() + ')(document,true)<\/script>';   /* 기사 iframe 안 전화·계좌 번호도 누르면 연결 */
+  const resizer = '<script>(function(){function s(){parent.postMessage({pgnFrame:"' + id + '",h:document.documentElement.offsetHeight},"*")}addEventListener("load",s);new ResizeObserver(s).observe(document.documentElement);setInterval(s,1500)})()<\/script>' + '<script>(' + pgnLinkCore.toString() + ')(document,true)<\/script><script src="https://parkgolfnews.org/assets/navi.js?v=20261121b"><\/script>';   /* 기사 iframe 안 전화·계좌 번호도 누르면 연결 */
   const base = '<base target="_blank"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"><style>*{font-family:Pretendard Variable,Pretendard,Noto Sans KR,sans-serif!important}</style>';   /* 상업적 무료 글꼴(Pretendard, OFL)만 사용 */
   if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, resizer + '</body>').replace(/<head[^>]*>/i, m => m + base);
   return '<!doctype html><html><head><meta charset="utf-8">' + base + '<style>body{margin:0;font-family:Pretendard Variable,Pretendard,Noto Sans KR,sans-serif;line-height:1.65}img{max-width:100%}</style></head><body>' + html + resizer + '</body></html>';
@@ -537,7 +537,7 @@ function pgnDateLine() { const d = new Date(); return d.getFullYear() + '년 ' +
 
 /* ---------- 뉴스레터에서 열린 창 정리 (2026-11-15) ----------
    뉴스레터에서 열린 화면에 '뉴스레터 원문으로' 단추를 붙이고, 누르면 뉴스레터에서 열린 창을 모두 닫고 원문으로 돌아감 (assets/nlwin.js) */
-(function () { try { if (document.querySelector('script[src*="assets/nlwin.js"]')) return; const s = document.createElement('script'); s.src = '/assets/nlwin.js?v=20261121a'; s.async = true; (document.head || document.documentElement).appendChild(s); } catch (e) {} })();
+(function () { try { if (document.querySelector('script[src*="assets/nlwin.js"]')) return; const s = document.createElement('script'); s.src = '/assets/nlwin.js?v=20261121b'; s.async = true; (document.head || document.documentElement).appendChild(s); } catch (e) {} })();
 
 /* ---------- 공통 레이아웃 ---------- */
 async function layout(active, opts) {
@@ -1445,44 +1445,10 @@ function pgnLinkCore(doc, inFrame) {
     const list = []; while (w.nextNode()) list.push(w.currentNode);
     for (const n of list) { const f = piece(n.data, plOk(n.parentElement)); if (f && n.parentNode) n.parentNode.replaceChild(f, n); }
   }
-  /* (2026-11-21 사용자 "기사나 뉴스레터 뉴스에서 장소를 네이버지도로 띄우면 현재위치만 나오는데 ... 항상 그 위치를 찾아갈수있도록")
-     좌표가 없는 장소 링크(place.html?n=이름)는 화면이 열릴 때 미리 회원 서버(geo)로 좌표를 받아 링크에 lat·lng 를 넣어 둠.
-     -> 누르는 순간 좌표가 있으므로 네이버 지도·카카오맵이 이름 검색(못 찾으면 현재 위치만 보임) 대신 그 장소로 바로 감.
-     결과는 이 기기에 7일 보관(pgn_geo5:이름), 못 찾은 이름은 1일. 서버에 한 번에 3개까지만 물어봄 */
-  const GEO_URL = 'https://script.google.com/macros/s/AKfycby4zEPx3AB25E7x4peqc9UTlYsGgywDjew64Xh8Va7VhM4zMG8clQGM0eCUZIQqsW2tVg/exec';
-  const geoMem = {}, geoQ = []; let geoRun = 0;
-  function geoAsk(q) {
-    if (geoMem[q]) return geoMem[q];
-    return (geoMem[q] = new Promise(res => { geoQ.push({ q, res }); geoNext(); }));
-  }
-  function geoNext() {
-    while (geoRun < 3 && geoQ.length) {
-      const it = geoQ.shift(); geoRun++;
-      fetch(GEO_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'geo', q: it.q }) })
-        .then(r => r.json()).then(j => {
-          const v = (j && j.ok && !j.none && isFinite(j.lat) && isFinite(j.lng)) ? { lat: +j.lat, lng: +j.lng, t: Date.now() } : (j && j.ok ? { none: 1, t: Date.now() } : null);
-          if (v) { try { localStorage.setItem('pgn_geo5:' + it.q, JSON.stringify(v)); } catch (x) {} }
-          it.res(v);
-        }).catch(() => it.res(null)).finally(() => { geoRun--; geoNext(); });
-    }
-  }
-  function warm() {
-    doc.querySelectorAll('a[href*="place.html?"]').forEach(a => {
-      let u; try { u = new URL(a.href); } catch (x) { return; }
-      if (!/\/place\.html$/.test(u.pathname) || u.searchParams.get('lat') || a.dataset.pgGeo) return;
-      const n = (u.searchParams.get('n') || '').trim(), al = (u.searchParams.get('a') || '').trim(); if (!n) return;
-      const q = al ? n + ' (' + al + ')' : n;
-      a.dataset.pgGeo = '1';
-      const put = v => { if (v && !v.none && isFinite(v.lat) && isFinite(v.lng)) { u.searchParams.set('lat', v.lat); u.searchParams.set('lng', v.lng); a.href = u.toString(); } };
-      let c = null; try { c = JSON.parse(localStorage.getItem('pgn_geo5:' + q) || 'null'); } catch (x) {}
-      if (c && Date.now() - c.t < (c.none ? 864e5 : 7 * 864e5)) { put(c); return; }
-      geoAsk(q).then(v => { if (v) put(v); else delete a.dataset.pgGeo; });
-    });
-  }
+  /* 좌표가 없는 장소 링크의 좌표 미리 채우기는 assets/navi.js 한 곳에서 함 (2026-11-21, 기사 iframe 에도 navi.js 를 넣음) */
   scan(doc.body);
-  warm();
   let q = [], t = 0;
-  new MutationObserver(ms => { for (const m of ms) { if (m.type === 'characterData') q.push(m.target); else m.addedNodes.forEach(n => q.push(n)); } if (!t) t = setTimeout(() => { t = 0; const l = q; q = []; l.forEach(scan); warm(); }, 60); })
+  new MutationObserver(ms => { for (const m of ms) { if (m.type === 'characterData') q.push(m.target); else m.addedNodes.forEach(n => q.push(n)); } if (!t) t = setTimeout(() => { t = 0; const l = q; q = []; l.forEach(scan); }, 60); })
     .observe(doc.body, { childList: true, subtree: true, characterData: true });
   doc.addEventListener('click', ev => {
     const a = ev.target.closest && ev.target.closest('a.pgtel, a.pgacct, a.pgweb'); if (!a) return;
@@ -1716,4 +1682,4 @@ if (document.body) pgnLinkCore(document, false); else document.addEventListener(
 /* 2026-11-10: 기사 반응 수·댓글 수 파일 (회원 서버가 1분마다 data/counts.json으로 게시). 한 페이지에서 한 번만 받음 */
 function pgnCounts() { return window._pgnCnt || (window._pgnCnt = fetch('data/counts.json?t=' + Math.floor(Date.now() / 60000), { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error('no counts'); return r.json(); })); }
 /* 장소 길안내 공용 코드 불러오기 (2026-11-16): 휴대폰에서 장소를 누르면 네이버 지도 앱 자동차 길안내를 바로 엶 */
-(function () { if (window.pgnNavi || document.querySelector('script[src*="/assets/navi.js"]')) return; const s = document.createElement('script'); s.src = '/assets/navi.js?v=20261121a'; (document.head || document.documentElement).appendChild(s); })();
+(function () { if (window.pgnNavi || document.querySelector('script[src*="/assets/navi.js"]')) return; const s = document.createElement('script'); s.src = '/assets/navi.js?v=20261121b'; (document.head || document.documentElement).appendChild(s); })();
