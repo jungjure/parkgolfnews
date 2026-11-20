@@ -38,7 +38,7 @@ h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 4px}
   <p class="msg" id="msg" style="display:none"></p>
   <p class="note" id="note"></p>
 </div>
-<script src="/assets/navi.js?v=20261116c"></script>
+<script src="/assets/navi.js?v=20261121a"></script>
 <script>
 /* 장소 길안내 (2026-11-16 새로 만듦. 사용자 지시 "장소를 누르면 네비게이션이 열리는 코드는 전체 다 지워주고 다시 만들자",
    "홈페이지와 휴대폰에서 기사나 뉴스레터에서 항상 장소를 누르면 네이버지도 카카오지도에서 자동차경로를 찾아 이동경로를 찾게해줘", "항상 장소를 부르면 그 장소값을 불러오게")
@@ -48,18 +48,20 @@ h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 4px}
    2) 좌표가 없으면 회원 서버(geo)로 이름·주소의 좌표를 찾음
    3) 휴대폰: 네이버 지도 앱 자동차 길안내를 자동으로(기본), 카카오맵 앱은 버튼으로 (앱 주소는 navi.js). 웹 길찾기로 자동으로 넘어가지 않음(앱이 없을 때 설치·웹 링크만 보여 줌)
    4) 컴퓨터(지도 앱 없음): 브라우저 현재 위치 -> 네이버 지도 / 카카오맵 웹 자동차 길찾기. 위치를 못 받으면 도착지만 채운 길찾기
-   5) 처음 고른 지도(pgn_mapPick)를 기억해 다음부터 바로 그 지도로. 주소에 pick=1 이 있거나 '뒤로'로 돌아오면 다시 고름 */
+   5) 처음 고른 지도(pgn_mapPick)를 기억해 다음부터 바로 그 지도로. 주소에 pick=1 이 있거나 '뒤로'로 돌아오면 다시 고름
+   6) (2026-11-21 사용자 "장소를 네이버지도로 띄우면 현재위치만 나오는데 ... 항상 그 위치를 찾아갈수있도록") 좌표가 없으면 기기에 저장된 좌표(pgn_geo5:) -> 회원 서버 geo(최대 9초)로 찾음.
+      a=(괄호 속 다른 이름)도 함께 찾고, 끝내 못 찾으면 다른 이름으로 검색한 화면을 엶. (이름 검색이 실패하면 네이버 지도가 현재 위치만 보여 주기 때문) */
 (function(){
   var GEO='https://script.google.com/macros/s/AKfycby4zEPx3AB25E7x4peqc9UTlYsGgywDjew64Xh8Va7VhM4zMG8clQGM0eCUZIQqsW2tVg/exec';
   var q=new URLSearchParams(location.search), ua=navigator.userAgent||'';
   var ios=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   var android=/Android/i.test(ua), phone=ios||android||/Mobile/i.test(ua), inKakao=phone&&/KAKAOTALK/i.test(ua);
-  var P={n:(q.get('n')||'').trim()||'장소', lat:parseFloat(q.get('lat')), lng:parseFloat(q.get('lng')), id:q.get('id')||''};
+  var P={n:(q.get('n')||'').trim()||'장소', a:(q.get('a')||'').trim(), lat:parseFloat(q.get('lat')), lng:parseFloat(q.get('lng')), id:q.get('id')||''};
   var NM={naver:'네이버 지도',kakao:'카카오맵'}, APPNAME='parkgolfnews.org';
   function $(i){return document.getElementById(i);}
   function msg(h){$('msg').innerHTML=h||'';$('msg').style.display=h?'':'none';}
   function has(){return isFinite(P.lat)&&isFinite(P.lng);}
-  function en(){return encodeURIComponent(P.n.replace(/[,\/;^|]/g,' '));}
+  function en(){return encodeURIComponent((has()?P.n:(P.a||P.n)).replace(/[,\/;^|]/g,' '));}   // 좌표가 없을 때는 다른 이름(a)으로 검색
   function getPref(){try{var v=localStorage.getItem('pgn_mapPick');return (v==='naver'||v==='kakao')?v:'';}catch(e){return '';}}
   function setPref(k){try{localStorage.setItem('pgn_mapPick',k);}catch(e){}}
   function self(extra){var u=new URLSearchParams(location.search);for(var k in extra)u.set(k,extra[k]);return location.origin+location.pathname+'?'+u.toString();}
@@ -169,10 +171,14 @@ h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 4px}
   }
   function lookup(cb){   // 좌표 찾기 (회원 서버 geo: 장소 이름·주소 -> 위도·경도)
     var done=false;function fin(){if(!done){done=true;cb();}}
-    msg('장소 위치를 찾는 중입니다…');setTimeout(fin,4500);
-    fetch(GEO,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'geo',q:P.n})})
+    var gq=P.a?(P.n+' ('+P.a+')'):P.n, c=null;
+    try{c=JSON.parse(localStorage.getItem('pgn_geo5:'+gq)||'null');}catch(e){}
+    if(c&&!c.none&&isFinite(c.lat)&&isFinite(c.lng)){P.lat=+c.lat;P.lng=+c.lng;return fin();}
+    msg('장소 위치를 찾는 중입니다…');setTimeout(fin,9000);
+    fetch(GEO,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'geo',q:gq})})
       .then(function(r){return r.json();}).then(function(j){
-        if(!done&&j&&j.ok&&!j.none&&isFinite(j.lat)&&isFinite(j.lng)){P.lat=+j.lat;P.lng=+j.lng;if(j.n&&/파크골프|구장|공원|체육/.test(j.n))P.n=j.n;if(j.addr)$('addr').textContent=j.addr;}
+        if(!done&&j&&j.ok&&!j.none&&isFinite(j.lat)&&isFinite(j.lng)){P.lat=+j.lat;P.lng=+j.lng;if(j.n&&/파크골프/.test(j.n))P.n=j.n;if(j.addr)$('addr').textContent=j.addr;
+          try{localStorage.setItem('pgn_geo5:'+gq,JSON.stringify({lat:P.lat,lng:P.lng,t:Date.now()}));}catch(e){}}
         fin();
       }).catch(fin);
   }
@@ -181,6 +187,6 @@ h1{font-size:22px;font-weight:800;line-height:1.35;margin:4px 0 4px}
   start();
 })();
 </script>
-<script src="/assets/nlwin.js?v=20261116c"></script>
+<script src="/assets/nlwin.js?v=20261121a"></script>
 </body>
 </html>
