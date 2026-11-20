@@ -9,6 +9,9 @@
    - 컴퓨터는 지도 앱이 없으므로 그대로 장소 화면(현재 위치 -> 웹 자동차 길찾기)으로 감
    - (2026-11-16 사용자 "일정에 있는 장소도 네이버지도앱과 카카오앱에 장소를 자동차이동으로 표시하게") 장소 주소에 go=kakao 가 있으면 카카오맵 앱,
      go=naver(또는 없음)이면 네이버 지도 앱으로 자동차 길안내. 일정 카드의 [네이버] [카카오] 단추가 이 주소를 씀
+   - (2026-11-21 사용자 "기사나 뉴스레터 뉴스에서 장소를 네이버지도로 띄우면 현재위치만 나오는데 ... 항상 그 위치를 찾아갈수있도록")
+     좌표 찾기: 이 기기에 저장된 좌표(pgn_geo5:, app.js가 기사를 열 때 미리 받아 둠) -> 없으면 회원 서버 geo(최대 4.5초).
+     주소의 a=(괄호 속 다른 이름)도 함께 넘겨 찾음. 좌표를 끝내 못 찾으면 다른 이름(a)으로 앱 검색
    쓰는 곳: place.html, 뉴스레터(nlwin.js가 불러옴), 홈페이지(app.js가 불러옴). 길안내 코드는 이 파일과 place.html에만 둠. */
 (function () {
   if (window.pgnNavi) return;
@@ -24,23 +27,33 @@
       if (!/(^|\.)parkgolfnews\.org$/.test(u.hostname) && u.hostname !== location.hostname) return null;
       if (!/\/place\.html$/.test(u.pathname)) return null;
       var s = u.searchParams;
-      return { u: u, n: (s.get('n') || '').trim() || '장소', lat: parseFloat(s.get('lat')), lng: parseFloat(s.get('lng')), id: s.get('id') || '', go: s.get('go') === 'kakao' ? 'kakao' : 'naver' };
+      return { u: u, n: (s.get('n') || '').trim() || '장소', a: (s.get('a') || '').trim(), lat: parseFloat(s.get('lat')), lng: parseFloat(s.get('lng')), id: s.get('id') || '', go: s.get('go') === 'kakao' ? 'kakao' : 'naver' };
     } catch (e) { return null; }
   }
   function has(p) { return isFinite(p.lat) && isFinite(p.lng); }
   function appUrl(kind, p) {
-    var en = encodeURIComponent(String(p.n).replace(/[,\/;^|]/g, ' ')), scheme, pkg, path;
+    var en = encodeURIComponent(String(has(p) ? p.n : (p.a || p.n)).replace(/[,\/;^|]/g, ' ')), scheme, pkg, path;
     if (kind === 'kakao') { scheme = 'kakaomap'; pkg = 'net.daum.android.map'; path = has(p) ? ('route?ep=' + p.lat + ',' + p.lng + '&by=CAR') : ('search?q=' + en); }
     else { scheme = 'nmap'; pkg = 'com.nhn.android.nmap'; path = has(p) ? ('route/car?dlat=' + p.lat + '&dlng=' + p.lng + '&dname=' + en + '&appname=' + APPNAME) : ('search?query=' + en + '&appname=' + APPNAME); }
     if (android) return 'intent://' + path + '#Intent;scheme=' + scheme + ';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=' + pkg + ';end';
     return scheme + '://' + path;
   }
+  function geoQ(p) { return p.a ? p.n + ' (' + p.a + ')' : p.n; }
   function geo(p) {
     if (has(p)) return Promise.resolve(p);
-    var t = new Promise(function (r) { setTimeout(function () { r(p); }, 3000); });
-    var f = fetch(GEO, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'geo', q: p.n }) })
+    var q = geoQ(p), c = null;
+    try { c = JSON.parse(localStorage.getItem('pgn_geo5:' + q) || 'null'); } catch (e) {}
+    if (c && !c.none && isFinite(c.lat) && isFinite(c.lng)) { p.lat = +c.lat; p.lng = +c.lng; return Promise.resolve(p); }
+    var t = new Promise(function (r) { setTimeout(function () { r(p); }, 4500); });
+    var f = fetch(GEO, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'geo', q: q }) })
       .then(function (r) { return r.json(); })
-      .then(function (j) { if (j && j.ok && !j.none && isFinite(j.lat) && isFinite(j.lng)) { p.lat = +j.lat; p.lng = +j.lng; if (j.n && /파크골프|구장|공원|체육/.test(j.n)) p.n = j.n; } return p; })
+      .then(function (j) {
+        if (j && j.ok && !j.none && isFinite(j.lat) && isFinite(j.lng)) {
+          p.lat = +j.lat; p.lng = +j.lng;
+          try { localStorage.setItem('pgn_geo5:' + q, JSON.stringify({ lat: p.lat, lng: p.lng, t: Date.now() })); } catch (e) {}
+        }
+        return p;
+      })
       .catch(function () { return p; });
     return Promise.race([f, t]);
   }
@@ -55,7 +68,7 @@
   }
   function placePage(p, extra) {
     var s = new URLSearchParams(p.u.search);
-    s.set('n', p.n); if (has(p)) { s.set('lat', p.lat); s.set('lng', p.lng); }
+    s.set('n', p.n); if (p.a) s.set('a', p.a); if (has(p)) { s.set('lat', p.lat); s.set('lng', p.lng); }
     for (var k in extra) s.set(k, extra[k]);
     return 'https://parkgolfnews.org/place.html?' + s.toString();
   }
