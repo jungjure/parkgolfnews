@@ -3,7 +3,11 @@
    - 글쓰기 버튼 없이 맨 아래 입력창에 바로 쓰면 바로 대화에 보임 (카카오톡 단체방처럼, 최신 대화가 맨 아래)
    - 읽기는 누구나, 입력은 로그인한 회원만. 분류(질문·동행·조인·대회 정보·자유)를 골라 보낼 수 있고, 분류 칩과 검색으로 걸러 봄
    - 서버(회원 서버): tklist(3초마다, 바뀐 게 없으면 same) / tkpost / tkdel(내 메시지, 관리자는 전부)
-   - 글꼴은 따로 지정하지 않음(inherit = 사이트 기본 Pretendard) */
+   - 글꼴은 따로 지정하지 않음(inherit = 사이트 기본 Pretendard)
+   - 2026-11-24 사용자 "질문을 선택하면 질문글을 불러오고 거기에 답변을 달 수 있게", "질문자에게 알리는 것도":
+     질문을 누르면 그 질문과 답변만 보이는 화면(질문 화면)이 열리고 맨 아래 입력창은 답변 입력창이 됨 (서버 tkpost re=질문 번호).
+     답변은 전체 대화 흐름에는 따로 나오지 않고 질문 줄에 '답변 N'으로 셈. 질문한 사람에게는 '새 답변' 표시 + 이름 위 알림(서버 mynoti, 내 알림 화면).
+     talk.html?q=질문번호 로 들어오면 그 질문 화면이 바로 열림 */
 (function () {
   if (window.PGNTalk) return;
   const CATS = ['질문', '동행·조인', '대회 정보', '자유'];
@@ -40,10 +44,21 @@
     '#tk .tk-login a{display:inline-block;border-radius:10px;padding:8px 14px;font-weight:400;font-size:.86rem;text-decoration:none;background:#111;color:#fff}#tk .tk-login a.sub{background:#fff;color:#111;border:1px solid #cfcfcf}' +
     '@media(max-width:640px){#tk .tk-top{padding:8px 8px 0 18px}#tk .tk-hd{padding:0 18px 8px}#tk .tk-hd h2{font-size:1.2rem}#tk .tk-hd p{margin:3px 0 8px;font-size:.82rem}#tk .tk-log{padding:2px 12px 8px}#tk .tk-in{padding:8px 12px calc(10px + env(safe-area-inset-bottom))}#tk .tk-s{max-width:none}}' +
     '#tk b,#tk strong,#tk h2{font-weight:400}' +   /* 2026-11-13 사용자 "글자를 작게 해주고 볼드체도 넣지마": 파크톡 창은 굵은 글씨 없음 */
+    '#tk .tk-m.q{cursor:pointer}#tk .tk-m.q:hover{background:#f6f9f7}#tk .tk-m.me.q:hover{background:#fff6cc}' +
+    '#tk .tk-ans{border:0;background:none;color:#1d6b44;font-family:inherit;font-size:.75rem;font-weight:400;cursor:pointer;padding:0}#tk .tk-ans:hover{text-decoration:underline}#tk .tk-nw{color:#e53935;font-size:.72rem}' +
+    '#tk .tk-th{display:flex;align-items:center;gap:8px;margin:10px 0 8px}#tk .tk-back{border:1px solid #d6d6d6;background:#fff;color:#222;border-radius:8px;padding:5px 11px;font-family:inherit;font-size:.8rem;font-weight:400;cursor:pointer}#tk .tk-back:hover{border-color:#111}#tk .tk-th span{font-size:.8rem;color:#666}' +
+    '#tk .tk-qc{border:1px solid #cfe0d6;background:#f5f8f6;border-radius:10px;padding:10px 12px}#tk .tk-qc .tk-m{border-bottom:0;padding:0;background:none}#tk .tk-ac{font-size:.78rem;color:#555;margin:12px 0 2px;padding:0 2px}' +
+    '#tk .tk-m.a{position:relative;padding-left:26px}#tk .tk-m.a::before{content:"↳";position:absolute;left:8px;top:9px;color:#9aa;font-size:.85rem}' +
+    '#tk .tk-reto{font-size:.78rem;color:#1d6b44;margin-bottom:7px;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
     'html.tk-lock,html.tk-lock body{overflow:hidden}';
   document.head.appendChild(st);
 
   let box = null, timer = 0, v = '', items = [], cat = '전체', kw = '', isOpen = false, pageMode = false, pushed = false, myCat = '자유', sending = false, admin = false, first = true;
+  let thread = '', tpushed = false, ans = {};   /* thread = 지금 보고 있는 질문 번호, ans = 질문 번호 -> 답변 목록 */
+  const SEENK = 'pgn_tkseen';   /* 내 질문의 답변을 어디까지 봤는지 (질문 번호 -> 마지막으로 본 답변 시각) */
+  const seenGet = () => { try { return JSON.parse(localStorage.getItem(SEENK) || '{}') || {}; } catch (e) { return {}; } };
+  const isQ = x => x && !x.sys && !x.del && !x.re && (x.cat || '자유') === '질문';
+  const newAns = x => { if (!x.mine) return 0; const s = seenGet()[x.id] || ''; return (ans[x.id] || []).filter(a => !a.mine && !a.del && a.at > s).length; };
   const me = () => (typeof Auth !== 'undefined' && Auth.get()) || null;
   const X = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
   const MAG = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>';
@@ -55,7 +70,13 @@
     const u = me();
     if (!u) {
       const nx = encodeURIComponent((location.pathname.split('/').pop() || 'index.html') + location.search);
-      return '<div class="tk-login"><span>로그인하면 바로 대화할 수 있어요.</span><div><a href="login.html?next=' + nx + '">로그인</a><a class="sub" href="signup.html?next=' + nx + '">회원가입</a></div></div>';
+      return '<div class="tk-login"><span>로그인하면 바로 ' + (thread ? '답변할' : '대화할') + ' 수 있어요.</span><div><a href="login.html?next=' + nx + '">로그인</a><a class="sub" href="signup.html?next=' + nx + '">회원가입</a></div></div>';
+    }
+    if (thread) {
+      const q = items.find(x => x.id === thread);
+      return '<div class="tk-reto">' + (q && !q.del ? '질문에 답변: ' + esc2(q.text) : '이 질문에 답변을 남겨 주세요.') + '</div>' +
+        '<form id="tkF" autocomplete="off"><textarea id="tkT" rows="1" maxlength="300" placeholder="' + esc2(u.name || '') + '님, 답변을 입력하세요" aria-label="답변 입력"></textarea><button class="tk-send" id="tkS" type="submit">답변</button></form>' +
+        '<div class="tk-err" id="tkE"></div>';
     }
     return '<div class="tk-mc" id="tkMc"><small>분류</small>' + CATS.map(c => '<button type="button" data-c="' + c + '"' + (c === myCat ? ' class="on"' : '') + '>' + c + '</button>').join('') + '</div>' +
       '<form id="tkF" autocomplete="off"><textarea id="tkT" rows="1" maxlength="300" placeholder="' + esc2(u.name || '') + '님, 메시지를 입력하세요" aria-label="메시지 입력"></textarea><button class="tk-send" id="tkS" type="submit">전송</button></form>' +
@@ -73,27 +94,39 @@
     document.body.appendChild(box);
     box.querySelector('.tk-x').onclick = closePanel;
     box.querySelector('.tk-dim').onclick = closePanel;
-    box.querySelector('#tkC').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; cat = b.dataset.c; box.querySelectorAll('#tkC button').forEach(x => x.classList.toggle('on', x === b)); draw(true); };
-    box.querySelector('#tkQ').oninput = e => { kw = e.target.value; draw(true); };
+    box.querySelector('#tkC').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; cat = b.dataset.c; box.querySelectorAll('#tkC button').forEach(x => x.classList.toggle('on', x === b)); if (CATS.indexOf(cat) >= 0) myCat = cat; if (thread) backThread(); else { refreshInput(); draw(true); } };
+    box.querySelector('#tkQ').oninput = e => { kw = e.target.value; if (thread) backThread(); else draw(true); };
     box.querySelector('#tkN').onclick = () => toBottom();
     box.querySelector('#tkL').addEventListener('scroll', () => { if (nearBottom()) box.querySelector('#tkN').hidden = true; });
     box.querySelector('#tkL').onclick = async e => {
-      const b = e.target.closest('.tk-del'); if (!b) return;
+      if (e.target.closest('.tk-back')) { backThread(); return; }
+      const b = e.target.closest('.tk-del');
+      if (!b) { const q = !thread && !e.target.closest('a') && e.target.closest('[data-q]'); if (q) openThread(q.dataset.q); return; }
       if (!confirm('이 메시지를 지울까요?')) return;
       try { const r = await api('tkdel', { id: b.dataset.id }); take(r, false); } catch (er) { err(er.message); }
     };
     wireInput();
-    document.addEventListener('keydown', e => { if (isOpen && e.key === 'Escape') closePanel(); });
+    document.addEventListener('keydown', e => { if (isOpen && e.key === 'Escape') { if (thread) backThread(); else closePanel(); } });
   }
   function wireInput() {
     const f = box.querySelector('#tkF'); if (!f) return;
     const ta = box.querySelector('#tkT');
-    box.querySelector('#tkMc').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; myCat = b.dataset.c; box.querySelectorAll('#tkMc button').forEach(x => x.classList.toggle('on', x === b)); ta.focus(); };
+    const mc = box.querySelector('#tkMc'); if (mc) mc.onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; myCat = b.dataset.c; box.querySelectorAll('#tkMc button').forEach(x => x.classList.toggle('on', x === b)); ta.focus(); };
     const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(120, ta.scrollHeight + 2) + 'px'; };
     ta.addEventListener('input', () => { grow(); err(''); });
     ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229 && !MOB) { e.preventDefault(); send(); } });   /* PC: Enter 보내기, Shift+Enter 줄바꿈. 휴대폰: 전송 버튼 */
     f.onsubmit = e => { e.preventDefault(); send(); };
   }
+  function refreshInput() { if (!box) return; const t = box.querySelector('#tkT'), keep = t ? t.value : ''; box.querySelector('#tkI').innerHTML = inputHtml(); wireInput(); const n = box.querySelector('#tkT'); if (n && keep && !thread) n.value = keep; }
+  function openThread(id) {
+    if (!id) return;
+    thread = String(id); first = true;
+    if (!tpushed) { try { history.pushState({ pgnTalkQ: 1 }, ''); tpushed = true; } catch (e) {} }   /* 휴대폰 뒤로 가기 = 질문 목록으로 */
+    refreshInput(); draw(true);
+    if (!MOB) setTimeout(() => { const t = box.querySelector('#tkT'); if (t) t.focus(); }, 50);
+  }
+  function closeThread() { if (!thread) return; thread = ''; first = true; refreshInput(); draw(true); }
+  function backThread() { if (tpushed) { try { history.back(); return; } catch (e) {} } tpushed = false; closeThread(); }
   function err(t) { const e = box && box.querySelector('#tkE'); if (e) e.textContent = t || ''; }
   const logEl = () => box.querySelector('#tkL');
   const nearBottom = () => { const l = logEl(); return l.scrollHeight - l.scrollTop - l.clientHeight < 80; };
@@ -105,19 +138,36 @@
         '<span class="tk-st">' + timeOf(x.at) + (admin ? ' <button type="button" class="tk-del" data-id="' + esc2(x.id) + '">삭제</button>' : '') + '</span></div>';
     }
     const can = !x.del && !pend && (x.mine || admin);
-    return '<div class="tk-m' + (x.mine ? ' me' : '') + (x.del ? ' del' : '') + (pend ? ' pend' : '') + '"><div class="tk-t"><span class="tk-tag">' + esc2(x.cat || '자유') + '</span><b>' + (x.del ? '삭제된 메시지입니다.' : esc2(x.text)) + '</b></div>' +
-      '<div class="tk-meta"><span class="nk">' + esc2(x.nick) + (x.adm ? '<span class="tk-adm">운영자</span>' : '') + '</span><span>' + (pend ? '보내는 중...' : timeOf(x.at)) + '</span>' + (can ? '<button type="button" class="tk-del" data-id="' + esc2(x.id) + '">삭제</button>' : '') + '</div></div>';
+    const q = !pend && !thread && isQ(x), na = q ? (ans[x.id] || []).filter(a => !a.del).length : 0, nw = q ? newAns(x) : 0;
+    return '<div class="tk-m' + (x.mine ? ' me' : '') + (x.del ? ' del' : '') + (pend ? ' pend' : '') + (q ? ' q' : '') + (x.re ? ' a' : '') + '"' + (q ? ' data-q="' + esc2(x.id) + '" title="눌러서 답변 보기·달기"' : '') + '><div class="tk-t"><span class="tk-tag">' + esc2(x.cat || '자유') + '</span><b>' + (x.del ? '삭제된 메시지입니다.' : esc2(x.text)) + '</b></div>' +
+      '<div class="tk-meta"><span class="nk">' + esc2(x.nick) + (x.adm ? '<span class="tk-adm">운영자</span>' : '') + '</span><span>' + (pend ? '보내는 중...' : (thread && dayOf(x.at) ? dayOf(x.at).replace(/ \(.\)$/, '') + ' ' : '') + timeOf(x.at)) + '</span>' + (q ? '<button type="button" class="tk-ans" data-q="' + esc2(x.id) + '">' + (na ? '답변 ' + na + ' ›' : '답변하기 ›') + '</button>' + (nw ? '<span class="tk-nw">새 답변 ' + nw + '</span>' : '') : '') + (can ? '<button type="button" class="tk-del" data-id="' + esc2(x.id) + '">삭제</button>' : '') + '</div></div>';
   }
   function draw(stick) {
     if (!box) return;
     const l = logEl(), atB = first || stick === true || nearBottom();
+    ans = {}; items.forEach(x => { if (x.re) (ans[x.re] = ans[x.re] || []).push(x); });
+    if (thread) { drawThread(l, atB); first = false; return; }
     const k = kw.trim().toLowerCase().replace(/\s+/g, '');
-    const f = items.filter(x => (cat === '전체' || (x.cat || '자유') === cat) && (!k || (!x.del && String(x.text).toLowerCase().replace(/\s+/g, '').includes(k))));
+    const f = items.filter(x => !x.re && (cat === '전체' || (x.cat || '자유') === cat) && (!k || (!x.del && String(x.text).toLowerCase().replace(/\s+/g, '').includes(k))));
     let h = '', day = '';
     f.forEach(x => { const d = dayOf(x.at); if (d && d !== day) { day = d; h += '<div class="tk-day"><span>' + d + '</span></div>'; } h += rowHtml(x); });
     l.innerHTML = h || '<div class="tk-empty">' + (items.length ? '조건에 맞는 대화가 없습니다.' : '아직 대화가 없습니다.<br>' + (me() ? '아래 입력창에 첫 메시지를 남겨 보세요.' : '로그인하고 첫 메시지를 남겨 보세요.')) + '</div>';
     if (atB) toBottom();
     first = false;
+  }
+  function drawThread(l, atB) {   /* 질문 화면: 질문 + 답변 (오래된 답변이 위) */
+    const q = items.find(x => x.id === thread), list = (ans[thread] || []);
+    let h = '<div class="tk-th"><button type="button" class="tk-back">‹ 목록으로</button><span>질문과 답변</span></div>';
+    if (!q) h += '<div class="tk-empty">' + (items.length ? '질문을 찾을 수 없습니다.<br><small>지워졌거나 오래되어 목록에서 빠진 질문입니다.</small>' : '질문을 불러오는 중...') + '</div>';
+    else {
+      h += '<div class="tk-qc">' + rowHtml(q) + '</div>';
+      const live = list.filter(a => !a.del).length;
+      h += '<div class="tk-ac">' + (live ? '답변 ' + live + '개' : '아직 답변이 없습니다. ' + (me() ? '아래 입력창에 첫 답변을 남겨 보세요.' : '로그인하고 첫 답변을 남겨 보세요.')) + '</div>';
+      h += list.map(a => rowHtml(a)).join('');
+      if (q.mine && list.length) { const s = seenGet(), last = list[list.length - 1].at || ''; if ((s[thread] || '') < last) { s[thread] = last; try { localStorage.setItem(SEENK, JSON.stringify(s)); } catch (e) {} } }   /* 내 질문: 답변을 봤으니 '새 답변' 표시를 지움 */
+    }
+    l.innerHTML = h;
+    if (atB) toBottom();
   }
   function take(r, fromPoll) {
     if (!r || r.same) return;
@@ -126,7 +176,7 @@
     const grown = items.length && items[items.length - 1].id !== before;
     const atB = nearBottom();
     draw();
-    if (fromPoll && grown && !atB) box.querySelector('#tkN').hidden = false;
+    if (fromPoll && grown && !atB && !thread) box.querySelector('#tkN').hidden = false;
   }
   async function poll() {
     clearTimeout(timer);
@@ -142,9 +192,10 @@
     if (!me()) { err('로그인이 필요합니다.'); return; }
     sending = true; b.disabled = true; err('');
     const l = logEl(); const tmp = document.createElement('div');
-    tmp.innerHTML = rowHtml({ text, cat: myCat, nick: me().name || '나', mine: true }, true); l.appendChild(tmp.firstChild); toBottom();
+    const re = thread;
+    tmp.innerHTML = rowHtml({ text, cat: re ? '답변' : myCat, nick: me().name || '나', mine: true, re }, true); l.appendChild(tmp.firstChild); toBottom();
     ta.value = ''; ta.style.height = 'auto';
-    try { const r = await api('tkpost', { text, cat: myCat }); take(r, false); toBottom(); }
+    try { const r = await api('tkpost', re ? { text, cat: '질문', re } : { text, cat: myCat }); take(r, false); toBottom(); }
     catch (e) { draw(); ta.value = text; err(e.message); if (/로그인/.test(e.message) && !me()) box.querySelector('#tkI').innerHTML = inputHtml(); }
     sending = false; b.disabled = false; if (!MOB) ta.focus();
   }
@@ -152,6 +203,8 @@
     o = o || {};
     if (!box) build();
     pageMode = !!o.page;
+    let q0 = o.q || ''; if (!q0 && pageMode) { try { q0 = new URLSearchParams(location.search).get('q') || ''; } catch (e) {} }
+    thread = q0 ? String(q0) : ''; tpushed = false;
     box.querySelector('#tkI').innerHTML = inputHtml(); wireInput();   /* 로그인 상태가 바뀌었을 수 있음 */
     box.classList.add('on'); document.documentElement.classList.add('tk-lock'); isOpen = true; first = true;
     if (!pageMode && !pushed) { try { history.pushState({ pgnTalk: 1 }, ''); pushed = true; } catch (e) {} }   /* 휴대폰 뒤로 가기 = 닫기 */
@@ -162,9 +215,13 @@
   function closePanel() {
     if (pageMode) { location.href = 'index.html'; return; }
     hide();
-    if (pushed) { pushed = false; try { history.back(); } catch (e) {} }
+    const n = (pushed ? 1 : 0) + (tpushed ? 1 : 0); pushed = false; tpushed = false; thread = '';
+    if (n) { try { history.go(-n); } catch (e) {} }
   }
-  window.addEventListener('popstate', () => { if (isOpen && !pageMode) { pushed = false; hide(); } });
+  window.addEventListener('popstate', () => {
+    if (isOpen && thread && tpushed) { tpushed = false; closeThread(); return; }   /* 질문 화면에서 뒤로 가기 = 질문 목록 */
+    if (isOpen && !pageMode) { pushed = false; hide(); }
+  });
   document.addEventListener('visibilitychange', () => { if (isOpen && !document.hidden) poll(); });
   window.PGNTalk = { open: openPanel, close: closePanel };
 })();

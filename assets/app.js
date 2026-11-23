@@ -452,7 +452,7 @@ document.addEventListener('click', e => {
   e.preventDefault();
   const go = () => window.PGNTalk && PGNTalk.open({ page: /talk\.html$/.test(location.pathname) });
   if (window.PGNTalk) { go(); return; }
-  const s = document.createElement('script'); s.src = 'assets/talk.js?v=20261115a'; s.onload = go; s.onerror = () => { location.href = 'talk.html'; }; document.head.appendChild(s);
+  const s = document.createElement('script'); s.src = 'assets/talk.js?v=20261124tk'; s.onload = go; s.onerror = () => { location.href = 'talk.html'; }; document.head.appendChild(s);
 });
 function pgnAlignAll() { pgnSubAlign(); pgnNavAlign(); }
 function schedSubPrep(active) {
@@ -577,7 +577,7 @@ async function layout(active, opts) {
 }
 
 /* ---------- 알림 배지: '○○님' 위에 빨간 숫자 ----------
-   - 회원(관리자 포함): 내가 쓴 자유게시판·조인 글에 달린 남의 댓글 + 내 조인 글 참가 신청 (서버 mynoti) → 누르면 내 알림(noti.html)
+   - 회원(관리자 포함): 내가 쓴 자유게시판·조인 글에 달린 남의 댓글 + 내 조인 글 참가 신청 + 파크톡 내 질문에 달린 답변(2026-11-24) (서버 mynoti) → 누르면 내 알림(noti.html)
    - 관리자: 새 개선요청(접수 상태) + 새 댓글 → 누르면 개선요청 또는 통계 > 댓글
    - 해당 화면을 보면 숫자가 사라짐. 1분 캐시, 2분마다 재확인 */
 const ADMB = { k: 'pgn_admb', sr: 'pgn_seen_req', sc: 'pgn_seen_cmt', nk: 'pgn_noti' };
